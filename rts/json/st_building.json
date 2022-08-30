@@ -1,0 +1,4 @@
+[
+    {"config_id":301, "building_type":1, "hp": 500, "def": 15, "atk":0, "name":"base", "size":60},
+    {"config_id":302, "building_type":2, "hp": 300, "def": 15, "atk":0, "name":"soldior camp", "size":60}
+]

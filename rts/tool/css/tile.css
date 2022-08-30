@@ -1,0 +1,16 @@
+div .load {
+    margin-top: 20px;
+}
+
+div .follow {
+    padding-top: 10px;
+}
+
+.th-size {
+    font-size: small;
+}
+
+.canvas {
+    border: 1px solid gray;
+    box-sizing: border-box;
+}

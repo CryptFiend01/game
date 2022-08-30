@@ -1,0 +1,84 @@
+<html>
+    <head>
+        <title>Tile</title>
+        <link href="css/bootstrap.min.css" rel="stylesheet">
+        <link href="css/tile.css" rel="stylesheet">
+    </head>
+    <body>
+        <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+            <a class="navbar-brand">编辑器</a>
+            <div class="collapse navbar-collapse" id="navMenu">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item active">
+                        <a class="nav-link" href="#">文件</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">其他</a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+        <div class="container">
+            <div class="row">
+                <div class="col-sm-10">
+                    <canvas id="tiles" width="900" height="800"></canvas>
+                </div>
+                <div class="col-sm-2">
+                    <div class="load">
+                        <button type="button" class="btn btn-primary" onclick="onClickAddImg()">+</button>
+                        <button type="button" class="btn btn-primary" onclick="onClickClearImg()">清空</button>
+                    </div>
+
+                    <div class="follow">
+                        <table class="table table-primary" id="tabImages">
+                            <thead>
+                                <tr>
+                                    <th class="th-size">ID</th>
+                                    <th class="th-size">Name</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="follow">
+                        <canvas id="baseImg" width="250" height="400" class="canvas"></canvas>
+                        <canvas id="baseGrid" width="250" height="400"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <script>
+            function drawMap() {
+                var canvas = document.getElementById("tiles");
+                var context = canvas.getContext("2d");
+                context.beginPath();
+                context.rect(10, 20, 800, 600);
+                for (var i = 1; i < 30; i++) {
+                    context.moveTo(10, 20 + i*20);
+                    context.lineTo(810, 20 + i*20);
+                }
+                for (var i = 1; i < 40; i++) {
+                    context.moveTo(10 + i*20, 20);
+                    context.lineTo(10 + i*20, 620);
+                }
+                context.closePath();
+                context.strokeStyle = "#f00";
+                context.fillStyle = "#ccc";
+                context.stroke();
+                //context.fill();
+            }
+            drawMap();
+
+            function onClickAddImg() {
+                alert("add!");
+            }
+
+            function onClickClearImg() {
+                alert("clear!");
+            }
+        </script>
+    </body>
+</html>
