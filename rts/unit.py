@@ -1,4 +1,3 @@
-from itsdangerous import json
 from base_unit import *
 import pygame
 from public import CMD_MOVE, posDist
