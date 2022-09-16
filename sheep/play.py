@@ -9,7 +9,6 @@ class Game:
         self.surfaces = []
         self.screen = None
         self.cards = []
-        self.isTop = False
         self.maxWidth = 0
         self.maxHeight = 0
 
@@ -27,7 +26,7 @@ class Game:
         ssize = [self.maxWidth * 50, self.maxHeight * 60]
         print(f"screen size: {ssize}")
 
-        for layer in grids:
+        for i, layer in enumerate(grids):
             surf = pygame.Surface(ssize, 0, self.screen)
             surf.set_colorkey(KEY_COLOR)
             surf.fill(KEY_COLOR)
@@ -42,7 +41,7 @@ class Game:
                         px = x * 50 + dx
                         py = y * 60 + dy
                         card = Card(n, (px, py))
-                        card.Create(self.screen, surf)
+                        card.Create(self.screen, surf, i == len(grids)-1)
                         self.cards.append(card)
                     x += 1
                 y += 1
@@ -55,7 +54,7 @@ class Game:
         for card in self.cards:
             card.draw()
         for surf in self.surfaces:
-            self.screen.blit(surf, (50, 200))
+            self.screen.blit(surf, (50, 100))
 
     def Run(self):
         while True:
