@@ -1,4 +1,3 @@
-from matplotlib.pyplot import cla
 import pygame
 from table_data import TableData
 
