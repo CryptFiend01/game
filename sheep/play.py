@@ -1,3 +1,4 @@
+import os
 import pygame
 from sheep import makeGrids
 from card import Card, CARD_POS_GRID
@@ -196,7 +197,7 @@ class Game:
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    exit()
+                    os._exit(0)
                 elif event.type == pygame.MOUSEBUTTONUP:
                     self.onMouseClick(event.pos)
             self.draw()
