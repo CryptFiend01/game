@@ -2,6 +2,11 @@ import pygame
 
 CARD_KEY_COLOR = pygame.Color(0, 1, 10)
 
+CARD_POS_GRID = 1
+CARD_POS_SLOT = 2
+CARD_POS_CACHE = 3
+CARD_POS_FINISH = 4
+
 def sub(a, b):
     c = a - b
     if c < 0:
@@ -16,6 +21,7 @@ class Card:
         self.surf = None
         self.dst = None
         self.isTop = False
+        self.status = CARD_POS_GRID
 
     def Create(self, screen, dst, top):
         self.surf = pygame.Surface([48, 58], 0, screen)
@@ -47,5 +53,16 @@ class Card:
 
         self.drawCard()
 
+    def putSlot(self, dst):
+        self.status = CARD_POS_SLOT
+        self.dst = dst
+
+    def clearCard(self):
+        self.status = CARD_POS_FINISH
+
+    def setSlotPos(self, pos):
+        self.pos = pos
+
     def draw(self):
-        self.dst.blit(self.surf, self.pos)
+        if self.status == CARD_POS_GRID or self.status == CARD_POS_SLOT:
+            self.dst.blit(self.surf, self.pos)

@@ -2,7 +2,7 @@ from random import shuffle
 from gate import gates
 
 def makeGrids():
-    cards = [14,14,14]
+    cards = []
     for i in range(14):
         if i < 7:
             cards.extend([i+1]*12)
