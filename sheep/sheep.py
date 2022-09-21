@@ -5,9 +5,9 @@ def makeGrids():
     cards = []
     for i in range(14):
         if i < 7:
-            cards.extend([i+1]*12)
+            cards.extend([i+1]*18)
         else:
-            cards.extend([i+1]*12)
+            cards.extend([i+1]*18)
 
     shuffle(cards)
 
@@ -15,7 +15,11 @@ def makeGrids():
     maxHeight = 0
 
     i = 0
-    grids = gates.copy()
+    grids = []
+    for g in gates:
+        #grids.insert(0, g)
+        grids.append(g)
+
     for layer in grids:
         if maxHeight < len(layer):
             maxHeight = len(layer)

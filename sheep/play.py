@@ -76,6 +76,8 @@ class Game:
                 x = 0
             self.cardGrids.append(cardLayer)
 
+        self.checkAllCardGrids()
+
     def checkAllCardGrids(self):
         for i, cardLayer in enumerate(self.cardGrids):
             if i == len(self.cardGrids) - 1:
@@ -94,21 +96,32 @@ class Game:
             upLayer = self.cardGrids[k]
             w2 = len(upLayer[0])
             h2 = len(upLayer)
-            dw = w1 - w2
-            dh = h1 - h2
-            dx = x + int(dw / 2)
-            dy = y + int(dh / 2)
-            poses = [[dx, dy]]
-            if dw % 2 == 1:
-                poses.append([dx-1, dy])
-            if dh % 2 == 1:
-                poses.append([dx, dy-1])
-            if dw % 2 == 1 and dh % 2 == 1:
-                poses.append([dx-1, dy-1])
-            if x == 1 and y == 1:
-                print(f"check poses: {poses} dw: {dw} dh: {dh}")
+            dw = w2 - w1
+            dh = h2 - h1
+            mx, my = 1, 1
+            if dw < 0:
+                mx = -1
+            if dh < 0:
+                my = -1
+            poses = []
+            poses.append([x + int(dw/2), y + int(dh/2)])
+            if dw % 2 == 0 and dh % 2 != 0:
+                poses.append([x + int(dw/2), y + int(dh/2) + my])
+            if dw % 2 != 0 and dh % 2 == 0:
+                poses.append([x + int(dw/2) + mx, y + int(dh/2)])
+            if dw % 2 != 0 and dh % 2 != 0:
+                poses.append([x + int(dw/2), y + int(dh/2) + my])
+                poses.append([x + int(dw/2) + mx, y + int(dh/2)])
+                poses.append([x + int(dw/2) + mx, y + int(dh/2) + my])
+
+            if x == 1 and y == 4:
+                card = self.cardGrids[i][y][x]
+                print(f"layer {i} check poses: {poses} at layer {k} dw: {dw} dh: {dh} card: {card.cardNo}")
             for pos in poses:
                 if self.checkLayerHasCard(upLayer, pos[0], pos[1], w2, h2):
+                    if x == 1 and y == 4:
+                        card = upLayer[pos[1]][pos[0]]
+                        print(f"layer {i} check poses: {pos} at layer {k} has card {card.cardNo}")
                     return True
         return False
     
@@ -128,10 +141,13 @@ class Game:
         for i in range(len(self.cardGrids)-1, -1, -1):
             layer = self.cardGrids[i]
             w, h = len(layer[0]), len(layer)
-            dw, dy = self.maxWidth - w, self.maxHeight - h
-            x = int((gamePos[0] - (dw * 25)) / 50)
-            y = int((gamePos[1] - (dy * 30)) / 60)
-            print(f"[{i}] click ({x}, {y}) w: {w} h: {h}")
+            dw, dh = self.maxWidth - w, self.maxHeight - h
+            dx, dy = (gamePos[0] - (dw * 25)), (gamePos[1] - (dh * 30))
+            if dx < 0 or dy < 0:
+                continue
+            x = int(dx / 50)
+            y = int(dy / 60)
+            print(f"[{i}] click ({x}, {y}) w: {w} h: {h} dw: {dw} dh: {dh}")
             if x < 0 or x >= w or y < 0 or y >= h:
                 continue
             card = layer[y][x]
@@ -150,10 +166,7 @@ class Game:
                 break
         else:
             self.cardSlots.append(card)
-        for i, card in enumerate(self.cardSlots):
-            p = [i * 50, 0]
-            print(f"set card to {p}")
-            card.setSlotPos(p)
+        
         n = 0
         toDeletes = []
         for c in self.cardSlots:
@@ -165,6 +178,11 @@ class Game:
             for c in toDeletes:
                 self.cardSlots.remove(c)
                 c.clearCard()
+
+        for i, card in enumerate(self.cardSlots):
+            p = [i * 50, 0]
+            print(f"set card to {p}")
+            card.setSlotPos(p)
 
         if len(self.cardSlots) >= 7:
             self.result = LOSE
