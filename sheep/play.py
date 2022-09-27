@@ -24,9 +24,10 @@ class Game:
         self.maxHeight = 0
         self.screenColor = (195,254,139)
         self.cardSlots = []
+        self.cardGroup = []
         self.result = 0
 
-    def Init(self, grids, maxWidth, maxHeight):
+    def Init(self, grids, maxWidth, maxHeight, groups):
         pygame.init()
 
         self.maxWidth = maxWidth
@@ -42,11 +43,15 @@ class Game:
         self.loseText = font.render("YOU LOSE, FOOLISH DONKEY~~~ ^_^", True, (230, 80, 30))
 
         ssize = [self.maxWidth * 50, self.maxHeight * 60]
-        print(f"screen size: {ssize}")
+        # print(f"screen size: {ssize}")
 
         self.slotSurf = pygame.Surface([50*7, 60], 0, self.screen)
         self.slotSurf.set_colorkey(KEY_COLOR)
         self.slotSurf.fill(KEY_COLOR)
+
+        self.groupSurf = pygame.Surface([self.maxWidth*50, 60], 0, self.screen)
+        self.groupSurf.set_colorkey(KEY_COLOR)
+        self.groupSurf.fill(KEY_COLOR)
 
         for i, layer in enumerate(grids):
             surf = pygame.Surface(ssize, 0, self.screen)
@@ -65,7 +70,7 @@ class Game:
                         px = x * 50 + dx
                         py = y * 60 + dy
                         card = Card(n, (px, py))
-                        card.Create(self.screen, surf, i == len(grids)-1)
+                        card.Create(self.screen, surf, i == len(grids)-1, i == len(grids)-1)
                         self.cards.append(card)
                         cardLine.append(card)
                     else:
@@ -77,21 +82,34 @@ class Game:
             self.cardGrids.append(cardLayer)
 
         self.checkAllCardGrids()
+        
+        for i, n in enumerate(groups):
+            card = Card(n, (i*3, 0))
+            card.Create(self.screen, self.groupSurf, i == len(groups)-1, True)
+            self.cardGroup.append(card)
+            self.cards.append(card)
 
     def checkAllCardGrids(self):
-        for i, cardLayer in enumerate(self.cardGrids):
-            if i == len(self.cardGrids) - 1:
-                break
-            for y, cardLine in enumerate(cardLayer):
+        self.checkVerticalGrids(len(self.cardGrids)-1)
+
+    def checkVerticalGrids(self, ilayer):
+        for i in range(ilayer-1, -1, -1):
+            layer = self.cardGrids[i]
+            for y, cardLine in enumerate(layer):
                 w1 = len(cardLine)
-                h1 = len(cardLayer)
+                h1 = len(layer)
                 for x, card in enumerate(cardLine):
                     if card == None or card.isTop:
                         continue
-                    if not self.isGridCovered(x, y, w1, h1, i):
+                    status = self.isGridCovered(x, y, w1, h1, i)
+                    if status == 1:
+                        card.setVisible()
+                    elif status == 2:
                         card.setTop()
 
     def isGridCovered(self, x, y, w1, h1, i):
+        status = 2
+        layerCovers = 0
         for k in range(i+1, len(self.cardGrids)):
             upLayer = self.cardGrids[k]
             w2 = len(upLayer[0])
@@ -104,25 +122,82 @@ class Game:
             if dh < 0:
                 my = -1
             poses = []
-            poses.append([x + int(dw/2), y + int(dh/2)])
-            if dw % 2 == 0 and dh % 2 != 0:
+            if dw % 2 == 0 and dh % 2 == 0:
+                coverType = 1
+                poses.append([x + int(dw/2), y + int(dh/2)])
+            elif dw % 2 == 0 and dh % 2 != 0:
+                poses.append([x + int(dw/2), y + int(dh/2)])
                 poses.append([x + int(dw/2), y + int(dh/2) + my])
-            if dw % 2 != 0 and dh % 2 == 0:
+                coverType = 2
+            elif dw % 2 != 0 and dh % 2 == 0:
+                poses.append([x + int(dw/2), y + int(dh/2)])
                 poses.append([x + int(dw/2) + mx, y + int(dh/2)])
-            if dw % 2 != 0 and dh % 2 != 0:
-                poses.append([x + int(dw/2), y + int(dh/2) + my])
-                poses.append([x + int(dw/2) + mx, y + int(dh/2)])
-                poses.append([x + int(dw/2) + mx, y + int(dh/2) + my])
+                coverType = 3
+            elif dw % 2 != 0 and dh % 2 != 0:
+                if my < 0:
+                    if mx < 0:
+                        poses.append([x + int(dw/2) + mx, y + int(dh/2) + my])
+                        poses.append([x + int(dw/2), y + int(dh/2) + my])
+                        poses.append([x + int(dw/2) + mx, y + int(dh/2)])
+                        poses.append([x + int(dw/2), y + int(dh/2)])
+                    else:
+                        poses.append([x + int(dw/2), y + int(dh/2) + my])
+                        poses.append([x + int(dw/2) + mx, y + int(dh/2) + my])
+                        poses.append([x + int(dw/2), y + int(dh/2)])
+                        poses.append([x + int(dw/2) + mx, y + int(dh/2)])
+                else:
+                    if mx < 0:
+                        poses.append([x + int(dw/2) + mx, y + int(dh/2)])
+                        poses.append([x + int(dw/2), y + int(dh/2)])
+                        poses.append([x + int(dw/2) + mx, y + int(dh/2) + my])
+                        poses.append([x + int(dw/2), y + int(dh/2) + my])
+                    else:
+                        poses.append([x + int(dw/2), y + int(dh/2)])
+                        poses.append([x + int(dw/2) + mx, y + int(dh/2)])
+                        poses.append([x + int(dw/2), y + int(dh/2) + my])
+                        poses.append([x + int(dw/2) + mx, y + int(dh/2) + my])
+                coverType = 4
 
-            if x == 1 and y == 4:
+            if x == 2 and y == 6 and i == 1:
                 card = self.cardGrids[i][y][x]
-                print(f"layer {i} check poses: {poses} at layer {k} dw: {dw} dh: {dh} card: {card.cardNo}")
+                print(f"layer {i}-{k} check poses: {poses} at layer {k} dw: {dw} dh: {dh} card: {card.cardNo}")
+            covers = []
             for pos in poses:
                 if self.checkLayerHasCard(upLayer, pos[0], pos[1], w2, h2):
-                    if x == 1 and y == 4:
+                    if x == 2 and y == 6 and i == 1:
                         card = upLayer[pos[1]][pos[0]]
-                        print(f"layer {i} check poses: {pos} at layer {k} has card {card.cardNo}")
-                    return True
+                        print(f"layer {i}-{k} check poses: {pos} at layer {k} has card {card.cardNo}")
+                    covers.append(1)
+                    status = 1
+                else:
+                    covers.append(0)
+            if coverType == 1:
+                if covers[0] == 1:
+                    layerCovers = 0xf
+            elif coverType == 2:
+                if (covers[0] == 1 and my > 0) or (covers[1] == 1 and my < 0):
+                    layerCovers |= 0xa
+                elif (covers[1] == 1 and my > 0) or (covers[0] == 1 and my < 0):
+                    layerCovers |= 0x5
+            elif coverType == 3:
+                if (covers[0] == 1 and mx > 0) or (covers[1] == 1 and mx < 0):
+                    layerCovers |= 0xc
+                elif (covers[1] == 1 and mx > 0) or (covers[0] == 1 and mx < 0):
+                    layerCovers |= 0x3
+            elif coverType == 4:
+                layerCovers |= ((covers[0] << 3) | (covers[1] << 2) | (covers[2] << 1) | (covers[3]))
+
+            if x == 2 and y == 6 and i == 1:
+                print(f"layer {i}-{k} layer cover: {layerCovers} covers: {covers}")
+
+            if layerCovers == 0xf:
+                return 0
+        return status
+
+    def checkVisible(self, covers):
+        for c in covers:
+            if c == 0:
+                return True
         return False
     
     def checkLayerHasCard(self, layer, dx, dy, w, h):
@@ -136,26 +211,36 @@ class Game:
         return card.status == CARD_POS_GRID
        
     def onMouseClick(self, pos):
-        gamePos = [pos[0] - OFFSET_X, pos[1]-OFFSET_Y]
-        print(f"click gamepos {gamePos}")
-        for i in range(len(self.cardGrids)-1, -1, -1):
-            layer = self.cardGrids[i]
-            w, h = len(layer[0]), len(layer)
-            dw, dh = self.maxWidth - w, self.maxHeight - h
-            dx, dy = (gamePos[0] - (dw * 25)), (gamePos[1] - (dh * 30))
-            if dx < 0 or dy < 0:
-                continue
-            x = int(dx / 50)
-            y = int(dy / 60)
-            print(f"[{i}] click ({x}, {y}) w: {w} h: {h} dw: {dw} dh: {dh}")
-            if x < 0 or x >= w or y < 0 or y >= h:
-                continue
-            card = layer[y][x]
-            if card != None:
-                if card.isTop and card.status == CARD_POS_GRID:
-                    self.addAndCheckResult(card)
-                    self.checkAllCardGrids()
-                    break
+        if pos[1] >= 600 and pos[1] <= 660:
+            l = (len(self.cardGroup) - 1) * 3 + 60
+            r = l + 50
+            if pos[0] >= l and pos[0] <= r:
+                card = self.cardGroup.pop()
+                self.addAndCheckResult(card)
+                if len(self.cardGroup) > 0:
+                    self.cardGroup[-1].setTop()
+        else:
+            gamePos = [pos[0] - OFFSET_X, pos[1]-OFFSET_Y]
+            print(f"click gamepos {gamePos}")
+            for i in range(len(self.cardGrids)-1, -1, -1):
+                layer = self.cardGrids[i]
+                w, h = len(layer[0]), len(layer)
+                dw, dh = self.maxWidth - w, self.maxHeight - h
+                dx, dy = (gamePos[0] - (dw * 25)), (gamePos[1] - (dh * 30))
+                if dx < 0 or dy < 0:
+                    continue
+                x = int(dx / 50)
+                y = int(dy / 60)
+                if x < 0 or x >= w or y < 0 or y >= h:
+                    continue
+                card = layer[y][x]
+                if card != None:
+                    print(f"[{i}] click ({x}, {y}) w: {w} h: {h} dw: {dw} dh: {dh}")
+                    if card.isTop and card.status == CARD_POS_GRID:
+                        self.addAndCheckResult(card)
+                        self.checkVerticalGrids(i)
+                        # self.checkAllCardGrids()
+                        break
 
     def addAndCheckResult(self, card):
         card.putSlot(self.slotSurf)
@@ -203,13 +288,15 @@ class Game:
             self.screen.blit(self.loseText, (10, 400))
         else:
             self.slotSurf.fill(KEY_COLOR)
+            self.groupSurf.fill(KEY_COLOR)
             for surf in self.surfaces:
                 surf.fill(KEY_COLOR)
             for card in self.cards:
                 card.draw()
             for surf in self.surfaces:
                 self.screen.blit(surf, (OFFSET_X, OFFSET_Y))
-            self.screen.blit(self.slotSurf, (60, 600))
+            self.screen.blit(self.groupSurf, (60, 600))
+            self.screen.blit(self.slotSurf, (60, 680))
 
     def Run(self):
         while True:
@@ -223,6 +310,7 @@ class Game:
 
 if __name__ == '__main__':
     game = Game()
-    grids, w, h = makeGrids()
-    game.Init(grids, w, h)
+    grids, w, h, groups = makeGrids()
+    #print(groups)
+    game.Init(grids, w, h, groups)
     game.Run()

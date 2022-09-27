@@ -1,3 +1,4 @@
+from turtle import isvisible
 import pygame
 
 CARD_KEY_COLOR = pygame.Color(0, 1, 10)
@@ -21,13 +22,15 @@ class Card:
         self.surf = None
         self.dst = None
         self.isTop = False
+        self.isVisible = False
         self.status = CARD_POS_GRID
 
-    def Create(self, screen, dst, top):
+    def Create(self, screen, dst, top, visible):
         self.surf = pygame.Surface([48, 58], 0, screen)
         self.surf.set_colorkey(CARD_KEY_COLOR)
         self.dst = dst
         self.isTop = top
+        self.isVisible = visible
         self.drawCard()
 
     def drawCard(self):
@@ -40,17 +43,22 @@ class Card:
         if not self.isTop:
             pygame.draw.rect(self.surf, (30, 30, 30), (0, 0, 48, 58), 1, 6)
 
-        font = pygame.font.SysFont("Consolas", 16)
-        if self.isTop:
-            txColor = (255-color[0], 255-color[1], 255-color[2])
-        else:
-            txColor = (250, 250, 250)
-        text = font.render("%d" % self.cardNo, True, txColor)
-        self.surf.blit(text, (16, 24))
+        if self.isVisible:
+            font = pygame.font.SysFont("Consolas", 16)
+            if self.isTop:
+                txColor = (255-color[0], 255-color[1], 255-color[2])
+            else:
+                txColor = (250, 250, 250)
+            text = font.render("%d" % self.cardNo, True, txColor)
+            self.surf.blit(text, (16, 24))
         
     def setTop(self):
+        self.isVisible = True
         self.isTop = True
+        self.drawCard()
 
+    def setVisible(self):
+        self.isVisible = True
         self.drawCard()
 
     def putSlot(self, dst):
