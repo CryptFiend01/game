@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/style.css">
+    <title>Editor</title>
+</head>
+<body>
+    <div class="nav">
+        <ul class="main-head">
+            <li class="main-first-menu">☰</li>
+            <li class="main-menu">
+                <span>文件</span>
+                <ul class="droplist">
+                    <li class="sub-menu">打开</li>
+                    <li class="sub-menu">保存</li>
+                    <li class="sub-menu">重新加载</li>
+                </ul>
+            </li>
+            <li class="main-menu">
+                <span>编辑</span>
+                <ul class="droplist">
+                    <li class="sub-menu">擦除</li>
+                    <li class="sub-menu">清空</li>
+                    <li class="sub-menu">填充</li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+    <div class="main">
+        <div id="cell-list" class="cell-list">
+            <button id="load" onclick="onClickLoad()">load</button>
+            <table>
+                <tbody id="imageList">
+                </tbody>
+            </table>
+            <canvas id="cells" class="cells"></canvas>
+        </div>
+        <div id="scene-area" class="scene-area">
+            <!-- <canvas id="grid" class="scene"></canvas> -->
+            <canvas id="scene" class="scene"></canvas>
+        </div>
+    </div>
+    <script src="editor.js"></script>
+</body>
+</html>

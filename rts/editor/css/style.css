@@ -1,0 +1,144 @@
+* {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    box-sizing: border-box;
+    text-decoration: none;
+}
+
+body {
+    display: flex;
+    flex-direction: column; /* 竖排 */
+}
+
+.nav {
+    height: 60px;
+    background-color: deepskyblue;
+    display: flex;
+}
+
+.main-head {
+    display: flex;
+    flex-direction: row;
+}
+
+.main-menu {
+    color: #e5e5e5;
+    width: 100px;
+    text-align: center;
+    line-height: 60px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.main-first-menu {
+    color: #e5e5e5;
+    text-align: center;
+    width: 60px;
+    font-size: 40px;
+}
+
+.main-menu:hover {
+    background-color: skyblue;
+}
+
+.droplist {
+    position: relative;
+    visibility: hidden;
+}
+
+.main-menu:hover .droplist {
+    visibility: visible;
+}
+
+.sub-menu {
+    width: 120px;
+    height: 40px;
+    background-color: deepskyblue;
+    line-height: 40px;
+    text-align: center;
+    border-top: 1px solid #ccc;
+    cursor: pointer;
+    /* border: 1px solid #ccc; */
+}
+
+.sub-menu:hover {
+    background-color: skyblue;
+}
+
+.main {
+    height: calc(100vh - 60px);
+    display: flex;
+}
+
+.cell-list {
+    flex: 2;
+    background-color: #e7e7e7;
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* column对应的水平居中是align-items，row对应的是justify-content */
+}
+
+.cell-list button {
+    background-color: deepskyblue;
+    border: none;
+    color: aliceblue;
+    font-size: 20px;
+    border-radius: 4px;
+    width: 350px;
+    height: 40px;
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+.cell-list button:hover {
+    background-color: cornflowerblue;
+}
+
+.cell-list table {
+    border: 1px solid #0a0a0a;
+    background-color: #ededed;
+    margin-bottom: 10px;   
+}
+
+.cell-list tbody {
+    display: block;
+    width: 350px;
+    height: 200px;
+    overflow-y: scroll;
+}
+
+.cell-list td {
+    text-align: center;
+    width: 350px;
+    height: 20px;
+    background-color: #e5e5e5;
+    color: #0a0a0a;
+}
+
+.cell-list td:hover {
+    background-color: #aeaeae;
+}
+
+.cell-list td::focus {
+    background-color: dodgerblue;
+}
+
+.cells {
+    width: 350px;
+    height: 600px;
+    border: 1px solid #0a0a0a;
+}
+
+.scene-area {
+    flex: 5;
+    background-color: #efefef;
+    display: flex;
+    justify-content: center;
+}
+
+.scene {
+    margin: 16px;
+    border: 1px solid #0a0a0a;
+    /* position: absolute; */
+}
