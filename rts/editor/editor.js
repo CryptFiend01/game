@@ -38,6 +38,7 @@ function resetScene() {
 }
 
 function initEditor() {
+    document.getElementById("newbox").style.visibility = "hidden";
     resetScene();
     cells.addEventListener("click", function(evt) {
         if (images.length > 0) {
