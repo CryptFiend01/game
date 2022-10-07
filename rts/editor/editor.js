@@ -210,4 +210,13 @@ function addImageListItem(content) {
     imgTable.innerHTML += "<tr><td>" + content + "</td></tr>";
 }
 
+function onClickCloseOpenbox() {
+    const box = document.getElementById("openbox");
+    box.style.visibility = "hidden";
+}
+
+function onClickOpen() {
+    
+}
+
 initEditor();
