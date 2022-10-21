@@ -38,7 +38,8 @@ function resetScene() {
 }
 
 function initEditor() {
-    document.getElementById("newbox").style.visibility = "hidden";
+    $("#newbox").hide();
+    $("#openbox").hide();
     resetScene();
     cells.addEventListener("click", function(evt) {
         if (images.length > 0) {
@@ -94,7 +95,21 @@ function initEditor() {
 
     document.getElementById("new").addEventListener("click", function() {
         console.log("open new.");
-        document.getElementById("newbox").style.visibility = "";
+        $("#newbox").show();
+    });
+
+    document.getElementById("open").addEventListener("click", function() {
+        $("#openbox").show();
+        $("#select-mapid-down").hide();
+        // clearDropdown();
+
+        httpGet(svrUrl + "/get_map_list", function(data) {
+            let maplist = JSON.parse(data);
+            let files = maplist["files"];
+            for (let i = 0; i < files.length; i++) {
+                addDropdownMap(files[i]);
+            }
+        });
     });
 
     document.getElementById("save").addEventListener("click", function() {
@@ -154,27 +169,35 @@ function initEditor() {
 
 function onClickLoad() {
     if (images.length == 0) {
-        let img = new Image();
         let name = "TileA5_PHC_Exterior-Nature.png";
         for (let i = 0; i < mapObj.images.length; i++) {
             if (mapObj.images[i] == name) {
                 return;
             }
         }
-        
-        img.src = "img/" + name;
+        mapObj.images.push(name);
+        loadImages();
+    }
+}
+
+function loadImages() {
+    images = [];
+    document.getElementById("imageList").innerHTML = "";
+    for (let i = 0; i < mapObj.images.length; i++) {
+        let img = new Image();
+        img.src = "img/" + mapObj.images[i];
         img.addEventListener("load", function(evt) {
-            addImageListItem(name);
-            cellCtx.drawImage(img, 0, 0, cells.width, cells.height);
-            mapObj.images.push(name);
+            addImageListItem(mapObj.images[i]);
             images.push(img);
+            if (i == 0) {
+                cellCtx.drawImage(img, 0, 0, cells.width, cells.height);
+            }
         });
     }
 }
 
 function onClickCloseNewbox() {
-    const box = document.getElementById("newbox");
-    box.style.visibility = "hidden";
+    $("#newbox").hide();
 }
 
 function onClickNew() {
@@ -211,12 +234,55 @@ function addImageListItem(content) {
 }
 
 function onClickCloseOpenbox() {
-    const box = document.getElementById("openbox");
-    box.style.visibility = "hidden";
+    $("#openbox").hide();
+}
+
+function clearDropdown() {
+    document.getElementById("select-mapid-down").innerHTML = "";
+}
+
+function onClickSelectMapid(obj) {
+    let val = $(obj).text();
+    $("#select-mapid-down").toggle();
+    $("#select-mapid").text(val);
+}
+
+function addDropdownMap(content) {
+    const dropdown = document.getElementById("select-mapid-down");
+    dropdown.innerHTML += "<li class=\"li-dropdown\" onclick=\"onClickSelectMapid(this)\">" + content + "</li>";
+}
+
+function onClickMapidDropdown() {
+    $("#select-mapid-down").toggle();
+}
+
+function httpGet(url, callback) {
+    let req = new XMLHttpRequest();
+    req.open("GET", url, true);
+
+    req.onreadystatechange = function() {
+        if (req.readyState != 4) {
+            return;
+        }
+
+        if (req.status === 200) {
+            callback(req.responseText);
+        }
+    };
+    req.send();
 }
 
 function onClickOpen() {
-    
+    let selectMapId = $("#select-mapid").text();
+    httpGet(svrUrl + "/get_map/" + selectMapId, function(data) {
+        if (data == "fail") {
+            return;
+        }
+        mapid = parseInt(selectMapId);
+        mapObj = JSON.parse(data);
+        loadImages();
+        draw();
+    });
 }
 
 initEditor();

@@ -43,15 +43,20 @@ class Unit(BaseUnit):
         self.aniElapse = pygame.time.get_ticks()
 
     def move(self, dx, dy):
-        if dx == 0:
+        if abs(dy) > abs(dx):
             if dy > 0:
-                self.dir = DIR_UP
-            else:
                 self.dir = DIR_DOWN
+            else:
+                self.dir = DIR_UP
+        else:
+            if dx > 0:
+                self.dir = DIR_RIGHT
+            else:
+                self.dir = DIR_LEFT
 
         gmap = self.app.game.map
 
-        if gmap.isBlock([self.pos[0] + dx, self.pos[1] + dy], self):
+        if gmap.isBlock([self.pos[0] + dx, self.pos[1] + dy]):
             # print("unit is blocked")
             return False
 
@@ -88,7 +93,7 @@ class Unit(BaseUnit):
                 self.move(dx, dy)
             else:
                 gmap = self.app.game.map
-                if not gmap.isUnitTake(tag, self):
+                if not gmap.isUnitTake(tag):
                     dx = int((tag[0] - self.pos[0]) / dist)
                     dy = int((tag[1] - self.pos[1]) / dist)
                     self.move(dx, dy)

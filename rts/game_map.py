@@ -86,21 +86,20 @@ class GameMap:
             self.__removeUnit(unit, x, y)
             self.__addUnit(unit, x1, y1)
 
-    def isBlock(self, pos, unit):
+    def isBlock(self, pos):
         x, y = self.posToGrid(pos)
         cell = self.grids[x + y * self.width]
-        if cell.isBlock:
-            return True
-        if len(cell.units) == 0 or (unit != None and unit in cell.units):
-            # print(f'uid:{uid} cell units:{cell.units}')
-            return False
-        else:
-            return True
+        return cell.isBlock
+        # if len(cell.units) == 0 or (unit != None and unit in cell.units):
+        #     # print(f'uid:{uid} cell units:{cell.units}')
+        #     return False
+        # else:
+        #     return True
 
-    def isUnitTake(self, pos, unit):
+    def isUnitTake(self, pos):
         x, y = self.posToGrid(pos)
         cell = self.grids[x + y * self.width]
-        if len(cell.units) == 0 or (unit != None and unit in cell.units):
+        if len(cell.units) == 0:
             return True
         else:
             return False

@@ -10,7 +10,7 @@ from table_data import TableData
 class Game:
     def __init__(self, app) -> None:
         self.app = app
-        self.map = None
+        self.map = GameMap(self.app)
         self.surface = None
         self.camps = []
         self.buildings = {}
@@ -23,10 +23,9 @@ class Game:
         self.isMouseDown = False
         self.mouseStart = [0,0]
         self.screenPos = [0,0]
-        self.defaultTeam = Team(0)
+        self.defaultTeam = Team(0, self.map)
 
     def Init(self):
-        self.map = GameMap(self.app)
         if not self.map.Init(1001):
             return False
 
@@ -38,7 +37,7 @@ class Game:
             camp.Init(pos)
             campid += 1
 
-        poses = [[110, 110], [320, 82], [510, 90], [115, 180]]
+        poses = [[110, 110], [320, 82], [510, 90], [115, 180], [140, 55], [20, 200]]
         for pos in poses:
             self.addUnit(101, pos, 1)
         

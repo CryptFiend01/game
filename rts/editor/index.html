@@ -5,6 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.staticfile.org/jquery/1.10.2/jquery.min.js"></script>
     <title>Editor</title>
 </head>
 <body>
@@ -84,7 +85,11 @@
         </div>
         <div class="open-group">
             <div class="open-line">
-                <label>地图列表</label>
+                <label>地图列表: </label>
+                <button class="dropdown-button" id="select-mapid" onclick="onClickMapidDropdown()"></button>
+                <ul class="dropdown" id="select-mapid-down">
+                    <li class="li-dropdown" onclick="onClickSelectMapid()">10001</li>
+                </ul>
             </div>
             <div class="open-line">
                 <button class="new-ok-btn" onclick="onClickOpen()">确认</button>
