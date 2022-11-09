@@ -11,7 +11,8 @@ class Camp:
 
     def Init(self, pos):
         self.golds = 1000
-        self.game.addBuilding(301, pos, self.campid)
+        if len(pos) > 0:
+            self.game.addBuilding(301, pos, self.campid)
 
     def isLose(self):
         return len(self.buildings) == 0

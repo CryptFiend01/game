@@ -3,14 +3,22 @@ const cellCtx = cells.getContext("2d");
 const scene = document.getElementById("scene");
 const sceneCtx = scene.getContext("2d");
 const imgSide = 16;
+let screenWidth = 54;
+let screenHeight = 54;
+scene.width = imgSide * screenWidth;
+scene.height = imgSide * screenHeight;
 let sceneWidth = 0;
 let sceneHeight = 0;
+let canvasOffsetX = 0;
+let canvasOffsetY = 0;
 let cursor = null;
 let images = [];
 let isFill = false;
 let isErase = false;
+let isDrag = false;
+let dragStartPos = null;
 let initSet = 0;
-const svrUrl = "http://127.0.0.1:5678"
+const svrUrl = "http://127.0.0.1:5678";
 
 let mapid = 1;
 let mapObj = {
@@ -24,20 +32,26 @@ let mapObj = {
     blocks : [],
 };
 
+function cursorPos(cursor) {
+    let img = images[cursor.img];
+    return cursor.x + cursor.y * Math.floor(img.width / imgSide);
+}
+
 function resetScene() {
     sceneWidth = mapObj.width;
     sceneHeight = mapObj.height;
-    scene.width = imgSide * sceneWidth;
-    scene.height = imgSide * sceneHeight;
+    canvasOffsetX = 0;
+    canvasOffsetY = 0;
+    console.log("scene clientWidth:" + scene.clientWidth + ", clientHeight:" + scene.clientHeight);
     mapObj.tiles = [];
     mapObj.blocks = [];
     for (let i = 0; i < sceneWidth*sceneHeight; i++) {
-        mapObj.tiles.push([0, 0, 0]);
+        mapObj.tiles.push([0, 0]);
         mapObj.blocks.push(0);
     }
 }
 
-function initEditor() {
+function InitEditor() {
     $("#newbox").hide();
     $("#openbox").hide();
     resetScene();
@@ -46,8 +60,8 @@ function initEditor() {
             let img = images[0];
             let wimg = img.width / imgSide;
             let himg = img.height / imgSide;
-            let x = Math.floor(evt.offsetX / Math.floor(cells.clientWidth / wimg)) * imgSide;
-            let y = Math.floor(evt.offsetY / Math.floor(cells.clientHeight / himg)) * imgSide;
+            let x = Math.floor(evt.offsetX / Math.floor(cells.clientWidth / wimg));
+            let y = Math.floor(evt.offsetY / Math.floor(cells.clientHeight / himg));
             cursor = {img: 0, x: x, y: y};
         } else {
             console.log("no image.");
@@ -55,64 +69,69 @@ function initEditor() {
     });
 
     scene.addEventListener("click", function(evt) {
-        let x = Math.floor((evt.offsetX * scene.width / scene.clientWidth) / imgSide) * imgSide;
-        let y = Math.floor((evt.offsetY * scene.height / scene.clientHeight) / imgSide) * imgSide;
-        let i = Math.floor(x / imgSide) + Math.floor(y / imgSide) * sceneWidth;
-        if (isErase) {
-            mapObj.tiles[i] = [0, 0, 0];
-        } else {
-            if (cursor == null) {
-                return;
-            }            
-            mapObj.tiles[i] = [cursor.img+1, cursor.x, cursor.y];
+        if (!isDrag) {
+            let x = Math.floor((evt.offsetX + canvasOffsetX) / imgSide) * imgSide;
+            let y = Math.floor((evt.offsetY + canvasOffsetY) / imgSide) * imgSide;
+            let i = Math.floor(x / imgSide) + Math.floor(y / imgSide) * sceneWidth;
+            if (isErase) {
+                console.log("erase (" + x + "," + y + ")");
+                mapObj.tiles[i] = [0, 0];
+            } else if (cursor != null) {
+                console.log("click pos: (" + evt.offsetX + "," + evt.offsetY + ")");
+                console.log("draw cursor: (" + cursor.img + "," + cursor.x + "," + cursor.y + ") at (" + x + "," + y + ")");
+                console.log("cursorpos: " + cursorPos(cursor));
+                mapObj.tiles[i] = [cursor.img+1, cursorPos(cursor)];
+            }
         }
-
         draw();
     });
 
     scene.addEventListener("mousedown", function(evt) {
-        isFill = true;
+        if (isDrag) {
+            dragStartPos = {x: evt.offsetX, y: evt.offsetY};
+        } else {
+            isFill = true;
+        }
     });
 
     scene.addEventListener("mousemove", function(evt) {
         if (isFill) {
-            let x = Math.floor((evt.offsetX * scene.width / scene.clientWidth) / imgSide) * imgSide;
-            let y = Math.floor((evt.offsetY * scene.height / scene.clientHeight) / imgSide) * imgSide;
+            let x = Math.floor((evt.offsetX + canvasOffsetX) / imgSide) * imgSide;
+            let y = Math.floor((evt.offsetY + canvasOffsetY) / imgSide) * imgSide;
             let i = Math.floor(x / imgSide) + Math.floor(y / imgSide) * sceneWidth;
             if (isErase) {
-                mapObj.tiles[i] = [0, 0, 0];
+                mapObj.tiles[i] = [0, 0];
             } else if (cursor != null) {
-                mapObj.tiles[i] = [cursor.img+1, cursor.x, cursor.y];
+                mapObj.tiles[i] = [cursor.img+1, cursorPos(cursor)];
             }
     
             draw();
+        } else if (isDrag && dragStartPos != null) {
+            let dx = dragStartPos.x - evt.offsetX;
+            let dy = dragStartPos.y - evt.offsetY;
+            let oldOffsetX = canvasOffsetX;
+            let oldOffsetY = canvasOffsetY;
+            canvasOffsetX += dx; //Math.floor(dx / (imgSide*2)) * imgSide;
+            canvasOffsetY += dy; //Math.floor(dy / (imgSide*2)) * imgSide;
+            if (canvasOffsetX < 0)
+                canvasOffsetX = 0;
+            if (canvasOffsetY < 0)
+                canvasOffsetY = 0;
+            if (canvasOffsetX > sceneWidth * imgSide - scene.width)
+                canvasOffsetX = sceneWidth * imgSide - scene.width;
+            if (canvasOffsetY > sceneHeight * imgSide - scene.height)
+                canvasOffsetY = sceneHeight * imgSide - scene.height;
+            if (oldOffsetX != canvasOffsetX || oldOffsetY != canvasOffsetY)
+                draw();
         }
     });
 
     scene.addEventListener("mouseup", function(evt) {
         isFill = false;
+        dragStartPos = null;
     });
 
-    document.getElementById("new").addEventListener("click", function() {
-        console.log("open new.");
-        $("#newbox").show();
-    });
-
-    document.getElementById("open").addEventListener("click", function() {
-        $("#openbox").show();
-        $("#select-mapid-down").hide();
-        // clearDropdown();
-
-        httpGet(svrUrl + "/get_map_list", function(data) {
-            let maplist = JSON.parse(data);
-            let files = maplist["files"];
-            for (let i = 0; i < files.length; i++) {
-                addDropdownMap(files[i]);
-            }
-        });
-    });
-
-    document.getElementById("save").addEventListener("click", function() {
+    $("#save").click(function() {
         let httpRequest = new XMLHttpRequest();
         httpRequest.open("POST", svrUrl + "/save_map", true);
         httpRequest.setRequestHeader("Content-type","application/json");
@@ -133,34 +152,51 @@ function initEditor() {
         }
     });
 
-    document.getElementById("clear").addEventListener("click", function() {
+    $("#pen").click(function() {
+        isDrag = false;
+        isErase = false;
+        dragStartPos = null;
+    });
+
+    $("#clear").click(function() {
         for (let i = 0; i < sceneWidth*sceneHeight; i++) {
-            mapObj.tiles[i] = [0, 0, 0];
+            mapObj.tiles[i] = [0, 0];
         }
+
+        isDrag = false;
+        isErase = false;
+        dragStartPos = null;
         draw();
     });
 
-    document.getElementById("erase").addEventListener("click", function() {
-        isErase = !isErase;
+    $("#drag").click(function() {
+        isDrag = true;
+        isErase = false;
+    })
+
+    $("#erase").click(function() {
+        isErase = true;
+        isDrag = false;
+        dragStartPos = null;
     });
 
-    document.getElementById("fill").addEventListener("click", function() {
+    $("#fill").click(function() {
         if (cursor != null) {
             mapObj.tiles = [];
             for (let i = 0; i < sceneWidth*sceneHeight; i++) {
-                mapObj.tiles.push([cursor.img+1, cursor.x, cursor.y]);
+                mapObj.tiles.push([cursor.img+1, cursorPos(cursor)]);
             }
             draw();
         }
     });
 
-    document.getElementById("init1").addEventListener("click", function(evt) {
+    $("#init1").click(function() {
         initSet = 1;
         cursor = null;
         isErase = false;
     });
 
-    document.getElementById("init2").addEventListener("click", function(evt) {
+    $("#init2").click(function() {
         initSet = 2;
         cursor = null;
         isErase = false;
@@ -176,43 +212,49 @@ function onClickLoad() {
             }
         }
         mapObj.images.push(name);
-        loadImages();
+        loadImages(null);
     }
 }
 
-function loadImages() {
+function loadImages(onfinish) {
     images = [];
     document.getElementById("imageList").innerHTML = "";
+    let promises = [];
     for (let i = 0; i < mapObj.images.length; i++) {
-        let img = new Image();
-        img.src = "img/" + mapObj.images[i];
-        img.addEventListener("load", function(evt) {
-            addImageListItem(mapObj.images[i]);
-            images.push(img);
-            if (i == 0) {
-                cellCtx.drawImage(img, 0, 0, cells.width, cells.height);
-            }
+        let p = new Promise(function(resolve, reject) {
+            let img = new Image();
+            img.src = "img/" + mapObj.images[i];
+            img.addEventListener("load", function(evt) {
+                addImageListItem(mapObj.images[i]);
+                images.push(img);
+                if (i == 0) {
+                    cellCtx.drawImage(img, 0, 0, cells.width, cells.height);
+                }
+                resolve();
+            });
         });
+        promises.push(p);
     }
+
+    Promise.all(promises).then(() => {
+        console.log("load images finish!");
+        if (onfinish != null) {
+            onfinish();
+        }
+    });
 }
 
-function onClickCloseNewbox() {
-    $("#newbox").hide();
-}
-
-function onClickNew() {
-    mapid = parseInt(document.getElementById("new-mapid").value);
-    let width = parseInt(document.getElementById("new-width").value);
-    let height = parseInt(document.getElementById("new-height").value);
-    mapObj.width = width;
-    mapObj.height = height;
-    console.log("mapid:" + mapid + ", width:" + width + ",height:" + height);
-    onClickCloseNewbox();
-    resetScene();
+function redraw() {
+    sceneWidth = mapObj.width;
+    sceneHeight = mapObj.height;
+    canvasOffsetX = 0;
+    canvasOffsetY = 0;
+    
+    draw();
 }
 
 function draw() {
-    sceneCtx.clearRect(0, 0, scene.clientHeight, scene.clientHeight);
+    sceneCtx.clearRect(0, 0, scene.clientWidth, scene.clientHeight);
     for (let i = 0; i < mapObj.tiles.length; i++) {
         let tile = mapObj.tiles[i];
         if (tile == undefined) {
@@ -221,68 +263,12 @@ function draw() {
         }
         if (tile[0] > 0) {
             let img = images[tile[0]-1];
-            let x = Math.floor(i % sceneWidth) * imgSide;
-            let y = Math.floor(i / sceneWidth) * imgSide;
-            sceneCtx.drawImage(img, tile[1], tile[2], imgSide, imgSide, x, y, imgSide, imgSide);
+            let w = Math.floor(img.width / imgSide);
+            let x = Math.floor(i % sceneWidth) * imgSide - canvasOffsetX;
+            let y = Math.floor(i / sceneWidth) * imgSide - canvasOffsetY;
+            sceneCtx.drawImage(img, Math.floor(tile[1] % w) * imgSide, Math.floor(tile[1] / w) * imgSide, imgSide, imgSide, x, y, imgSide, imgSide);
         }
     }
 }
 
-function addImageListItem(content) {
-    const imgTable = document.getElementById("imageList");
-    imgTable.innerHTML += "<tr><td>" + content + "</td></tr>";
-}
-
-function onClickCloseOpenbox() {
-    $("#openbox").hide();
-}
-
-function clearDropdown() {
-    document.getElementById("select-mapid-down").innerHTML = "";
-}
-
-function onClickSelectMapid(obj) {
-    let val = $(obj).text();
-    $("#select-mapid-down").toggle();
-    $("#select-mapid").text(val);
-}
-
-function addDropdownMap(content) {
-    const dropdown = document.getElementById("select-mapid-down");
-    dropdown.innerHTML += "<li class=\"li-dropdown\" onclick=\"onClickSelectMapid(this)\">" + content + "</li>";
-}
-
-function onClickMapidDropdown() {
-    $("#select-mapid-down").toggle();
-}
-
-function httpGet(url, callback) {
-    let req = new XMLHttpRequest();
-    req.open("GET", url, true);
-
-    req.onreadystatechange = function() {
-        if (req.readyState != 4) {
-            return;
-        }
-
-        if (req.status === 200) {
-            callback(req.responseText);
-        }
-    };
-    req.send();
-}
-
-function onClickOpen() {
-    let selectMapId = $("#select-mapid").text();
-    httpGet(svrUrl + "/get_map/" + selectMapId, function(data) {
-        if (data == "fail") {
-            return;
-        }
-        mapid = parseInt(selectMapId);
-        mapObj = JSON.parse(data);
-        loadImages();
-        draw();
-    });
-}
-
-initEditor();
+InitEditor();

@@ -26,7 +26,7 @@ class Game:
         self.defaultTeam = Team(0, self.map)
 
     def Init(self):
-        if not self.map.Init(1001):
+        if not self.map.Init(1003):
             return False
 
         initPoses = self.map.getInitPos()

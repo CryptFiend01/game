@@ -20,7 +20,7 @@ class TableData:
         return True
 
     def loadMaps(self):
-        maps = [1001]
+        maps = [1001, 1002, 1003]
         self.st_map = {}
         for mapid in maps:
             cfg = json.load(open(f'json/maps/{mapid}.json', 'r'))
