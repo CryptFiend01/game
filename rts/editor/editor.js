@@ -166,18 +166,21 @@ function InitEditor() {
         isDrag = false;
         isErase = false;
         dragStartPos = null;
+        initSet = 0;
         draw();
     });
 
     $("#drag").click(function() {
         isDrag = true;
         isErase = false;
+        initSet = 0;
     })
 
     $("#erase").click(function() {
         isErase = true;
         isDrag = false;
         dragStartPos = null;
+        initSet = 0;
     });
 
     $("#fill").click(function() {
@@ -194,12 +197,16 @@ function InitEditor() {
         initSet = 1;
         cursor = null;
         isErase = false;
+        isDrag = false;
+        dragStartPos = null;
     });
 
     $("#init2").click(function() {
         initSet = 2;
         cursor = null;
         isErase = false;
+        isDrag = false;
+        dragStartPos = null;
     });
 }
 
