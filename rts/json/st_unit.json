@@ -1,5 +1,5 @@
 [
-    {"config_id":101, "unit_type":1, "name":"soldior", "hp":100, "atk":10, "def":5, "speed":4, "building":302, "train_time":15},
-    {"config_id":102, "unit_type":2, "name":"sword", "hp":80, "atk":15, "def":3, "speed":5, "building":302, "train_time":20},
-    {"config_id":103, "unit_type":3, "name":"farmer", "hp":30, "atk":5, "def":2, "speed":4, "building":301, "train_time":5}
+    {"config_id":101, "unit_type":1, "name":"soldior", "radius":8, "hp":100, "atk":10, "def":5, "speed":4, "building":302, "train_time":15},
+    {"config_id":102, "unit_type":2, "name":"sword", "radius":8, "hp":80, "atk":15, "def":3, "speed":5, "building":302, "train_time":20},
+    {"config_id":103, "unit_type":3, "name":"farmer", "radius":8, "hp":30, "atk":5, "def":2, "speed":4, "building":301, "train_time":5}
 ]

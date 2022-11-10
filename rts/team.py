@@ -59,12 +59,12 @@ class Team:
             col = ceil(len(self.units) / row)
             print(f"row:{row} col:{col}")
             logicPos = self.map.posToGrid(pos)
-            left = logicPos[0] - int(row / 2) + 1
+            left = logicPos[0] - int(row/2) + 1
             top = logicPos[1] - int(col/2) + 1
-            print(f"target: {logicPos}, range: [{left}, {top}, {left+col-1}, {top+row-1}]")
+            print(f"target: {logicPos}, range: [{left}, {top}, {left+(col-1)*2}, {top+(row-1)*2}]")
             tagPoses = []
-            for v in range(top, top+row):
-                for h in range(left, left+col):
+            for v in range(top, top+row*2, 2):
+                for h in range(left, left+col*2, 2):
                     print(f"---> ({h},{v})")
                     tagPoses.append(self.map.gridToPos([h, v]))
                     if len(tagPoses) >= len(self.units):

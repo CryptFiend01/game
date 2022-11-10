@@ -104,6 +104,18 @@ class GameMap:
         else:
             return False
 
+    def getNearUnits(self, pos):
+        x, y = self.posToGrid(pos)
+        nears = [[-1, -1], [0, -1], [1, -1], [-1, 0], [0, 0], [1, 0], [-1, 1], [0, 1], [1, 1]]
+        units = []
+        for p in nears:
+            x1, y1 = x + p[0], y + p[1]
+            if x1 < 0 or x1 >= self.width or y1 < 0 or y1 >= self.height:
+                continue
+            cell = self.grids[x1 + y1 * self.width]
+            units.extend(cell.units)
+        return units
+
     def draw(self, dst):
         dst.blit(self.surface, (0, 0))
 

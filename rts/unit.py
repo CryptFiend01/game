@@ -24,12 +24,14 @@ class Unit(BaseUnit):
         self.runningCmd = None
         self.roads = []
         self.logicFrame = 0
+        self.waitUnit = None
 
     def Init(self, cfg, pos):
         self.hp = cfg['hp']
         self.atk = cfg['atk']
         self.defend = cfg['def']
         self.speed = cfg['speed']
+        self.radius = cfg['radius']
         self.pos = pos
 
         rm = ResMgr()
@@ -42,7 +44,30 @@ class Unit(BaseUnit):
         self._drawFrame()
         self.aniElapse = pygame.time.get_ticks()
 
+    def isMoving(self):
+        return self.runningCmd != None and self.runningCmd['cmd'] == CMD_MOVE
+
     def move(self, dx, dy):
+        gmap = self.app.game.map
+        nextPos = [self.pos[0] + dx, self.pos[1] + dy]
+        units = gmap.getNearUnits(nextPos)
+        if len(units) > 1:
+            for unit in units:
+                if unit == self:
+                    continue
+                dist = posDist(nextPos, unit.pos)
+                if dist < self.radius + unit.radius:
+                    if unit.isMoving() and (not unit.waitUnit or unit.waitUnit != self):
+                        # print(f"wait front moving. nextPos={nextPos} unitPos={unit.pos} dist={dist} radius={self.radius}")
+                        self.waitUnit = unit
+                        return
+                    else:
+                        # 垂直该单位的方向向右
+                        vec = pygame.Vector2(unit.pos[0] - self.pos[0], unit.pos[1] - self.pos[1])
+                        v = vec.rotate(90).normalize()
+                        dx, dy = v.x * self.speed, v.y * self.speed
+                        break
+        self.waitUnit = None
         if abs(dy) > abs(dx):
             if dy > 0:
                 self.dir = DIR_DOWN
@@ -53,8 +78,6 @@ class Unit(BaseUnit):
                 self.dir = DIR_RIGHT
             else:
                 self.dir = DIR_LEFT
-
-        gmap = self.app.game.map
 
         if gmap.isBlock([self.pos[0] + dx, self.pos[1] + dy]):
             # print("unit is blocked")
@@ -77,9 +100,9 @@ class Unit(BaseUnit):
 
     def checkCmd(self):
         if not self.runningCmd and len(self.cmds) > 0:
-            self.runningCmd = self.cmds[0]
-            self.cmds.pop(0)
+            self.runningCmd = self.cmds.pop(0)
             if self.runningCmd['cmd'] == CMD_MOVE:
+                self.roads = []
                 self.moveTo(self.runningCmd['pos'])
 
     def doMove(self):
@@ -128,4 +151,5 @@ class Unit(BaseUnit):
         dst.blit(self.img, self.renderPos, self.rect)
 
     def addCmd(self, cmd):
+        self.runningCmd = None
         self.cmds.append(cmd)
