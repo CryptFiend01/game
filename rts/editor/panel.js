@@ -38,6 +38,7 @@ $("#open").click(function() {
     $("#openbox").show();
     $("#select-mapid-down").hide();
     clearDropdown();
+    // $("#filedrop").hide();
 
     $.get(svrUrl + "/get_map_list", function(data, status) {
         let maplist = data;
@@ -47,11 +48,6 @@ $("#open").click(function() {
         }
     });
 });
-
-function addImageListItem(content) {
-    const imgTable = document.getElementById("imageList");
-    imgTable.innerHTML += "<tr><td>" + content + "</td></tr>";
-}
 
 function onClickCloseOpenbox() {
     $("#openbox").hide();

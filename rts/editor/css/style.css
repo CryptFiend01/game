@@ -46,11 +46,7 @@ body {
 
 .droplist {
     position: relative;
-    visibility: hidden;
-}
-
-.main-menu:hover .droplist {
-    visibility: visible;
+    display: none;
 }
 
 .sub-menu {
@@ -82,21 +78,36 @@ body {
     align-items: center; /* column对应的水平居中是align-items，row对应的是justify-content */
 }
 
-.cell-list button {
-    background-color: deepskyblue;
-    border: none;
-    color: aliceblue;
-    font-size: 16px;
-    border-radius: 4px;
+.img-file {  
+    /* position: relative;  
+    display: inline-block;   */
+    background: #666;  
+    border: none;  
+    border-radius: 4px;  
+    padding: 4px 12px;
+    /* overflow: hidden;   */
+    color: #e5e5e5;
+    line-height: 20px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    text-align: center;
     width: 350px;
-    height: 40px;
-    margin-top: 20px;
-    margin-bottom: 20px;
+    height: 30px;
 }
 
-.cell-list button:hover {
-    background-color: cornflowerblue;
+.img-file input {  
+    position: absolute;  
+    font-size: 100px; 
+    height: 30px;
+    right: 0;  
+    top: 50px;  
+    opacity: 0;  
 }
+
+.img-file:hover {  
+    background: #888;
+    /* color: #004974;   */
+} 
 
 .cell-list table {
     border: 1px solid #0a0a0a;
@@ -239,5 +250,17 @@ body {
 }
 
 .li-dropdown:hover {
+    background-color: #55aaff;
+}
+
+.btn-sel {
+    background-color: grey;
+    border: none;
+    border-radius: 2px;
+    cursor: pointer;
+    width: 100%;
+}
+
+.btn-sel:hover {
     background-color: #55aaff;
 }

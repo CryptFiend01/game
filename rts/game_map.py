@@ -59,6 +59,9 @@ class GameMap:
     def getInitPos(self):
         return (self.cfg['init1'], self.cfg['init2'])
 
+    def getSide(self):
+        return self.cfg["side"]
+
     def addUnit(self, unit):
         x, y = self.posToGrid(unit.pos)
         self.__addUnit(unit, x, y)

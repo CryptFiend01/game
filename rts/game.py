@@ -34,7 +34,7 @@ class Game:
         for pos in initPoses:
             camp = Camp(self, campid)
             self.camps.append(camp)
-            camp.Init(pos)
+            camp.Init([pos[0] * self.map.getSide(), pos[1] * self.map.getSide()])
             campid += 1
 
         poses = [[110, 110], [320, 82], [510, 90], [115, 180], [140, 55], [20, 200]]

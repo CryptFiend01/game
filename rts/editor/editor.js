@@ -18,9 +18,12 @@ let isErase = false;
 let isDrag = false;
 let dragStartPos = null;
 let initSet = 0;
+let isGrid = false;
+let isEraseGrid = false;
+let selectImg = -1;
 const svrUrl = "http://127.0.0.1:5678";
 
-let mapid = 1;
+let mapid = 0;
 let mapObj = {
     width : 40,
     height : 30,
@@ -54,36 +57,48 @@ function resetScene() {
 function InitEditor() {
     $("#newbox").hide();
     $("#openbox").hide();
+    $("#filemain").click( function() { $("#filedrop").toggle(); } );
+    $("#editmain").click( function() { $("#editdrop").toggle(); } );
+    $("#layermain").click( function() { $("#layerdrop").toggle(); } );
     resetScene();
     cells.addEventListener("click", function(evt) {
-        if (images.length > 0) {
-            let img = images[0];
+        if (selectImg >= 0) {
+            let img = images[selectImg];
             let wimg = img.width / imgSide;
             let himg = img.height / imgSide;
             let x = Math.floor(evt.offsetX / Math.floor(cells.clientWidth / wimg));
             let y = Math.floor(evt.offsetY / Math.floor(cells.clientHeight / himg));
-            cursor = {img: 0, x: x, y: y};
+            cursor = {img: selectImg, x: x, y: y};
         } else {
             console.log("no image.");
         }
     });
 
-    scene.addEventListener("click", function(evt) {
-        if (!isDrag) {
-            let x = Math.floor((evt.offsetX + canvasOffsetX) / imgSide) * imgSide;
-            let y = Math.floor((evt.offsetY + canvasOffsetY) / imgSide) * imgSide;
-            let i = Math.floor(x / imgSide) + Math.floor(y / imgSide) * sceneWidth;
-            if (isErase) {
-                console.log("erase (" + x + "," + y + ")");
-                mapObj.tiles[i] = [0, 0];
-            } else if (cursor != null) {
-                console.log("click pos: (" + evt.offsetX + "," + evt.offsetY + ")");
-                console.log("draw cursor: (" + cursor.img + "," + cursor.x + "," + cursor.y + ") at (" + x + "," + y + ")");
-                console.log("cursorpos: " + cursorPos(cursor));
-                mapObj.tiles[i] = [cursor.img+1, cursorPos(cursor)];
-            }
+    function setGrid(offsetX, offsetY) {
+        let x = Math.floor((offsetX + canvasOffsetX) / imgSide) * imgSide;
+        let y = Math.floor((offsetY + canvasOffsetY) / imgSide) * imgSide;
+        let i = Math.floor(x / imgSide) + Math.floor(y / imgSide) * sceneWidth;
+        if (isErase) {
+            console.log("erase (" + x + "," + y + ")");
+            mapObj.tiles[i] = [0, 0];
+        } else if (isEraseGrid) {
+            mapObj.blocks[i] = 0;
+        } else if (isGrid) {
+            mapObj.blocks[i] = 1;
+        } else if (initSet == 1) {
+            mapObj.init1 = [Math.floor(x/imgSide), Math.floor(y/imgSide)];
+        } else if (initSet == 2) {
+            mapObj.init2 = [Math.floor(x/imgSide), Math.floor(y/imgSide)];
+        } else if (cursor != null) {
+            mapObj.tiles[i] = [cursor.img+1, cursorPos(cursor)];
         }
         draw();
+    }
+
+    scene.addEventListener("click", function(evt) {
+        if (!isDrag) {
+            setGrid(evt.offsetX, evt.offsetY);
+        }
     });
 
     scene.addEventListener("mousedown", function(evt) {
@@ -96,21 +111,10 @@ function InitEditor() {
 
     scene.addEventListener("mousemove", function(evt) {
         if (isFill) {
-            let x = Math.floor((evt.offsetX + canvasOffsetX) / imgSide) * imgSide;
-            let y = Math.floor((evt.offsetY + canvasOffsetY) / imgSide) * imgSide;
-            let i = Math.floor(x / imgSide) + Math.floor(y / imgSide) * sceneWidth;
-            if (isErase) {
-                mapObj.tiles[i] = [0, 0];
-            } else if (cursor != null) {
-                mapObj.tiles[i] = [cursor.img+1, cursorPos(cursor)];
-            }
-    
-            draw();
+            setGrid(evt.offsetX, evt.offsetY);
         } else if (isDrag && dragStartPos != null) {
             let dx = dragStartPos.x - evt.offsetX;
             let dy = dragStartPos.y - evt.offsetY;
-            let oldOffsetX = canvasOffsetX;
-            let oldOffsetY = canvasOffsetY;
             canvasOffsetX += dx; //Math.floor(dx / (imgSide*2)) * imgSide;
             canvasOffsetY += dy; //Math.floor(dy / (imgSide*2)) * imgSide;
             if (canvasOffsetX < 0)
@@ -121,8 +125,7 @@ function InitEditor() {
                 canvasOffsetX = sceneWidth * imgSide - scene.width;
             if (canvasOffsetY > sceneHeight * imgSide - scene.height)
                 canvasOffsetY = sceneHeight * imgSide - scene.height;
-            if (oldOffsetX != canvasOffsetX || oldOffsetY != canvasOffsetY)
-                draw();
+            draw();
         }
     });
 
@@ -132,6 +135,9 @@ function InitEditor() {
     });
 
     $("#save").click(function() {
+        if (mapid == 0) {
+            return;
+        }
         let httpRequest = new XMLHttpRequest();
         httpRequest.open("POST", svrUrl + "/save_map", true);
         httpRequest.setRequestHeader("Content-type","application/json");
@@ -156,17 +162,14 @@ function InitEditor() {
         isDrag = false;
         isErase = false;
         dragStartPos = null;
+        isGrid = false;
+        isEraseGrid = false;
     });
 
     $("#clear").click(function() {
         for (let i = 0; i < sceneWidth*sceneHeight; i++) {
             mapObj.tiles[i] = [0, 0];
         }
-
-        isDrag = false;
-        isErase = false;
-        dragStartPos = null;
-        initSet = 0;
         draw();
     });
 
@@ -181,6 +184,8 @@ function InitEditor() {
         isDrag = false;
         dragStartPos = null;
         initSet = 0;
+        isGrid = false;
+        isEraseGrid = false;
     });
 
     $("#fill").click(function() {
@@ -199,6 +204,8 @@ function InitEditor() {
         isErase = false;
         isDrag = false;
         dragStartPos = null;
+        isGrid = false;
+        isEraseGrid = false;
     });
 
     $("#init2").click(function() {
@@ -207,20 +214,58 @@ function InitEditor() {
         isErase = false;
         isDrag = false;
         dragStartPos = null;
+        isGrid = false;
+        isEraseGrid = false;
     });
-}
 
-function onClickLoad() {
-    if (images.length == 0) {
-        let name = "TileA5_PHC_Exterior-Nature.png";
+    $("#setgrid").click(function() {
+        initSet = 0;
+        isErase = false;
+        isDrag = false;
+        dragStartPos = null;
+        isGrid = true;
+        isEraseGrid = false;
+    });
+
+    $("#remgrid").click(function() {
+        initSet = 0;
+        isErase = false;
+        isDrag = false;
+        dragStartPos = null;
+        isGrid = false;
+        isEraseGrid = true;
+    });
+
+    $("#cleargrid").click(function() {
+        for (let i = 0; i < sceneWidth*sceneHeight; i++) {
+            mapObj.blocks[i] = [0];
+        }
+        draw();
+    });
+
+    $("#loadimg").change(function() {
+        let imgName = this.files[0].name;
         for (let i = 0; i < mapObj.images.length; i++) {
-            if (mapObj.images[i] == name) {
+            if (mapObj.images[i] == imgName) {
                 return;
             }
         }
-        mapObj.images.push(name);
+        mapObj.images.push(imgName);
         loadImages(null);
-    }
+    });
+}
+
+function addImageListItem(content, i) {
+    const imgTable = document.getElementById("imageList");
+    imgTable.innerHTML += "<tr><td><div class=\"btn-sel\" onclick=\"selectImageItem(" + i + ")\">" + content + "</div></td></tr>";
+}
+
+function selectImageItem(i) {
+    console.log("select " + i);
+    selectImg = i;
+    cellCtx.clearRect(0, 0, cells.clientWidth, cells.clientHeight);
+    let img = images[i];
+    cellCtx.drawImage(img, 0, 0, cells.width, cells.height);
 }
 
 function loadImages(onfinish) {
@@ -232,11 +277,11 @@ function loadImages(onfinish) {
             let img = new Image();
             img.src = "img/" + mapObj.images[i];
             img.addEventListener("load", function(evt) {
-                addImageListItem(mapObj.images[i]);
+                addImageListItem(mapObj.images[i], i);
                 images.push(img);
-                if (i == 0) {
-                    cellCtx.drawImage(img, 0, 0, cells.width, cells.height);
-                }
+                selectImg = images.length - 1;
+                cellCtx.clearRect(0, 0, cells.clientWidth, cells.clientHeight);
+                cellCtx.drawImage(img, 0, 0, cells.width, cells.height);
                 resolve();
             });
         });
@@ -261,6 +306,9 @@ function redraw() {
 }
 
 function draw() {
+    if (mapid < 1) {
+        return;
+    }
     sceneCtx.clearRect(0, 0, scene.clientWidth, scene.clientHeight);
     for (let i = 0; i < mapObj.tiles.length; i++) {
         let tile = mapObj.tiles[i];
@@ -275,6 +323,64 @@ function draw() {
             let y = Math.floor(i / sceneWidth) * imgSide - canvasOffsetY;
             sceneCtx.drawImage(img, Math.floor(tile[1] % w) * imgSide, Math.floor(tile[1] / w) * imgSide, imgSide, imgSide, x, y, imgSide, imgSide);
         }
+    }
+
+    drawGrid();
+}
+
+function drawGrid() {
+    for (let i = 0; i <= mapObj.width; i++) {
+        let x = i * imgSide - canvasOffsetX;
+        if (x >=0 && x <= scene.clientWidth) {
+            sceneCtx.beginPath();
+            sceneCtx.moveTo(x, 0);
+            sceneCtx.lineTo(x, mapObj.height * imgSide);
+            sceneCtx.lineWidth = 1;
+            sceneCtx.setLineDash([10, 3]);
+            sceneCtx.strokeStyle = "rgba(50, 80, 180, 0.5)";
+            sceneCtx.stroke();
+        }
+    }
+
+    for (let i = 0; i <= mapObj.height; i++) {
+        let y = i * imgSide - canvasOffsetY;
+        if (y >= 0 && y <= scene.clientHeight) {
+            sceneCtx.beginPath();
+            sceneCtx.moveTo(0, y);
+            sceneCtx.lineTo(mapObj.width * imgSide, y);
+            sceneCtx.lineWidth = 1;
+            sceneCtx.setLineDash([10, 3]);
+            sceneCtx.strokeStyle = "rgba(50, 80, 180, 0.5)";
+            sceneCtx.stroke();
+        }
+    }
+
+    for (let i = 0; i < mapObj.blocks.length; i++) {
+        if (mapObj.blocks[i] != 0) {
+            let x = Math.floor(i % mapObj.width) * imgSide - canvasOffsetX;
+            let y = Math.floor(i / mapObj.width) * imgSide - canvasOffsetY;
+            if (x >= 0 && x <= scene.clientWidth && y >= 0 && y <= scene.clientHeight) {
+                sceneCtx.fillStyle = "rgba(50, 80, 180, 0.5)";
+                sceneCtx.fillRect(x, y, imgSide, imgSide);
+            }
+        }
+    }
+
+    function drawInit(x, y, color) {
+        let centerX = x * imgSide + Math.floor(imgSide / 2) - canvasOffsetX;
+        let centerY = y * imgSide + Math.floor(imgSide / 2) - canvasOffsetY;
+        sceneCtx.beginPath();
+        sceneCtx.arc(centerX, centerY, 13, 0, 2*Math.PI);
+        sceneCtx.lineWidth = 5;
+        sceneCtx.strokeStyle = color;
+        sceneCtx.stroke();
+    }
+
+    if (mapObj.init1.length == 2) {
+        drawInit(mapObj.init1[0], mapObj.init1[1], "rgba(220, 30, 30, 0.8)");
+    }
+    if (mapObj.init2.length == 2) {
+        drawInit(mapObj.init2[0], mapObj.init2[1], "rgba(30, 30, 220, 0.8)");
     }
 }
 
