@@ -42,3 +42,6 @@ class BaseUnit:
     def draw(self, dst):
         if self.surface:
             dst.blit(self.surface, self.renderPos)
+
+    def isMoving(self):
+        return False

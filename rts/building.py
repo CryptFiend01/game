@@ -22,6 +22,7 @@ class Building(BaseUnit):
         self.hp = cfg['hp']
         self.defend = cfg['def']
         self.pos = pos
+        self.radius = cfg['radius']
 
         rm = ResMgr()
         self.resCfg = rm.getBuildingResCfg(cfg['config_id'])

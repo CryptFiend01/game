@@ -7,6 +7,10 @@ DIR_DOWN = 1
 DIR_LEFT = 2
 DIR_RIGHT = 3
 DIR_UP = 4
+DIR_LD = 5
+DIR_LR = 6
+DIR_RU = 7
+DIR_LU = 8
 
 class Unit(BaseUnit):
     def __init__(self, app, uid, camp) -> None:
@@ -25,6 +29,7 @@ class Unit(BaseUnit):
         self.roads = []
         self.logicFrame = 0
         self.waitUnit = None
+        self.isSkip = False
 
     def Init(self, cfg, pos):
         self.hp = cfg['hp']
@@ -66,6 +71,7 @@ class Unit(BaseUnit):
                         vec = pygame.Vector2(unit.pos[0] - self.pos[0], unit.pos[1] - self.pos[1])
                         v = vec.rotate(90).normalize()
                         dx, dy = v.x * self.speed, v.y * self.speed
+                        self.isSkip = True
                         break
         self.waitUnit = None
         if abs(dy) > abs(dx):
@@ -91,8 +97,8 @@ class Unit(BaseUnit):
         gmap.unitMove(self, old)
         return True
 
-    def moveTo(self, pos):
-        self.roads.append(pos)
+    def moveTo(self, tpos, pos):
+        self.roads = self.app.game.map.getPath(self.pos, tpos, pos)
 
     def updateLogic(self):
         self.checkCmd()
@@ -103,24 +109,26 @@ class Unit(BaseUnit):
             self.runningCmd = self.cmds.pop(0)
             if self.runningCmd['cmd'] == CMD_MOVE:
                 self.roads = []
-                self.moveTo(self.runningCmd['pos'])
+                self.moveTo(self.runningCmd['tpos'], self.runningCmd['pos'])
 
     def doMove(self):
         if len(self.roads) > 0:
-            tag = self.roads[len(self.roads) - 1]
+            tag = self.roads[0]
             dist = posDist(tag, self.pos)
             if dist > self.speed:
                 dx = int(self.speed * (tag[0] - self.pos[0]) / dist)
                 dy = int(self.speed * (tag[1] - self.pos[1]) / dist)
                 # print(f"move from {self.pos} to {tag} dist: {dist} speed: {self.speed} dx: {dx} dy: {dy}")
                 self.move(dx, dy)
+                if self.isSkip and len(self.roads) > 1:
+                    self.roads.pop(0)
             else:
                 gmap = self.app.game.map
                 if not gmap.isUnitTake(tag):
                     dx = int((tag[0] - self.pos[0]) / dist)
                     dy = int((tag[1] - self.pos[1]) / dist)
                     self.move(dx, dy)
-                self.roads.pop()
+                self.roads.pop(0)
                 if len(self.roads) == 0:
                     self.runningCmd = None
 

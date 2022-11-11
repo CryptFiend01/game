@@ -63,13 +63,16 @@ class Team:
             top = logicPos[1] - int(col/2) + 1
             print(f"target: {logicPos}, range: [{left}, {top}, {left+(col-1)*2}, {top+(row-1)*2}]")
             tagPoses = []
-            for v in range(top, top+row*2, 2):
-                for h in range(left, left+col*2, 2):
-                    print(f"---> ({h},{v})")
-                    tagPoses.append(self.map.gridToPos([h, v]))
-                    if len(tagPoses) >= len(self.units):
-                        break
+            if len(self.units) > 1:
+                for v in range(top, top+row*2, 2):
+                    for h in range(left, left+col*2, 2):
+                        print(f"---> ({h},{v})")
+                        tagPoses.append(self.map.gridToPos([h, v]))
+                        if len(tagPoses) >= len(self.units):
+                            break
+            else:
+                tagPoses.append(pos)
 
             for i, unit in enumerate(self.units):
                 # print(f"from {unit.pos} to {tagPoses[i]}")
-                unit.addCmd({"cmd":CMD_MOVE, "pos":tagPoses[i]})
+                unit.addCmd({"cmd":CMD_MOVE, "pos":tagPoses[i], "tpos":pos})

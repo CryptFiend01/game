@@ -1,10 +1,16 @@
 import pygame
 from table_data import TableData
+from public import *
 
 class Cell:
-    def __init__(self):
+    def __init__(self, p):
+        self.pos = p
         self.isBlock = False
         self.units = []
+        self.toStart = 0
+        self.eval = 0
+        self.parent = None
+        self.layer = 0
 
 class GameMap:
     def __init__(self, app) -> None:
@@ -12,6 +18,11 @@ class GameMap:
         self.surface = None
         self.app = app
         self.grids = []
+        self.nears = [[-1, -1], [0, -1], [1, -1], [-1, 0], [0, 0], [1, 0], [-1, 1], [0, 1], [1, 1]]
+        self.arrounds = [[0, -1], [-1, 0], [1, 0], [0, 1]]
+        self.flowVec = {}
+        self.roadLayer = 1  # 每次寻路+1，不用清空所有cell
+        self.flowSurf = None
 
     def Init(self, mapId):
         td = TableData()
@@ -36,11 +47,12 @@ class GameMap:
             #print(f"w: {cols} h:{rows}")
             images.append([img, cols, rows])
         for i in range(width * height):
-            self.grids.append(Cell())
+            self.grids.append(Cell([int(i % self.width), int(i/self.width)]))
         for i, b in enumerate(blocks):
             if b != 0:
                 self.grids[i].isBlock = True
         self.surface = pygame.Surface((width * side, height * side), 0, self.app.screen)
+        self.flowSurf = pygame.Surface((width * side, height * side), 0, self.app.screen)
         self.surface.fill(pygame.Color(200, 250, 200))
         for i, tile in enumerate(tiles):
             img, cols, rows = images[tile[0] - 1]
@@ -109,9 +121,9 @@ class GameMap:
 
     def getNearUnits(self, pos):
         x, y = self.posToGrid(pos)
-        nears = [[-1, -1], [0, -1], [1, -1], [-1, 0], [0, 0], [1, 0], [-1, 1], [0, 1], [1, 1]]
+
         units = []
-        for p in nears:
+        for p in self.nears:
             x1, y1 = x + p[0], y + p[1]
             if x1 < 0 or x1 >= self.width or y1 < 0 or y1 >= self.height:
                 continue
@@ -127,3 +139,91 @@ class GameMap:
 
     def gridToPos(self, grid):
         return [grid[0] * self.side + self.side / 2, grid[1] * self.side + self.side / 2]
+
+    def getGrid(self, pos):
+        if pos[0] < 0 or pos[0] >= self.width or pos[1] < 0 or pos[1] >= self.height:
+            return None
+        i = pos[0] + pos[1] * self.width
+        return self.grids[i]
+
+    def _createFlowField(self, end):
+        key = end[0] + end[1] * self.width
+        flows = self.flowVec.get(key)
+        if flows:
+            return flows
+        self.roadLayer += 1
+        target = self.getGrid(end)
+        open_list = []
+        target.eval = 0
+        target.layer = self.roadLayer
+        open_list.append(target)
+        while len(open_list) > 0:
+            cell = open_list.pop(0)
+            for p in self.arrounds:
+                np = [cell.pos[0] + p[0], cell.pos[1] + p[1]]
+                ncell = self.getGrid(np)
+                if ncell and not ncell.isBlock:
+                    if ncell.layer < self.roadLayer:
+                        ncell.eval = cell.eval + 1
+                        ncell.layer = self.roadLayer
+                        open_list.append(ncell)
+                    elif ncell.eval > cell.eval + 1:
+                        ncell.eval = cell.eval + 1
+
+        flows = [0] * (self.width * self.height)
+        for i, cell in enumerate(self.grids):
+            if cell.isBlock:
+                continue
+            if cell.layer != self.roadLayer:
+                print(f"cell{cell.pos} not in new layer")
+                continue
+            minval = -1
+            for k, p in enumerate(self.nears):
+                c = self.getGrid([cell.pos[0] + p[0], cell.pos[1] + p[1]])
+                if c and not c.isBlock and (minval < 0 or c.eval < minval):
+                    minval = c.eval
+                    flows[i] = k + 1
+        self.flowVec[key] = flows
+        return flows
+
+    def getPath(self, start, end, rend):
+        ex, ey = self.posToGrid(end)
+        ep = ex + ey * self.width
+        if ex < 0 or ex >= self.width or ey < 0 or ey >= self.width or self.grids[ep].isBlock:
+            return []
+            
+        flows = self.flowVec.get(ep)
+        if not flows:
+            flows = self._createFlowField([ex, ey])
+
+        rex, rey = self.posToGrid(rend)
+        sx, sy = self.posToGrid(start)
+        p = sx + sy * self.width
+        roadTemp = []
+        dirList = []
+        mindist = -1
+        minidx = -1
+
+        while p != ep:
+            direct = flows[p]
+            sx, sy = sx + self.nears[direct-1][0], sy + self.nears[direct-1][1]
+            roadTemp.append(self.gridToPos([sx, sy]))
+            dirList.append(direct)
+            if rex != ex or rey != ey:
+                dist = posDist([sx, sy], [rex, rey])
+                if dist == 0:
+                    return roadTemp
+                elif dist < 2:
+                    roadTemp.append(rend)
+                    return roadTemp
+                if mindist < 0 or dist < mindist:
+                    mindist = dist
+                    minidx = len(roadTemp)
+            p = sx + sy * self.width
+
+        if sx != rex or sy != rey:
+            while len(roadTemp) > minidx:
+                dirList.pop()
+                roadTemp.pop()
+            roadTemp.append(rend)
+        return roadTemp
