@@ -1,6 +1,6 @@
 import pygame
 from building import Building
-from public import CMD_MOVE
+from public import CMD_MOVE, COLOR_KEY
 from team import Team
 from unit import Unit
 from camp import Camp
@@ -43,8 +43,8 @@ class Game:
         
         self.surface = pygame.Surface((self.map.getWidth(), self.map.getHeight()), 0, self.app.screen)
         self.selSurf = pygame.Surface((self.map.getWidth(), self.map.getHeight()), 0, self.app.screen)
-        self.selSurf.set_colorkey(pygame.Color(1, 1, 1))
-        self.selSurf.fill(pygame.Color(1, 1, 1))
+        self.selSurf.set_colorkey(COLOR_KEY)
+        self.selSurf.fill(COLOR_KEY)
         return True
 
     def addBuilding(self, configId, pos, campid):
@@ -83,6 +83,7 @@ class Game:
                 building.clearTrainFinishUnits()
 
     def draw(self):
+        self.surface.fill(COLOR_KEY)
         self.map.draw(self.surface)
         for _, building in self.buildings.items():
             building.draw(self.surface)
@@ -92,12 +93,16 @@ class Game:
 
         self.app.screen.blit(self.surface, (0, 0), (self.windowPos[0], self.windowPos[1], self.app.width, self.app.height))
         if self.isMouseDown:
-            self.selSurf.fill(pygame.Color(1, 1, 1))
+            self.selSurf.fill(COLOR_KEY)
             mappos = self.toMapPos(self.screenPos)
             w, h = abs(mappos[0] - self.mouseStart[0]), abs(mappos[1] - self.mouseStart[1])
             x, y = min(mappos[0], self.mouseStart[0]), min(mappos[1], self.mouseStart[1])
             pygame.draw.rect(self.selSurf, pygame.Color(35,217,110), pygame.Rect(x, y, w, h), 1)
             self.app.screen.blit(self.selSurf, (0, 0), (self.windowPos[0], self.windowPos[1], self.app.width, self.app.height))
+
+    def clearFlows(self):
+        print("clear flows.")
+        self.map.redrawFlow(None)
 
     def genUid(self):
         uid = self.uidGen

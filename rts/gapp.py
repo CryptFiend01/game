@@ -15,7 +15,7 @@ class GameApp:
     def Init(self):
         pygame.init()
         self.screen = pygame.display.set_mode((self.width, self.height), 0, 32)
-        pygame.display.set_caption("Battle")
+        pygame.display.set_caption("CrazyRuk")
         self.font = pygame.font.SysFont("Arial", 10)
         self.cmdFont = pygame.font.SysFont("Consolas", 16)
         self.boardTxts = [] # text, [x, y], color
@@ -68,6 +68,8 @@ class GameApp:
                         self.onMouseUp(evt.pos)
                     elif evt.button == pygame.BUTTON_RIGHT:
                         self.onRMouseClick(evt.pos)
+                elif evt.type == pygame.KEYUP and evt.key == pygame.K_SPACE:
+                    self.game.clearFlows()
                 
             self._runGame()
             self._draw()

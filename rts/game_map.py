@@ -18,7 +18,7 @@ class GameMap:
         self.surface = None
         self.app = app
         self.grids = []
-        self.nears = [[-1, -1], [0, -1], [1, -1], [-1, 0], [0, 0], [1, 0], [-1, 1], [0, 1], [1, 1]]
+        self.nears = [[-1, -1], [0, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [0, 1], [1, 1], [0, 0]]
         self.arrounds = [[0, -1], [-1, 0], [1, 0], [0, 1]]
         self.flowVec = {}
         self.roadLayer = 1  # 每次寻路+1，不用清空所有cell
@@ -51,8 +51,11 @@ class GameMap:
         for i, b in enumerate(blocks):
             if b != 0:
                 self.grids[i].isBlock = True
-        self.surface = pygame.Surface((width * side, height * side), 0, self.app.screen)
         self.flowSurf = pygame.Surface((width * side, height * side), 0, self.app.screen)
+        self.flowSurf.set_colorkey(COLOR_KEY)
+        self.flowSurf.fill(COLOR_KEY)
+        self.flowSurf.set_alpha(150)
+        self.surface = pygame.Surface((width * side, height * side), 0, self.app.screen)
         self.surface.fill(pygame.Color(200, 250, 200))
         for i, tile in enumerate(tiles):
             img, cols, rows = images[tile[0] - 1]
@@ -121,7 +124,6 @@ class GameMap:
 
     def getNearUnits(self, pos):
         x, y = self.posToGrid(pos)
-
         units = []
         for p in self.nears:
             x1, y1 = x + p[0], y + p[1]
@@ -131,8 +133,33 @@ class GameMap:
             units.extend(cell.units)
         return units
 
-    def draw(self, dst):
+    def getTakingUnit(self, pos):
+        x, y = self.posToGrid(pos)
+        cell = self.grids[x + y * self.width]
+        if len(cell.units) == 0:
+            return None
+        else:
+            return cell.units[0]
+
+    def redrawFlow(self, flows):
+        self.flowSurf.fill(COLOR_KEY)
+        if flows != None:
+            for i in range(self.width):
+                pygame.draw.line(self.flowSurf, pygame.Color(50, 80, 220), (i * self.side, 0), (i * self.side, self.height * self.side))
+            for i in range(self.height):
+                pygame.draw.line(self.flowSurf, pygame.Color(50, 80, 220), (0, i * self.side), (self.width * self.side, i * self.side))
+            for i, d in enumerate(flows):
+                if self.grids[i].isBlock:
+                    continue
+                x, y = int(i % self.width), int(i / self.width)
+                mx, my = x * self.side + self.side / 2, y * self.side + self.side / 2
+                pygame.draw.circle(self.flowSurf, pygame.Color(230, 60, 80), (mx, my), 2)
+                tx, ty = mx + self.nears[d-1][0] * 6, my + self.nears[d-1][1] * 6
+                pygame.draw.line(self.flowSurf, pygame.Color(0, 0, 0), (mx, my), (tx, ty))
+
+    def draw(self, dst: pygame.Surface):
         dst.blit(self.surface, (0, 0))
+        dst.blit(self.flowSurf, (0, 0))
 
     def posToGrid(self, pos):
         return [int(pos[0] / self.side), int(pos[1] / self.side)]
@@ -179,6 +206,12 @@ class GameMap:
                 continue
             minval = -1
             for k, p in enumerate(self.nears):
+                # 斜向移动时，如果跨过一个障碍点，则不能通行
+                if p[0] != 0 and p[1] != 0:
+                    c1 = self.getGrid([cell.pos[0] + p[0], cell.pos[1]])
+                    c2 = self.getGrid([cell.pos[0], cell.pos[1] + p[1]])
+                    if not c1 or c1.isBlock or not c2 or c2.isBlock:
+                        continue
                 c = self.getGrid([cell.pos[0] + p[0], cell.pos[1] + p[1]])
                 if c and not c.isBlock and (minval < 0 or c.eval < minval):
                     minval = c.eval
@@ -195,6 +228,7 @@ class GameMap:
         flows = self.flowVec.get(ep)
         if not flows:
             flows = self._createFlowField([ex, ey])
+        self.redrawFlow(flows)
 
         rex, rey = self.posToGrid(rend)
         sx, sy = self.posToGrid(start)
