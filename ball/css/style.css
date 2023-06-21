@@ -1,0 +1,9 @@
+.main {
+    margin: 0 auto;
+    width: 500px;
+}
+
+canvas {
+    background-color: #f0f0f0;
+    border: 1px solid black;
+}
