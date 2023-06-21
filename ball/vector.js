@@ -89,6 +89,7 @@ function checkNextInterpoint(line, lines) {
             if (dist < nearest) {
                 inter.point = p;
                 inter.idx = i;
+                inter.mid = l.mid;
                 nearest = dist;
             }
         }

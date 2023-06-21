@@ -71,11 +71,25 @@ function onEmenyDead(id) {
     ldata.lines = temp;
 }
 
+function calcCollide(ball) {
+    let collide = getNextCollision(ball, ball.dir);
+    ball.collide = collide;
+    ball.dist = length({x:collide.point.x - ball.x, y:collide.point.y - ball.y});
+}
+
 function checkCollide(deads) {
     if (deads) {
         // 只有目标被移除，只需要检测和这些目标相撞的球
+        for (let ball of ldata.balls) {
+            if (deads.contain(ball.mid)) {
+                calcCollide(ball);
+            }
+        }
     } else {
         // 其他原因（比如召唤，移动）导致重新检测，需要全部重算一遍
+        for (let ball of ldata.balls) {
+            calcCollide(ball);
+        }
     }
 }
 
@@ -143,8 +157,7 @@ function runRound() {
             ball.dir = getReflectNorm(ball, ball.collide);
             ball.x = ball.collide.point.x;
             ball.y = ball.collide.point.y;
-            ball.collide = getNextCollision(ball, ball.dir);
-            ball.dist = length({x:collide.point.x - ball.x, y:collide.point.y - ball.y});
+            calcCollide(ball);
             ldata.balls.push(ball);
         }
 
