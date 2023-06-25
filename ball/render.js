@@ -4,25 +4,27 @@ const ctx = canvas.getContext("2d");
 let rdata = {
     lines : [],
     balls : [],
-    collisions : []
+    status : 1,
 }
 
-function draw(data) {
+function draw() {
+    let data = rdata;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     for (let l of data.lines) {
         drawLine(l);
     }
 
     for (let ball in data.balls) {
-        if (ball.dir) {
+        // 起点或者消失的球不画
+        if (ball.dir && ball.x != rdata.base.x && ball.y != rdata.base.y) {
             drawBall(ball);
         }
     }
 
     if (data.status == 1) {
-        drawBall({x: data.ballBase.x, y: data.ballBase.y, radius: 5, color: "#ac2234"});
+        drawBall({x: data.base.x, y: data.base.y, radius: 5, color: "#ac2234"});
         if (data.collisions.length > 0) {
-            let start = data.ballBase;
+            let start = data.base;
             for (let i = 0; i < data.collisions.length; i++) {
                 drawBall(data.collisions[i]);
                 let end = data.collisions[i];
@@ -38,12 +40,12 @@ function draw(data) {
             }
         } else {
             let target = {
-                x: data.ballBase.x + data.begin.x * 1400,
-                y: data.ballBase.y + data.begin.y * 1400
+                x: data.base.x + data.begin.x * 1400,
+                y: data.base.y + data.begin.y * 1400
             }
             drawDashLine({
-                x1: data.ballBase.x,
-                y1: data.ballBase.y,
+                x1: data.base.x,
+                y1: data.base.y,
                 x2: target.x,
                 y2: target.y,
                 color: "gray",
