@@ -1,4 +1,5 @@
 [
     {"id": 1, "type": "brick", "res": "Monster_1", "hp": 1000},
-    {"id": 2, "type": "brick", "res": "Brick_1", "hp": 10000}
+    {"id": 2, "type": "brick", "res": "Brick_1", "hp": 10000},
+    {"id": 3, "type": "monster", "res": "Boss", "hp": 10000}
 ]

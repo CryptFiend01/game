@@ -8,26 +8,29 @@ let rdata = {
 }
 
 function draw() {
-    let data = rdata;
+    console.log("status:" + rdata.status);
+    //let data = rdata;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    for (let l of data.lines) {
+
+    
+    for (let l of rdata.lines) {
         drawLine(l);
     }
 
-    for (let ball in data.balls) {
+    for (let ball of rdata.balls) {
         // 起点或者消失的球不画
-        if (ball.dir && ball.x != rdata.base.x && ball.y != rdata.base.y) {
+        if (ball.status != BallStatus.CREATING && ball.status != BallStatus.DESTROY) {
             drawBall(ball);
         }
     }
 
-    if (data.status == 1) {
-        drawBall({x: data.base.x, y: data.base.y, radius: 5, color: "#ac2234"});
-        if (data.collisions.length > 0) {
-            let start = data.base;
-            for (let i = 0; i < data.collisions.length; i++) {
-                drawBall(data.collisions[i]);
-                let end = data.collisions[i];
+    if (rdata.status == 1) {
+        drawBall({x: rdata.base.x, y: rdata.base.y, radius: 5, color: "#ac2234"});
+        if (rdata.collisions.length > 0) {
+            let start = rdata.base;
+            for (let i = 0; i < rdata.collisions.length; i++) {
+                drawBall(rdata.collisions[i]);
+                let end = rdata.collisions[i];
                 drawDashLine({
                     x1: start.x,
                     y1: start.y,
@@ -40,18 +43,28 @@ function draw() {
             }
         } else {
             let target = {
-                x: data.base.x + data.begin.x * 1400,
-                y: data.base.y + data.begin.y * 1400
+                x: rdata.base.x + rdata.begin.x * 1400,
+                y: rdata.base.y + rdata.begin.y * 1400
             }
             drawDashLine({
-                x1: data.base.x,
-                y1: data.base.y,
+                x1: rdata.base.x,
+                y1: rdata.base.y,
                 x2: target.x,
                 y2: target.y,
                 color: "gray",
                 width: 1
             });
         }
+    } else if (rdata.status == 3) {
+        
+        ctx.font = 'bold 60px 微软雅黑';
+        var grandient = ctx.createLinearGradient(0, 0, canvas.width, 0);
+        grandient.addColorStop('0', "magenta");
+        grandient.addColorStop('0.3', 'blue');
+        grandient.addColorStop('1.0', 'red');
+        //用渐变填色
+        ctx.fillStyle = grandient;
+        ctx.fillText('赢   了', canvas.width / 2 - 100, canvas.height / 2 - 10);
     }
 }
 

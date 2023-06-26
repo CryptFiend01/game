@@ -80,7 +80,7 @@ function getIntersection(line1, line2) {
 function checkNextInterpoint(line, lines) {
     //showLine("line", line);
     let nearest = 1e10;
-    let inter = { point: null, idx: -1 };
+    let inter = { point: null, line: null };
     for (let i = 0; i < lines.length; i++) {
         let l = lines[i];
         let p = getIntersection(l, line);
@@ -88,12 +88,28 @@ function checkNextInterpoint(line, lines) {
             let dist = length({x: p.x - line.x1, y: p.y - line.y1});
             if (dist < nearest) {
                 inter.point = p;
-                inter.idx = i;
-                inter.mid = l.mid;
+                inter.line = l;
                 nearest = dist;
             }
         }
     }
 
     return inter;
+}
+
+function copyLine(line) {
+    let obj = {};
+    for (let k in line) {
+        obj[k] = line[k];
+    }
+    return obj;
+}
+
+function assignPoint(src, dst) {
+    dst.x = src.x;
+    dst.y = src.y;
+}
+
+function copyPoint(pt) {
+    return {x: pt.x, y: pt.y};
 }
