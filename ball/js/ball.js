@@ -3,7 +3,7 @@ let game = {
     aimDir: {x: 0, y: 0},
     collisions : [], // {x: 0, y: 0, radius: 2, color: "#1234bc"}
     base: {x: 250, y: 800},
-    times: 10,
+    times: 30,
     timer: -1,
     basSpeed: 3,
     speed: 3,
