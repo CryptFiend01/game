@@ -6,10 +6,12 @@ let game = {
     times: 30,
     timer: -1,
     basSpeed: 3,
-    speed: 3,
+    speed: 1,
+    speedAdd: 0.1,
     running: null,
     totalDist: 0,
     distInterval: 15,
+    lastDist: 0
 }
 
 const BallStatus = {
@@ -41,14 +43,58 @@ function aim() {
     let start = game.base;
     while (game.collisions.length < game.times) {
         let collide = getNextCollision(start, n);
-        if (collide.point == null)
+        if (collide.point == null || (collide.point.x == start.x && collide.point.y == start.y)) {
+            console.log("collide times:" + game.collisions.length);
+            showVec("start", start);
+            showVec("dir", n);
+            console.log("collide:" + objToString(collide));
             break;
+        }
+            
         game.collisions.push({x: collide.point.x, y: collide.point.y, radius: 2, color: "#1234bc"});
 
-        n = getReflectNorm(start, collide);
+        let reflect = getReflectNorm(start, collide);
         start = collide.point;
+        n = reflect;
     }
     draw();
+}
+
+function test() {
+    let line = {x1:198,y1:630,x2:170,y2:645,color:"#004411",mid:17,normal:{x:-0.472221412515419,y:-0.8814799700287821}};
+    let dir = {x:-0.39691115068546706, y:-0.9178570359601427};
+    let start = game.base;//{x:176.32978723404258,y:641.6090425531914};
+    let end = {x: start.x + dir.x * 1400, y: start.y + dir.y * 1400};
+    let l = {x1: start.x, y1: start.y, x2: end.x, y2: end.y, color:"#bbaa11"};
+    let lines = [
+        {x1: 0, y1: 0, x2: canvas.width, y2: 0, color: "#00aa11"},
+        {x1: canvas.width, y1: 0, x2: canvas.width, y2: canvas.height, color: "#00aa11"},
+        {x1: canvas.width, y1: canvas.height, x2: 0, y2: canvas.height, color: "#00aa11"},
+        {x1: 0, y1: canvas.height, x2: 0, y2: 0, color: "#00aa11"},
+        line
+    ];
+
+    for (let i = 0; i < 4; i++) {
+        lines[i].normal = normalize(normalVector(vector(lines[i])));
+    }
+    
+    drawLine(line);
+    drawLine(l);
+    
+    let collide = checkNextInterpoint(l, lines);
+    if (collide.point == null) {
+        console.log("no collide.");
+        return;
+    }
+    console.log("collide:" + objToString(collide));
+    let n = getReflectNorm(game.base, collide);
+    showVec("reflect", n);
+    let dl = {x1: collide.point.x, y1: collide.point.y, x2: collide.point.x + n.x * 100, y2: collide.point.y + n.y * 100, color:"#00aa11"};
+    drawLine(dl);
+    let b1 = {x: dl.x1, y: dl.y1, radius:3, color: "#2233cc"};
+    let b2 = {x: dl.x2, y: dl.y2, radius:3, color: "#cc3322"};
+    drawBall(b1);
+    drawBall(b2);
 }
 
 function loadBalls() {
@@ -93,13 +139,32 @@ function update() {
     // 优先执行命令，看看有没有碰撞
     let cmd = game.running;
     while (true) {
-        //console.log("cmd:" + objToString(cmd));
         let ball = rdata.balls[cmd.id-1];
         if (ball.status != BallStatus.MOVING) {
+            console.error("cmd ball is not moving.")
             break;
         }
 
         let dist = length({x: cmd.target.x - ball.x, y: cmd.target.y - ball.y});
+        if (game.lastDist > 0 && dist > game.lastDist) {
+            console.log("ball " + ball.id + " is far away from target. ");
+            console.log("dist:" + dist + ", lastdist:" + game.lastDist);
+            console.log("ball.id:" + ball.id + ", cmd.id:" + cmd.id);
+            console.log("ball count:" + rdata.balls.length);
+            showVec("last point", game.lastPt);
+            showVec("current point", ball);
+            showVec("target", cmd.target);
+            if (ball.target)
+                showVec("ball target", ball.target);
+            else
+                console.log("ball target is null");
+            showVec("old dir", ball.dir);
+            ball.dir = normalize({x: cmd.target.x - ball.x, y: cmd.target.y - ball.y});
+            showVec("new dir", ball.dir);
+        }
+        game.lastDist = dist;
+        game.lastPt = copyPoint(ball);
+        ball.target = copyPoint(cmd.target);
         //console.log("ball:" + objToString(ball));
         //console.log("dist:" + dist);
         if (dist <= game.speed - ball.dist) {
@@ -109,6 +174,7 @@ function update() {
                 assignPoint(cmd.reflect, ball.dir);
             }
             assignPoint(cmd.target, ball);
+            ball.target = null;
             ball.dist += dist;
 
             // 移除死亡的单位
@@ -123,11 +189,13 @@ function update() {
             }
 
             cmd = ldata.cmds.shift();
-            console.log("next cmd:" + objToString(cmd));
+            //console.log("next cmd:" + objToString(cmd));
             if (cmd.type != CmdType.COLLIDE) {
                 break;
             }
             game.running = cmd;
+            game.lastDist = 0;
+            game.lastPt = null;
         } else {
             ballMove(ball);
             break;
@@ -142,7 +210,7 @@ function update() {
     }
     
     game.totalDist += game.speed;
-    game.speed += 0.1;
+    game.speed += game.speedAdd;
 
     draw();
 
@@ -182,17 +250,20 @@ function initialze() {
     loadData(function () {
         reset();
         addEventListener("mousemove", (evt) => {
+            let coord = document.getElementById("coord");
+            coord.innerHTML = "坐标：" + evt.offsetX + "," + evt.offsetY;
             if (game.status != 1) {
                 return;
             }
             game.collisions.length = 0;
             let v = {x: evt.offsetX - game.base.x, y: evt.offsetY - game.base.y};
             game.aimDir = normalize(v);
+            coord.innerHTML += "  方向：" + game.aimDir.x.toFixed(2) + "," + game.aimDir.y.toFixed(2);
             aim();
         });
 
         addEventListener("mousedown", (evt) => {
-            if (game.status == 2) {
+            if (game.status != 1) {
                 return;
             }
             game.status = 2;
@@ -215,9 +286,13 @@ function initialze() {
                     clearInterval(game.timer);
                     game.timer = -1;
                 }
+            } else if (game.status == 1) {
+                game.logaim = !game.logaim;
+                aim();
             }
         })
     });   
 }
 
 initialze();
+//test();

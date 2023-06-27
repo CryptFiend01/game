@@ -28,7 +28,7 @@ let ldata = {
 
     maxLen : -1,
 
-    ballCount : 30,
+    ballCount : 50,
 
     interLen : 15,
 
@@ -60,12 +60,12 @@ function sortBalls() {
         }
     });
 
-    let s = "[\n";
-    for (let b of ldata.balls) {
-        s += "{id:" + b.id + ",dist:" + b.dist + "}\n";
-    }
-    s += "]";
-    console.log(s);
+    // let s = "[\n";
+    // for (let b of ldata.balls) {
+    //     s += "{id:" + b.id + "[" + b.x + "," + b.y + "],dist:" + b.dist + "}\n";
+    // }
+    // s += "]";
+    // console.log(s);
 }
 
 function getNextCollision(start, dirNorm) {
@@ -108,7 +108,7 @@ function calcCollide(ball) {
     let collide = getNextCollision(ball, ball.dir);
     ball.collide = collide;
     if (ball.collide.point != null) {
-        ball.dist = length({x:collide.point.x - ball.x, y:collide.point.y - ball.y});
+        ball.dist = length({x:collide.point.x - ball.x, y:collide.point.y - ball.y}) - ball.passed;
     } else {
         console.log("collide null:");
         showVec("Ball", ball);
@@ -124,8 +124,10 @@ function checkCollide(deads) {
     if (deads) {
         // 只有目标被移除，只需要检测和这些目标相撞的球
         for (let ball of ldata.balls) {
-            if (deads.indexOf(ball.mid) != -1) {
+            if (deads.indexOf(ball.collide.line.mid) != -1) {
+                //let old = ball.collide;
                 calcCollide(ball);
+                //console.log("ball " + ball.id + " [" + ball.x + "," + ball.y + "] collide change from " + objToString(old) + " to " + objToString(ball.collide));
             }
         }
     } else {
@@ -170,7 +172,7 @@ function startRound(aimDir) {
     assignPoint(aimDir, ldata.begin);
 
     let collide = getNextCollision(ldata.base, ldata.begin);
-    showVec("first collide", collide.point);
+    //showVec("first collide", collide.point);
     let dist = length({x:collide.point.x - ldata.base.x, y:collide.point.y - ldata.base.y});
     for (let i = 0; i < ldata.ballCount; i++) {
         ldata.balls.push({
@@ -179,6 +181,7 @@ function startRound(aimDir) {
             y: ldata.base.y, 
             collide: collide,
             dist: dist + i * ldata.interLen,
+            passed: 0,
             dir: ldata.begin,
             times: 0
         });
@@ -192,6 +195,7 @@ function startRound(aimDir) {
 }
 
 function updateRound() {
+    console.time("round");
     while (ldata.balls.length > 0) {
         let ball = ldata.balls.shift();
         let line = ball.collide.line;
@@ -206,10 +210,12 @@ function updateRound() {
         ball.times += 1;
         for (let b of ldata.balls) {
             b.dist -= ball.dist;
+            b.passed += ball.dist;
         }
         // 达到撞击次数上限，就不再计算该球
         if (ball.times < ldata.times) {
             ball.dir = getReflectNorm(ball, ball.collide);
+            ball.passed = 0;
             cmd.reflect = copyPoint(ball.dir);
             assignPoint(ball.collide.point, ball);
             calcCollide(ball);
@@ -227,7 +233,7 @@ function updateRound() {
                     // 中间可以插入一些死亡触发的技能，有新的死亡id可以加入进来，如果触发移动或者召唤，则传入null
                     checkCollide([enemy.id]);
                     ldata.enemyCount -= 1;
-                    console.log("enemyCount: " + ldata.enemyCount);
+                    // console.log("enemyCount: " + ldata.enemyCount + " id=" + cmd.id);
                     if (ldata.enemyCount == 0) {
                         ldata.cmds.push(cmd);
                         ldata.cmds.push({type: CmdType.WIN});
@@ -235,13 +241,15 @@ function updateRound() {
                     }
                 }
             } else {
-                console.error("collide dead enemy!");
+                console.error("collide dead enemy! id=" + cmd.id + " mid=" + ball.collide.line.mid);
             }
         }
 
         ldata.cmds.push(cmd);
- 
+
         sortBalls();
     }
     ldata.cmds.push({type: CmdType.ROUND_END});
+
+    console.timeEnd("round");
 }

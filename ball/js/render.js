@@ -8,8 +8,6 @@ let rdata = {
 }
 
 function draw() {
-    console.log("status:" + rdata.status);
-    //let data = rdata;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     
@@ -56,7 +54,6 @@ function draw() {
             });
         }
     } else if (rdata.status == 3) {
-        
         ctx.font = 'bold 60px 微软雅黑';
         var grandient = ctx.createLinearGradient(0, 0, canvas.width, 0);
         grandient.addColorStop('0', "magenta");

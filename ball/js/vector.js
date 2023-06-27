@@ -91,7 +91,7 @@ function checkNextInterpoint(line, lines) {
         let p = getIntersection(l, line);
         if (p != null) {
             let dist = length({x: p.x - line.x1, y: p.y - line.y1});
-            if (dist < nearest) {
+            if (dist > 1e-9 && dist < nearest) {
                 inter.point = p;
                 inter.line = l;
                 nearest = dist;
