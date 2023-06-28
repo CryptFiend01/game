@@ -6,6 +6,14 @@ function showLine(name, l) {
     console.log(name + ": [" + l.x1 + "," + l.y1 + "," + l.x2 + "," + l.y2 + "]");
 }
 
+function vec2String(v) {
+    return "[" + v.x + "," + v.y + "]";
+}
+
+function line2String(l) {
+    return "[" + l.x1 + "," + l.y1 + "," + l.x2 + "," + l.y2 + "]";
+}
+
 function vector(line) {
     return {
         x : line.x2 - line.x1,

@@ -3,16 +3,16 @@ let game = {
     aimDir: {x: 0, y: 0},
     collisions : [], // {x: 0, y: 0, radius: 2, color: "#1234bc"}
     base: {x: 250, y: 800},
-    times: 10,
+    times: 30,
     timer: -1,
-    basSpeed: 6,
+    basSpeed: 3,
     speed: 1,
     speedAdd: 0,
     running: null,
     totalDist: 0,
     distInterval: 15,
     lastDist: 0,
-    gameMode: 4
+    gameMode: 2
 }
 
 const BallStatus = {
@@ -125,7 +125,6 @@ function ballMove(ball) {
 }
 
 function startDebug() {
-    game.running = ldata.cmds.shift();
     console.log("cmd:" + objToString(game.running));
     game.timer = setInterval(updateDebug, 10);
 }
@@ -136,12 +135,10 @@ function onfinish() {
         rdata.balls.length = 0;
         rdata.status = game.status;
 
-        if (game.timer != -1) {
-            clearInterval(game.timer);
-            game.timer = -1;
-        }
+        clearInterval(game.timer);
+        game.timer = -1;
 
-        if (cmd.type == CmdType.WIN) {
+        if (game.running.type == CmdType.WIN) {
             console.log("win.");
             game.status = 3;
             rdata.status = game.status;
@@ -152,6 +149,10 @@ function onfinish() {
 
 function updateDebug() {
     let cmd = game.running;
+    if (cmd.type != CmdType.COLLIDE) {
+        onfinish();
+        return;
+    }
     let ball = rdata.balls[cmd.id-1];
     ball.dist = 0;
     if (ball.status == BallStatus.CREATING) {
@@ -187,7 +188,6 @@ function updateDebug() {
     }
 
     draw();
-    onfinish();
 }
 
 function update() {
@@ -261,11 +261,11 @@ function update() {
             cmd = ldata.cmds.shift();
             game.lastDist = 0;
             game.lastPt = null;
+            game.running = cmd;
             //console.log("next cmd:" + objToString(cmd));
             if (cmd.type != CmdType.COLLIDE) {
                 break;
             }
-            game.running = cmd;
         } else {
             ballMove(ball);
             break;
@@ -350,6 +350,7 @@ function initialze() {
                 aim();
             } else if (game.status == 4) {
                 if (game.timer == -1) {
+                    game.running = ldata.cmds.shift();
                     startDebug();
                 }
             }

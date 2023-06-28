@@ -28,7 +28,7 @@ let ldata = {
 
     maxLen : -1,
 
-    ballCount : 20,
+    ballCount : 30,
 
     interLen : 15,
 
@@ -174,7 +174,7 @@ function startRound(aimDir) {
     assignPoint(aimDir, ldata.begin);
 
     let collide = getNextCollision(ldata.base, ldata.begin, null);
-    //showVec("first collide", collide.point);
+    showVec("first collide", collide.point);
     let dist = length({x:collide.point.x - ldata.base.x, y:collide.point.y - ldata.base.y});
     for (let i = 0; i < ldata.ballCount; i++) {
         ldata.balls.push({
@@ -193,6 +193,7 @@ function startRound(aimDir) {
             cid: 1001,
             dir: ldata.begin
         });
+        //console.log("ball " + (i + 1) + " collide:" + vec2String(ball.collide.point));
     }
 }
 
@@ -207,6 +208,7 @@ function updateRound() {
             dmg: null,
             target: copyPoint(ball.collide.point)
         };
+        console.log("ball " + ball.id + " target:" + vec2String(cmd.target) + ", collide:" + vec2String(ball.collide.point));
         
         // 先将球转向,并将所有球的dist减去第一个球的dist
         ball.times += 1;
