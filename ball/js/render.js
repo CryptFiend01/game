@@ -65,11 +65,15 @@ function draw() {
     }
 }
 
-function drawBall({x, y, radius, color}) {
+function drawBall({x, y, radius, color, dir}) {
     ctx.beginPath();
     ctx.fillStyle = color;
     ctx.arc(x, y, radius, 0, 2*Math.PI);
     ctx.fill();
+
+    if (dir) {
+        drawLine({x1:x, y1:y, x2:x+dir.x*20, y2:y+dir.y*20, color:"#233488", width:1});
+    }   
 }
 
 function drawLine({x1, y1, x2, y2, color, width=2}) {

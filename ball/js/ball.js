@@ -3,15 +3,16 @@ let game = {
     aimDir: {x: 0, y: 0},
     collisions : [], // {x: 0, y: 0, radius: 2, color: "#1234bc"}
     base: {x: 250, y: 800},
-    times: 30,
+    times: 10,
     timer: -1,
-    basSpeed: 3,
+    basSpeed: 6,
     speed: 1,
-    speedAdd: 0.1,
+    speedAdd: 0,
     running: null,
     totalDist: 0,
     distInterval: 15,
-    lastDist: 0
+    lastDist: 0,
+    gameMode: 4
 }
 
 const BallStatus = {
@@ -41,8 +42,9 @@ function objToString(o) {
 function aim() {
     let n = game.aimDir;
     let start = game.base;
+    let lastLine = null;
     while (game.collisions.length < game.times) {
-        let collide = getNextCollision(start, n);
+        let collide = getNextCollision(start, n, lastLine);
         if (collide.point == null || (collide.point.x == start.x && collide.point.y == start.y)) {
             console.log("collide times:" + game.collisions.length);
             showVec("start", start);
@@ -56,6 +58,7 @@ function aim() {
         let reflect = getReflectNorm(start, collide);
         start = collide.point;
         n = reflect;
+        lastLine = collide.line;
     }
     draw();
 }
@@ -121,6 +124,72 @@ function ballMove(ball) {
     ball.status = BallStatus.MOVED;
 }
 
+function startDebug() {
+    game.running = ldata.cmds.shift();
+    console.log("cmd:" + objToString(game.running));
+    game.timer = setInterval(updateDebug, 10);
+}
+
+function onfinish() {
+    if (ldata.cmds.length == 0) {
+        game.status = 1;
+        rdata.balls.length = 0;
+        rdata.status = game.status;
+
+        if (game.timer != -1) {
+            clearInterval(game.timer);
+            game.timer = -1;
+        }
+
+        if (cmd.type == CmdType.WIN) {
+            console.log("win.");
+            game.status = 3;
+            rdata.status = game.status;
+            draw();
+        }
+    }
+}
+
+function updateDebug() {
+    let cmd = game.running;
+    let ball = rdata.balls[cmd.id-1];
+    ball.dist = 0;
+    if (ball.status == BallStatus.CREATING) {
+        ball.status = BallStatus.MOVING;
+    }
+    let dist = length({x: cmd.target.x - ball.x, y: cmd.target.y - ball.y});
+    if (dist <= game.speed - ball.dist) {
+        if (cmd.reflect == null) {
+            ball.status = BallStatus.DESTROY;
+        } else {
+            assignPoint(cmd.reflect, ball.dir);
+        }
+        assignPoint(cmd.target, ball);
+        ball.target = null;
+        ball.dist += dist;
+
+        // 移除死亡的单位
+        if (cmd.dmg != null && cmd.dmg.hp == 0) {
+            let temp = [];
+            for (let l of rdata.lines) {
+                if (!l.mid || l.mid != cmd.dmg.id) {
+                    temp.push(l);
+                }
+            }
+            rdata.lines = temp;
+        }
+        console.log("move finish.")
+        game.running = null;
+        clearInterval(game.timer);
+        game.timer = -1;
+    } else {
+        ballMove(ball);
+    }
+
+    draw();
+    onfinish();
+}
+
 function update() {
     // 按照间隔解锁球,初始化一帧的状态
     for (let ball of rdata.balls) {
@@ -144,10 +213,11 @@ function update() {
             console.error("cmd ball is not moving.")
             break;
         }
+        //console.log(">run cmd ball:" + objToString(ball));
 
         let dist = length({x: cmd.target.x - ball.x, y: cmd.target.y - ball.y});
         if (game.lastDist > 0 && dist > game.lastDist) {
-            console.log("ball " + ball.id + " is far away from target. ");
+            console.error("ball " + ball.id + " is far away from target. ");
             console.log("dist:" + dist + ", lastdist:" + game.lastDist);
             console.log("ball.id:" + ball.id + ", cmd.id:" + cmd.id);
             console.log("ball count:" + rdata.balls.length);
@@ -189,13 +259,13 @@ function update() {
             }
 
             cmd = ldata.cmds.shift();
+            game.lastDist = 0;
+            game.lastPt = null;
             //console.log("next cmd:" + objToString(cmd));
             if (cmd.type != CmdType.COLLIDE) {
                 break;
             }
             game.running = cmd;
-            game.lastDist = 0;
-            game.lastPt = null;
         } else {
             ballMove(ball);
             break;
@@ -213,22 +283,7 @@ function update() {
     game.speed += game.speedAdd;
 
     draw();
-
-    if (ldata.cmds.length == 0) {
-        clearInterval(game.timer);
-        game.status = 1;
-        game.timer = -1;
-        rdata.balls.length = 0;
-        rdata.status = game.status;
-
-        if (cmd.type == CmdType.WIN) {
-            console.log("win.");
-            // reset();
-            game.status = 3;
-            rdata.status = game.status;
-            draw();
-        }
-    }
+    onfinish();
 }
 
 function initRender() {
@@ -258,7 +313,7 @@ function initialze() {
             game.collisions.length = 0;
             let v = {x: evt.offsetX - game.base.x, y: evt.offsetY - game.base.y};
             game.aimDir = normalize(v);
-            coord.innerHTML += "  方向：" + game.aimDir.x.toFixed(2) + "," + game.aimDir.y.toFixed(2);
+            coord.innerHTML += "  方向：" + game.aimDir.x + "," + game.aimDir.y;
             aim();
         });
 
@@ -266,7 +321,7 @@ function initialze() {
             if (game.status != 1) {
                 return;
             }
-            game.status = 2;
+            game.status = game.gameMode;
             game.totalDist = 0;
             game.speed = game.basSpeed;
             rdata.status = game.status;
@@ -275,7 +330,11 @@ function initialze() {
             console.log("cmd count:" + ldata.cmds.length);
             loadBalls();
             console.log("cmd count:" + ldata.cmds.length);
-            game.timer = setInterval(update, 10);
+            if (game.status == 2) {
+                game.timer = setInterval(update, 10);
+            } else if (game.status == 4) {
+                startDebug();
+            }
         });
 
         addEventListener("keydown", (evt) => {
@@ -289,6 +348,10 @@ function initialze() {
             } else if (game.status == 1) {
                 game.logaim = !game.logaim;
                 aim();
+            } else if (game.status == 4) {
+                if (game.timer == -1) {
+                    startDebug();
+                }
             }
         })
     });   

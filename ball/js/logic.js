@@ -28,7 +28,7 @@ let ldata = {
 
     maxLen : -1,
 
-    ballCount : 50,
+    ballCount : 20,
 
     interLen : 15,
 
@@ -68,17 +68,20 @@ function sortBalls() {
     // console.log(s);
 }
 
-function getNextCollision(start, dirNorm) {
+function getNextCollision(start, dirNorm, lastLine) {
     let end = {
         x: start.x + dirNorm.x * 1400,
         y: start.y + dirNorm.y * 1400
     }
     let line = {x1: start.x, y1: start.y, x2: end.x, y2: end.y}
-    return checkNextInterpoint(line, ldata.lines);
+    return checkNextInterpoint(line, ldata.lines, lastLine);
 }
 
 function getReflectNorm(start, collide) {
     let incident = {x: collide.point.x - start.x, y: collide.point.y - start.y};
+    // if (incident.x < 1e-8 && incident.y < 1e-8) {
+    //     incident = {}
+    // }
     let normal = collide.line.normal;
     let rft = reflectVector(incident, normal);
     let rft_normal = normalize(rft);
@@ -105,7 +108,10 @@ function onEmenyDead(id) {
 }
 
 function calcCollide(ball) {
-    let collide = getNextCollision(ball, ball.dir);
+    let collide = getNextCollision(ball, ball.dir, ball.collide.line);
+    if (collide.line === ball.collide.line) {
+        console.error("collide same line.");
+    }
     ball.collide = collide;
     if (ball.collide.point != null) {
         ball.dist = length({x:collide.point.x - ball.x, y:collide.point.y - ball.y}) - ball.passed;
@@ -171,7 +177,7 @@ function startRound(aimDir) {
     ldata.cmds.length = 0;
     assignPoint(aimDir, ldata.begin);
 
-    let collide = getNextCollision(ldata.base, ldata.begin);
+    let collide = getNextCollision(ldata.base, ldata.begin, null);
     //showVec("first collide", collide.point);
     let dist = length({x:collide.point.x - ldata.base.x, y:collide.point.y - ldata.base.y});
     for (let i = 0; i < ldata.ballCount; i++) {
@@ -237,6 +243,7 @@ function updateRound() {
                     if (ldata.enemyCount == 0) {
                         ldata.cmds.push(cmd);
                         ldata.cmds.push({type: CmdType.WIN});
+                        console.timeEnd("round");
                         return;
                     }
                 }

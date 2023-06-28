@@ -14,11 +14,7 @@ function vector(line) {
 }
 
 function normalVector(v) {
-    let n = {
-        x : -v.y,
-        y : v.x
-    };
-    return n;
+    return {x : -v.y, y : v.x};
 }
 
 function length(v) {
@@ -32,6 +28,23 @@ function normalize(v) {
 
 function dot(v1, v2) {
     return v1.x * v2.x + v1.y * v2.y;
+}
+
+function copyLine(line) {
+    let obj = {};
+    for (let k in line) {
+        obj[k] = line[k];
+    }
+    return obj;
+}
+
+function assignPoint(src, dst) {
+    dst.x = src.x;
+    dst.y = src.y;
+}
+
+function copyPoint(pt) {
+    return {x: pt.x, y: pt.y};
 }
 
 function reflectVector(incident, normal) {
@@ -82,16 +95,20 @@ function getIntersection(line1, line2) {
     return { x: a.x + dx , y: a.y + dy };
 }
 
-function checkNextInterpoint(line, lines) {
+function checkNextInterpoint(line, lines, lastLine) {
     //showLine("line", line);
     let nearest = 1e10;
     let inter = { point: null, line: null };
     for (let i = 0; i < lines.length; i++) {
         let l = lines[i];
+        // 起点所在的线条不检查，防止在同一条线上反复碰撞
+        if (lastLine === l) {
+            continue;
+        }
         let p = getIntersection(l, line);
         if (p != null) {
             let dist = length({x: p.x - line.x1, y: p.y - line.y1});
-            if (dist > 1e-9 && dist < nearest) {
+            if (dist < nearest) {
                 inter.point = p;
                 inter.line = l;
                 nearest = dist;
@@ -100,21 +117,4 @@ function checkNextInterpoint(line, lines) {
     }
 
     return inter;
-}
-
-function copyLine(line) {
-    let obj = {};
-    for (let k in line) {
-        obj[k] = line[k];
-    }
-    return obj;
-}
-
-function assignPoint(src, dst) {
-    dst.x = src.x;
-    dst.y = src.y;
-}
-
-function copyPoint(pt) {
-    return {x: pt.x, y: pt.y};
 }
