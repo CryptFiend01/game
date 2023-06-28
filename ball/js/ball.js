@@ -55,7 +55,7 @@ function aim() {
             
         game.collisions.push({x: collide.point.x, y: collide.point.y, radius: 2, color: "#1234bc"});
 
-        let reflect = getReflectNorm(start, collide);
+        let reflect = getReflectNorm(n, collide.line);
         start = collide.point;
         n = reflect;
         lastLine = collide.line;
@@ -90,7 +90,7 @@ function test() {
         return;
     }
     console.log("collide:" + objToString(collide));
-    let n = getReflectNorm(game.base, collide);
+    let n = getReflectNorm(dir, collide.line);
     showVec("reflect", n);
     let dl = {x1: collide.point.x, y1: collide.point.y, x2: collide.point.x + n.x * 100, y2: collide.point.y + n.y * 100, color:"#00aa11"};
     drawLine(dl);

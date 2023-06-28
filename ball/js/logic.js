@@ -77,13 +77,9 @@ function getNextCollision(start, dirNorm, lastLine) {
     return checkNextInterpoint(line, ldata.lines, lastLine);
 }
 
-function getReflectNorm(start, collide) {
-    let incident = {x: collide.point.x - start.x, y: collide.point.y - start.y};
-    // if (incident.x < 1e-8 && incident.y < 1e-8) {
-    //     incident = {}
-    // }
-    let normal = collide.line.normal;
-    let rft = reflectVector(incident, normal);
+function getReflectNorm(dir, line) {
+    let normal = line.normal;
+    let rft = reflectVector(dir, normal);
     let rft_normal = normalize(rft);
     if (rft_normal.x == 0 || rft_normal.y == 0) {
         let angle = Math.PI / 36;
@@ -220,7 +216,7 @@ function updateRound() {
         }
         // 达到撞击次数上限，就不再计算该球
         if (ball.times < ldata.times) {
-            ball.dir = getReflectNorm(ball, ball.collide);
+            ball.dir = getReflectNorm(ball.dir, ball.collide.line);
             ball.passed = 0;
             cmd.reflect = copyPoint(ball.dir);
             assignPoint(ball.collide.point, ball);

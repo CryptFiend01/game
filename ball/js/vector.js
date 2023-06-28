@@ -55,6 +55,7 @@ function reflectVector(incident, normal) {
     };
     // 反射向量不能为0，略微加上一个偏移量
     if (r.x == 0 && r.y == 0) {
+        console.warn("reflect zero, ajust it.");
         r.x = incident.x - 2.1 * dt * normal.x;
         r.y = incident.y - 2.1 * dt * normal.y;
     }
