@@ -28,7 +28,7 @@ let ldata = {
 
     maxLen : -1,
 
-    ballCount : 30,
+    ballCount : 10,
 
     interLen : 15,
 
@@ -68,13 +68,16 @@ function sortBalls() {
     // console.log(s);
 }
 
-function getNextCollision(start, dirNorm, lastLine) {
+function getNextCollision(start, dirNorm, ignores) {
     let end = {
         x: start.x + dirNorm.x * 1400,
         y: start.y + dirNorm.y * 1400
     }
-    let line = {x1: start.x, y1: start.y, x2: end.x, y2: end.y}
-    return checkNextInterpoint(line, ldata.lines, lastLine);
+    let line = {x1: start.x, y1: start.y, x2: end.x, y2: end.y};
+    if (ignores == null) {
+        ignores = [];
+    }
+    return checkNextInterpoint(line, ldata.lines, ignores);
 }
 
 function getReflectNorm(dir, line) {
@@ -93,21 +96,39 @@ function getReflectNorm(dir, line) {
     return rft_normal;
 }
 
-function onEmenyDead(id) {
+function removeDead(lines, id) {
     let temp = [];
-    for (let i = 0; i < ldata.lines.length; i++) {
-        if (!ldata.lines[i].mid || ldata.lines[i].mid != id) {
-            temp.push(ldata.lines[i]);
+    for (let l of lines) {
+        if (!l.mid || l.mid != id) {
+            if (l.hide == id) {
+                l.hide = 0;
+            }
+            temp.push(l);
         }
     }
-    ldata.lines = temp;
+    return temp;
+}
+
+function onEmenyDead(id) {
+    ldata.lines = removeDead(ldata.lines, id);
+}
+
+function checkIgnore(ball) {
+    let temp = [];
+    if (ball.collide && ball.collide.line) {
+        temp.push(ball.collide.line);
+    }
+    for (let l of ball.ignores) {
+        if (pointInLine(ball, l)) {
+            temp.push(l);
+        }
+    }
+    ball.ignores = temp;
 }
 
 function calcCollide(ball) {
-    let collide = getNextCollision(ball, ball.dir, ball.collide.line);
-    if (collide.line === ball.collide.line) {
-        console.error("collide same line.");
-    }
+    checkIgnore(ball);
+    let collide = getNextCollision(ball, ball.dir, ball.ignores);
     ball.collide = collide;
     if (ball.collide.point != null) {
         ball.dist = length({x:collide.point.x - ball.x, y:collide.point.y - ball.y}) - ball.passed;
@@ -165,8 +186,7 @@ function initLogic(base, times, interLen) {
             ldata.enemyCount += 1;
         }
     }
-
-    console.log("enemyCount: " + ldata.enemyCount);
+    // console.log("enemyCount: " + ldata.enemyCount);
 }
 
 function startRound(aimDir) {
@@ -185,7 +205,8 @@ function startRound(aimDir) {
             dist: dist + i * ldata.interLen,
             passed: 0,
             dir: ldata.begin,
-            times: 0
+            times: 0,
+            ignores: []
         });
         ldata.cmds.push({
             type: CmdType.CREATE_BALL,

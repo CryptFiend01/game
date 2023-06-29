@@ -1,9 +1,9 @@
 let config = {
     lines : [
-        {x1: 0, y1: 0, x2: canvas.width, y2: 0, color: "#00aa11"},
-        {x1: canvas.width, y1: 0, x2: canvas.width, y2: canvas.height, color: "#00aa11"},
-        {x1: canvas.width, y1: canvas.height, x2: 0, y2: canvas.height, color: "#00aa11"},
-        {x1: 0, y1: canvas.height, x2: 0, y2: 0, color: "#00aa11"},
+        {x1: 0, y1: 0, x2: canvas.width, y2: 0, color: "#00aa11", hide:0},
+        {x1: canvas.width, y1: 0, x2: canvas.width, y2: canvas.height, color: "#00aa11", hide:0},
+        {x1: canvas.width, y1: canvas.height, x2: 0, y2: canvas.height, color: "#00aa11", hide:0},
+        {x1: 0, y1: canvas.height, x2: 0, y2: 0, color: "#00aa11", hide:0},
     ],
 
     objects: null,
@@ -14,10 +14,10 @@ let config = {
 function makeLines(id, point, obj) {
     let lt = {x: point.x - obj.anchor.x, y: point.y - obj.anchor.y};
     let lines = [];
-    for (let i = 0; i < obj.points.length; i++) {
-        let j = i + 1;
-        if (j == obj.points.length) {
-            j = 0;
+    for (let i = obj.points.length - 1; i >= 0; i--) {
+        let j = i - 1;
+        if (j < 0) {
+            j = obj.points.length - 1;
         }
         let start = obj.points[i];
         let end = obj.points[j];
@@ -27,7 +27,8 @@ function makeLines(id, point, obj) {
             x2: end.x + lt.x,
             y2: end.y + lt.y,
             color: "#00aa11",
-            mid: id
+            mid: id,
+            hide: 0
         });
     }
     return lines;
@@ -69,6 +70,21 @@ function loadData(onfinish) {
                 // 通过线段数据生成法线向量
                 for (let i = 0; i < config.lines.length; i++) {
                     config.lines[i].normal = normalize(normalVector(vector(config.lines[i])));
+                }
+
+                // 隐去内线
+                for (let j = 0; j < config.lines.length; j++) {
+                    let l1 = config.lines[j];
+                    for (let i = 0; i < config.lines.length; i++) {
+                        if (i == j)
+                            continue;
+                        let l2 = config.lines[i];
+                        if ((l1.x1 == l2.x1 && l1.y1 == l2.y1 && l1.x2 == l2.x2 && l1.y2 == l2.y2) ||
+                            (l1.x1 == l2.x2 && l1.y1 == l2.y2 && l1.x2 == l2.x1 && l1.y2 == l2.y1)) {
+                            l1.hide = l2.mid;
+                            l2.hide = l1.mid;
+                        }
+                    }
                 }
                 onfinish();
             });

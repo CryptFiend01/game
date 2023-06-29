@@ -71,6 +71,13 @@ function reflectVector(incident, normal) {
 }
 
 function getIntersection(line1, line2) {
+    if ((line1.x1 == line2.x1 && line1.y1 == line2.y1) ||
+        (line1.x1 == line2.x2 && line1.y1 == line2.y2)) {
+        return {x: line1.x1, y: line1.y1};
+    } else if ((line1.x2 == line2.x1 && line1.y2 == line2.y1) ||
+        (line1.x2 == line2.x2 && line1.y2 == line2.y2)) {
+        return {x: line1.x2, y: line1.y2};
+    }
     let a = {x: line1.x1, y: line1.y1};
     let b = {x: line1.x2, y: line1.y2};
     let c = {x: line2.x1, y: line2.y1};
@@ -104,26 +111,37 @@ function getIntersection(line1, line2) {
     return { x: a.x + dx , y: a.y + dy };
 }
 
-function checkNextInterpoint(line, lines, lastLine) {
+function checkNextInterpoint(line, lines, ignores) {
     //showLine("line", line);
     let nearest = 1e10;
     let inter = { point: null, line: null };
     for (let i = 0; i < lines.length; i++) {
         let l = lines[i];
         // 起点所在的线条不检查，防止在同一条线上反复碰撞
-        if (lastLine === l) {
+        if (ignores.indexOf(l) != -1 || l.hide != 0) {
+            //console.log("line" + objToString(l) + " ignore, hide:" + l.hide);
             continue;
         }
         let p = getIntersection(l, line);
         if (p != null) {
             let dist = length({x: p.x - line.x1, y: p.y - line.y1});
+            //console.log("line" + objToString(l) + " dist:" + dist);
             if (dist < nearest) {
                 inter.point = p;
                 inter.line = l;
                 nearest = dist;
             }
+        } else {
+            //console.log("line" + objToString(l) + " not intersect.");
         }
     }
 
     return inter;
+}
+
+function pointInLine(point, line) {
+    let d = length({x: line.x2 - line.x1, y: line.y2 - line.y1});
+    let d2 = length({x: line.x1 - point.x, y: line.y1 - point.y});
+    let d3 = length({x: line.x2 - point.x, y: line.y2 - point.y});
+    return (d - d2 + d3) < 1e-9;
 }

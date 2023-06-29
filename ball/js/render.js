@@ -13,6 +13,7 @@ function draw() {
     
     for (let l of rdata.lines) {
         drawLine(l);
+        drawNormal(l);
     }
 
     for (let ball of rdata.balls) {
@@ -22,7 +23,7 @@ function draw() {
         }
     }
 
-    if (rdata.status == 1) {
+    if (rdata.status == GameState.GS_AIM) {
         drawBall({x: rdata.base.x, y: rdata.base.y, radius: 5, color: "#ac2234"});
         if (rdata.collisions.length > 0) {
             let start = rdata.base;
@@ -53,7 +54,7 @@ function draw() {
                 width: 1
             });
         }
-    } else if (rdata.status == 3) {
+    } else if (rdata.status == GameState.GS_FINISH) {
         ctx.font = 'bold 60px 微软雅黑';
         var grandient = ctx.createLinearGradient(0, 0, canvas.width, 0);
         grandient.addColorStop('0', "magenta");
@@ -76,10 +77,32 @@ function drawBall({x, y, radius, color, dir}) {
     }   
 }
 
-function drawLine({x1, y1, x2, y2, color, width=2}) {
+function drawNormal(l) {
+    if (l.hide == 0) {
+        let mid = {
+            x: l.x1 + (l.x2 - l.x1) / 2,
+            y: l.y1 + (l.y2 - l.y1) / 2
+        }
+        let normal = {
+            x1: mid.x,
+            y1: mid.y,
+            x2: mid.x + l.normal.x * 10,
+            y2: mid.y + l.normal.y * 10,
+            color: "#338899",
+            hide: 0
+        }
+        drawLine(normal);
+    }
+}
+
+function drawLine({x1, y1, x2, y2, color, width=2, hide}) {
     ctx.beginPath();
     ctx.lineWidth = width;
-    ctx.strokeStyle = color;
+    if (hide > 0) {
+        ctx.strokeStyle = "#ee7788";
+    } else {
+        ctx.strokeStyle = color;
+    }
     ctx.lineCap = "round";
     ctx.moveTo(x1, y1);
     ctx.lineTo(x2, y2);
