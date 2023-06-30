@@ -27,7 +27,7 @@ let game = {
     totalDist: 0,
     distInterval: 15,
     lastDist: 0,
-    gameMode: GameState.GS_PLAY
+    gameMode: GameState.GS_GROUP_DEBUG
 }
 
 function objToString(o) {
@@ -65,17 +65,10 @@ function aim() {
 
         let reflect = getReflectNorm(n, collide.line);
 
-        console.log("--------------------" + game.collisions.length + "-----------------------");
-        showVec("start", start);
-        showVec("dir", n);
-        console.log("collide:" + objToString(collide));
-        showVec("reflect", reflect);
-
         start = collide.point;
         n = reflect;
         let temp = [collide.line];
         for (let l of ignores) {
-            console.log("last ignore:" + objToString(l));
             if (pointInLine(start, l)) {
                 temp.push(l);
             }
@@ -115,7 +108,7 @@ function test() {
 
     console.log("ray: " + objToString(l));
     
-    let collide = checkNextInterpoint(l, lines, [lines[4]]);
+    let collide = checkNextInterpoint(start, dir, lines, [lines[4]]);
     if (collide.point == null) {
         console.log("no collide.");
         return;
@@ -419,7 +412,7 @@ function initialze() {
             }
             game.collisions.length = 0;
             let v = {x: evt.offsetX - game.base.x, y: evt.offsetY - game.base.y};
-            //let v = {x: 375 - game.base.x, y: 305 - game.base.y};
+            //let v = {x: 400 - game.base.x, y: 626 - game.base.y};
             game.aimDir = normalize(v);
             coord.innerHTML += "  方向：" + game.aimDir.x + "," + game.aimDir.y;
             aim();
@@ -477,14 +470,28 @@ initialze();
 //test();
 
 function test1() {
-    let start = {x:375, y:305};
-    let dir = {x:0.24483931082618096, y:0.9695636708716766};
-    //let dir = {x:0.2, y:0.9};
-    ldata.lines.push({x1:375,y1:305,x2:345,y2:305,color:"#00aa11",mid:30,hide:0,normal:{x:0,y:-1}});
-    ldata.lines.push({x1:405,y1:365,x2:375,y2:365,color:"#00aa11",mid:35,hide:0,normal:{x:0,y:-1}});
-    ldata.lines.push({x1:375,y1:335,x2:375,y2:305,color:"#00aa11",mid:30,hide:0,normal:{x:0,y:-1}});
-    let collide = getNextCollision(start, dir, ldata.lines[1]);
-    console.log("collide" + objToString(collide));
+    // let start = {x:375, y:305};
+    // let dir = {x:0.24483931082618096, y:0.9695636708716766};
+    // //let dir = {x:0.2, y:0.9};
+    // ldata.lines.push({x1:375,y1:305,x2:345,y2:305,color:"#00aa11",mid:30,hide:0,normal:{x:0,y:-1}});
+    // ldata.lines.push({x1:405,y1:365,x2:375,y2:365,color:"#00aa11",mid:35,hide:0,normal:{x:0,y:-1}});
+    // ldata.lines.push({x1:375,y1:335,x2:375,y2:305,color:"#00aa11",mid:30,hide:0,normal:{x:0,y:-1}});
+    // let collide = getNextCollision(start, dir, ldata.lines[1]);
+    // console.log("collide" + objToString(collide));
+    // let line1 = {x1: 250, y1: 800, x2: 1164.1154708972479, y2: -260.3739462408073, hide:1, width:1};
+    // let line2 = {x1:500,y1:0,x2:500,y2:900,color:"#00aa11",hide:0,normal:{x:-1,y:0}};
+
+    let start = {x: 10, y: 10};
+    let dir = {x: 0.5, y: 0.5};
+    let line1 = {x1: start.x, y1: start.y, x2: start.x + dir.x * 50, y2: start.y + dir.y * 50, hide:1, width:1};
+    let line2 = {x1:5,y1:15,x2:15,y2:5,color:"#00aa11",hide:0,normal:{x:-1,y:0}};
+    //let pt = getIntersectionPoint(line1, line2);
+    let pt = getRaySegmentIntersection(start, dir, line2);
+    console.log(pt);
+    //showVec("inter", pt);
+
+    drawLine(line1);
+    drawLine(line2);
 }
 
 //test1();

@@ -10,7 +10,6 @@ let rdata = {
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    
     for (let l of rdata.lines) {
         drawLine(l);
         drawNormal(l);

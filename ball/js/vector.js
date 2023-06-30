@@ -70,14 +70,29 @@ function reflectVector(incident, normal) {
     return r;
 }
 
-function getIntersection(line1, line2) {
-    if ((line1.x1 == line2.x1 && line1.y1 == line2.y1) ||
-        (line1.x1 == line2.x2 && line1.y1 == line2.y2)) {
-        return {x: line1.x1, y: line1.y1};
-    } else if ((line1.x2 == line2.x1 && line1.y2 == line2.y1) ||
-        (line1.x2 == line2.x2 && line1.y2 == line2.y2)) {
-        return {x: line1.x2, y: line1.y2};
+function getRaySegmentIntersection(start, dir, line) {
+    let segmentStart = {x: line.x1, y: line.y1};
+    let segmentEnd = {x: line.x2, y: line.y2};
+
+    const denominator = (segmentEnd.y - segmentStart.y) * (dir.x) - (segmentEnd.x - segmentStart.x) * (dir.y);
+    if (denominator === 0) {
+        return null; // 射线与线段平行或共线，没有交点
     }
+
+    const t1 = ((segmentEnd.x - segmentStart.x) * (start.y - segmentStart.y) - (segmentEnd.y - segmentStart.y) * (start.x - segmentStart.x)) / denominator;
+    const t2 = ((start.y - segmentStart.y) * (dir.x) - (start.x - segmentStart.x) * (dir.y)) / denominator;
+
+    if (t1 >= 0 && t2 >= 0 && t2 <= 1) {
+        const intersectionX = start.x + t1 * dir.x;
+        const intersectionY = start.y + t1 * dir.y;
+        return { x: intersectionX, y: intersectionY };
+    }
+
+    return null; // 射线与线段不相交或交点不在线段上
+}
+
+function getIntersection(line1, line2) {
+    // 这个算法有bug，无法检测交点在线段两端的情况
     let a = {x: line1.x1, y: line1.y1};
     let b = {x: line1.x2, y: line1.y2};
     let c = {x: line2.x1, y: line2.y1};
@@ -100,7 +115,7 @@ function getIntersection(line1, line2) {
     // 注意: 这里有一个小优化.不需要再用公式计算面积,而是通过已知的三个面积加减得出.  
     var area_cdb = area_cda + area_abc - area_abd ;  
 
-    if (  area_cda * area_cdb >= 0 ) {  
+    if (area_cda * area_cdb >= 0) {  
         return null;  
     }  
   
@@ -111,28 +126,23 @@ function getIntersection(line1, line2) {
     return { x: a.x + dx , y: a.y + dy };
 }
 
-function checkNextInterpoint(line, lines, ignores) {
-    //showLine("line", line);
+function checkNextInterpoint(start, dir, lines, ignores) {
     let nearest = 1e10;
     let inter = { point: null, line: null };
     for (let i = 0; i < lines.length; i++) {
         let l = lines[i];
         // 起点所在的线条不检查，防止在同一条线上反复碰撞
         if (ignores.indexOf(l) != -1 || l.hide != 0) {
-            //console.log("line" + objToString(l) + " ignore, hide:" + l.hide);
             continue;
         }
-        let p = getIntersection(l, line);
+        let p = getRaySegmentIntersection(start, dir, l);
         if (p != null) {
-            let dist = length({x: p.x - line.x1, y: p.y - line.y1});
-            //console.log("line" + objToString(l) + " dist:" + dist);
+            let dist = length({x: p.x - start.x, y: p.y - start.y});
             if (dist < nearest) {
                 inter.point = p;
                 inter.line = l;
                 nearest = dist;
             }
-        } else {
-            //console.log("line" + objToString(l) + " not intersect.");
         }
     }
 

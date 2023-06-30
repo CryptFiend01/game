@@ -69,15 +69,10 @@ function sortBalls() {
 }
 
 function getNextCollision(start, dirNorm, ignores) {
-    let end = {
-        x: start.x + dirNorm.x * 1400,
-        y: start.y + dirNorm.y * 1400
-    }
-    let line = {x1: start.x, y1: start.y, x2: end.x, y2: end.y};
     if (ignores == null) {
         ignores = [];
     }
-    return checkNextInterpoint(line, ldata.lines, ignores);
+    return checkNextInterpoint(start, dirNorm, ldata.lines, ignores);
 }
 
 function getReflectNorm(dir, line) {
