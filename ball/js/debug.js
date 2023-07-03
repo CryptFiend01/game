@@ -9,67 +9,30 @@ function startGroupDebug() {
 }
 
 function updateGroupDebug() {
-    let cmd = game.running;
-    if (cmd.type != CmdType.COLLIDE) {
-        onfinish();
-        return;
+    if (game.running == null) {
+        game.running = game.cmds.shift();
     }
-
-    for (let ball of rdata.balls) {
-        if (ball.status == BallStatus.CREATING) {
-            if (game.totalDist >= (ball.id - 1) * game.distInterval) {
-                ball.status = BallStatus.MOVING;
-                ball.dist = -(game.totalDist - (ball.id - 1) * game.distInterval);
-            } else {
-                break;
-            }
-        } else if (ball.status != BallStatus.DESTROY) {
-            ball.status = BallStatus.MOVING;
-            ball.dist = 0;
+    let d = run(0);
+    game.totalDist += d;
+    let stop = false;
+    while (d > 0 && d < game.speed) {
+        game.running = game.cmds.shift();
+        stop = true;
+        let x = run(d);
+        if (x == -1) {
+            break;
         }
+        game.totalDist += x;
+        d += x;
     }
 
-    let ball = rdata.balls[cmd.id-1];
-    if (ball.status != BallStatus.MOVING) {
-        console.error("Ball " + ball.id + " is not moving.");
-        console.log("cmd:" + objToString(cmd));
-        game.running = null;
-        clearInterval(game.timer);
-        game.timer = -1;
-        return;
-    }
-
-    let dist = length({x: cmd.target.x - ball.x, y: cmd.target.y - ball.y});
-    if (dist <= game.speed - ball.dist) {
-        if (cmd.reflect == null) {
-            ball.status = BallStatus.DESTROY;
-        } else {
-            assignPoint(cmd.reflect, ball.dir);
-        }
-        assignPoint(cmd.target, ball);
-        ball.target = null;
-        // ball.dist += dist;
-
-        // 移除死亡的单位
-        if (cmd.dmg != null && cmd.dmg.hp == 0) {
-            rdata.lines = removeDead(rdata.lines, cmd.dmg.id);
-        }
-
-        moveAll(dist);
-        game.totalDist += dist;
-
-        console.log("move finish.");
-        game.running = null;
-        clearInterval(game.timer);
-        game.timer = -1;
-        return;
-    } else {
-        moveAll();
-        game.totalDist += game.speed;
-    }
+    console.log("move finish.");
 
     //game.speed += game.speedAdd;
-
+    if (game.timer > 0 && stop) {
+        clearInterval(game.timer);
+        game.timer = -1;
+    }
     draw();
 }
 
@@ -84,8 +47,9 @@ function updateDebug() {
     if (ball.status == BallStatus.CREATING) {
         ball.status = BallStatus.MOVING;
     }
+    let d = game.speed - ball.dist;
     let dist = length({x: cmd.target.x - ball.x, y: cmd.target.y - ball.y});
-    if (dist <= game.speed - ball.dist) {
+    if (dist <= d) {
         if (cmd.reflect == null) {
             ball.status = BallStatus.DESTROY;
         } else {
@@ -104,7 +68,7 @@ function updateDebug() {
         clearInterval(game.timer);
         game.timer = -1;
     } else {
-        ballMove(ball);
+        ballMove(ball, d);
     }
 
     draw();

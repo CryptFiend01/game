@@ -49,7 +49,7 @@ function draw() {
                 });
                 start = end;
             }
-        } else {
+        } else if (rdata.begin != null) {
             let target = {
                 x: rdata.base.x + rdata.begin.x * 1400,
                 y: rdata.base.y + rdata.begin.y * 1400

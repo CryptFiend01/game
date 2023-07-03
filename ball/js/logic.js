@@ -26,8 +26,6 @@ let ldata = {
 
     times : 10,
 
-    maxLen : -1,
-
     ballCount : 10,
 
     interLen : 15,
@@ -45,13 +43,14 @@ const CmdType = {
     LOSE : 5
 }
 
-function initLogic(base, times, interLen) {
+function initLogic(base, times, interLen, ballCount) {
     assignPoint(base, ldata.base);
     ldata.times = times;
     ldata.interLen = interLen;
     ldata.lines.length = 0;
     ldata.balls.length = 0;
     ldata.enemyCount = 0;
+    ldata.ballCount = ballCount;
 
     for (let line of config.lines) {
         ldata.lines.push(copyLine(line));
@@ -75,9 +74,11 @@ function initLogic(base, times, interLen) {
 
 function sortBalls() {
     ldata.balls.sort((a, b) => {
-        if (a.dist < b.dist) {
+        let da = a.dist - a.passed;
+        let db = b.dist - b.passed;
+        if (da < db) {
             return -1;
-        } else if (a.dist > b.dist) {
+        } else if (da > db) {
             return 1;
         } else {
             if (a.id < b.id) {
@@ -138,8 +139,8 @@ function onEmenyDead(id) {
 
 function checkIgnore(ball) {
     let temp = [];
-    if (ball.collide && ball.collide.line) {
-        temp.push(ball.collide.line);
+    if (ball.atLine) {
+        temp.push(ball.atLine);
     }
     for (let l of ball.ignores) {
         if (pointInLine(ball, l)) {
@@ -154,7 +155,11 @@ function calcCollide(ball) {
     let collide = getNextCollision(ball, ball.dir, ball.ignores);
     ball.collide = collide;
     if (ball.collide.point != null) {
-        ball.dist = length({x:collide.point.x - ball.x, y:collide.point.y - ball.y}) - ball.passed;
+        ball.dist = length({x:collide.point.x - ball.x, y:collide.point.y - ball.y});
+        if (ball.times == 0) {
+            // 还未第一次触发弹射的球，因为目标消失而重新计算碰撞点，需要加上起点等待距离
+            ball.dist += (ball.id - 1) * ldata.interLen;
+        }
     } else {
         console.log("collide null:");
         showVec("Ball", ball);
@@ -189,7 +194,7 @@ function startRound(aimDir) {
     assignPoint(aimDir, ldata.begin);
 
     let collide = getNextCollision(ldata.base, ldata.begin, null);
-    showVec("first collide", collide.point);
+    //showVec("first collide", collide.point);
     let dist = length({x:collide.point.x - ldata.base.x, y:collide.point.y - ldata.base.y});
     for (let i = 0; i < ldata.ballCount; i++) {
         ldata.balls.push({
@@ -201,6 +206,7 @@ function startRound(aimDir) {
             passed: 0,
             dir: ldata.begin,
             times: 0,
+            atLine: null,
             ignores: []
         });
         ldata.cmds.push({
@@ -224,20 +230,22 @@ function updateRound() {
             dmg: null,
             target: copyPoint(ball.collide.point)
         };
-        console.log("ball " + ball.id + " target:" + vec2String(cmd.target) + ", collide:" + vec2String(ball.collide.point));
+        //console.log("ball " + ball.id + " target:" + vec2String(cmd.target) + ", collide:" + vec2String(ball.collide.point));
         
         // 先将球转向,并将所有球的dist减去第一个球的dist
         ball.times += 1;
+        let d = ball.dist - ball.passed; // 本次移动距离为弹射时的总距离-已经走过的距离
         for (let b of ldata.balls) {
-            b.dist -= ball.dist;
-            b.passed += ball.dist;
+            console.assert(b.dist >= 0, "dist can't be nagetive.");
+            b.passed += d;
         }
         // 达到撞击次数上限，就不再计算该球
         if (ball.times < ldata.times) {
             ball.dir = getReflectNorm(ball.dir, ball.collide.line);
-            ball.passed = 0;
+            ball.passed = 0; // 只有反弹时才需要将pass设置为0
             cmd.reflect = copyPoint(ball.dir);
             assignPoint(ball.collide.point, ball);
+            ball.atLine = ball.collide.line;
             calcCollide(ball);
             ldata.balls.push(ball);
         }
