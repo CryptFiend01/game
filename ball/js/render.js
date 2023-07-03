@@ -7,6 +7,16 @@ let rdata = {
     status : 1,
 }
 
+function initRender(lines, status, base, collisions) {
+    rdata.lines.length = 0;
+    for (let l of lines) {
+        rdata.lines.push(copyLine(l));
+    }
+    rdata.status = status;
+    rdata.base = base;
+    rdata.collisions = collisions;
+}
+
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 

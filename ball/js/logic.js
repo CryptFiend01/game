@@ -45,6 +45,34 @@ const CmdType = {
     LOSE : 5
 }
 
+function initLogic(base, times, interLen) {
+    assignPoint(base, ldata.base);
+    ldata.times = times;
+    ldata.interLen = interLen;
+    ldata.lines.length = 0;
+    ldata.balls.length = 0;
+    ldata.enemyCount = 0;
+
+    for (let line of config.lines) {
+        ldata.lines.push(copyLine(line));
+        if (!line.mid) {
+            continue;
+        }
+        if (ldata.enemys[line.mid] == null) {
+            let monsterData = config.stage.monsters[line.mid-1];
+            let monsterCfg = getMonster(monsterData.cid);
+            ldata.enemys[line.mid] = {
+                id : line.mid,
+                point : monsterData.point,
+                hp : monsterCfg.hp,
+                obj : config.objects[monsterCfg.type]
+            };
+            ldata.enemyCount += 1;
+        }
+    }
+    // console.log("enemyCount: " + ldata.enemyCount);
+}
+
 function sortBalls() {
     ldata.balls.sort((a, b) => {
         if (a.dist < b.dist) {
@@ -154,34 +182,6 @@ function checkCollide(deads) {
             calcCollide(ball);
         }
     }
-}
-
-function initLogic(base, times, interLen) {
-    assignPoint(base, ldata.base);
-    ldata.times = times;
-    ldata.interLen = interLen;
-    ldata.lines.length = 0;
-    ldata.balls.length = 0;
-    ldata.enemyCount = 0;
-
-    for (let line of config.lines) {
-        ldata.lines.push(copyLine(line));
-        if (!line.mid) {
-            continue;
-        }
-        if (ldata.enemys[line.mid] == null) {
-            let monsterData = config.stage.monsters[line.mid-1];
-            let monsterCfg = getMonster(monsterData.cid);
-            ldata.enemys[line.mid] = {
-                id : line.mid,
-                point : monsterData.point,
-                hp : monsterCfg.hp,
-                obj : config.objects[monsterCfg.type]
-            };
-            ldata.enemyCount += 1;
-        }
-    }
-    // console.log("enemyCount: " + ldata.enemyCount);
 }
 
 function startRound(aimDir) {
