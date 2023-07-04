@@ -69,3 +69,21 @@ function test1() {
     drawLine(line1);
     drawLine(line2);
 }
+
+function testHeap() {
+    let h = new Heap((a, b) => {return a < b;});
+    let elements = [100, 80, 96, 12, 300, 234, 113,64,158,77,950];
+    for (let e of elements) {
+        h.add(e);
+    }
+    h.show();
+    while(h.count > 5) {
+        console.log(h.pop());
+    }
+
+    h.add(211);
+    h.add(176);
+    while (!h.empty()) {
+        console.log(h.pop());
+    }
+}

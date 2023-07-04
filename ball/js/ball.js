@@ -317,3 +317,4 @@ function initialze() {
 initialze();
 //test1();
 //test();
+//testHeap();

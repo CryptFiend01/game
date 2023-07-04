@@ -54,7 +54,9 @@ function loadData(onfinish) {
             $.getJSON("data/stage.json", function(stage_data) {
                 var stage = stage_data;
                 config.stage = stage;
+                config.stage_monsters = {}
                 for (let m of stage.monsters) {
+                    config.stage_monsters[m.id] = m;
                     let mc = getMonster(m.cid);
                     if (mc == null) {
                         console.log("not find monster " + m.cid);
