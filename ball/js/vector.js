@@ -38,6 +38,10 @@ function dot(v1, v2) {
     return v1.x * v2.x + v1.y * v2.y;
 }
 
+function vecEqual(v1, v2) {
+    return Math.abs(v1.x - v2.x) < 1e-9 && Math.abs(v1.y - v2.y) < 1e-9;
+}
+
 function copyLine(line) {
     let obj = {};
     for (let k in line) {

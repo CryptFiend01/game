@@ -19,9 +19,10 @@ let game = {
     collisions : [], // {x: 0, y: 0, radius: 2, color: "#1234bc"}
     base: {x: 250, y: 800},
     timer: -1,
-    basSpeed: 20,
+    basSpeed: 3,
     speed: 1,
-    speedAdd: 0,
+    speedAdd: 0.1,
+    frame: 0,
     running: null,
     totalDist: 0,
     times: 50,
@@ -50,10 +51,20 @@ function objToString(o) {
     return s;
 }
 
+function getNextTarget(ball) {
+    ball.nextTarget = null;
+    for (let cmd of game.cmds) {
+        if (cmd.type == CmdType.COLLIDE && cmd.id == ball.id) {
+            ball.nextTarget = cmd.target;
+            break;
+        }
+    }
+}
+
 function loadBalls() {
     let cmd = game.cmds.shift();
     while (cmd.type == CmdType.CREATE_BALL) {
-        rdata.balls.push({
+        let ball = {
             id: cmd.id,
             x: game.base.x,
             y: game.base.y,
@@ -63,7 +74,9 @@ function loadBalls() {
             status: BallStatus.CREATING,
             dist: 0,
             totalDist: 0
-        });
+        };
+        getNextTarget(ball);
+        rdata.balls.push(ball);
         cmd = game.cmds.shift();
     }
     game.running = cmd;
@@ -89,10 +102,29 @@ function onfinish() {
 
 function ballMove(ball, dist) {
     let d = dist - ball.dist;
+    // if (ball.nextTarget) {
+    //     let nextDist = length({x:ball.x-ball.nextTarget.x, y:ball.y-ball.nextTarget.y});
+    //     if (nextDist < d) {
+    //         console.error("ball " + ball.id + " move over next target, game.running.id=" + game.running.id);
+    //     }
+    // }
     ball.x += ball.dir.x * d;
     ball.y += ball.dir.y * d;
     ball.totalDist += d;
     ball.status = BallStatus.MOVED;
+}
+
+function getShortestBall() {
+    let shortest = {dist:1e9, bid:0, target:{x:0,y:0}};
+    for (let ball of rdata.balls) {
+        let d = length({x:ball.x-ball.nextTarget.x, y:ball.y-ball.nextTarget.y});
+        if (d < shortest.dist) {
+            shortest.bid = ball.id;
+            shortest.dist = d;
+            assignPoint(ball.nextTarget, shortest.target);
+        }
+    }
+    return shortest;
 }
 
 function moveAll(dist) {
@@ -164,7 +196,8 @@ function run(pass) {
         return -1;
     }
     let rest = game.speed - pass;
-    let dist = length({x: cmd.target.x - ball.x, y: cmd.target.y - ball.y});
+    let v = {x: cmd.target.x - ball.x, y: cmd.target.y - ball.y};
+    let dist = length(v);
     if (dist <= rest) {
         moveAll(dist);
 
@@ -172,6 +205,7 @@ function run(pass) {
             ball.status = BallStatus.DESTROY;
         } else {
             assignPoint(cmd.reflect, ball.dir);
+            getNextTarget(ball);
         }
 
         // 移除死亡的单位
@@ -179,7 +213,7 @@ function run(pass) {
             rdata.lines = removeDead(rdata.lines, cmd.dmg.id);
         }
 
-        game.running = null;
+        game.running = game.cmds.shift();
         return dist;
     } else {
         moveAll(rest);
@@ -188,27 +222,23 @@ function run(pass) {
 }
 
 function update() {
-    if (game.running == null) {
-        game.running = game.cmds.shift();
-        //console.log("next cmd:" + objToString(game.running));
-    }
     let d = run(0);
-    //console.log("move length:" + d);
     game.totalDist += d;
     while (d > 0 && d < game.speed) {
-        game.running = game.cmds.shift();
-        //console.log("next cmd:" + objToString(game.running));
         let x = run(d);
         if (x == -1) {
+            d = -1;
             break;
         }
-        //console.log("move length:" + x);
         game.totalDist += x;
         d += x;
     }
 
+    if (d == -1) {
+        onfinish();
+    }
+
     game.speed += game.speedAdd;
-    //console.log("speed:" + game.speed);
     
     draw();
 }
@@ -239,6 +269,7 @@ function initialze() {
             game.status = game.gameMode;
             game.totalDist = 0;
             game.speed = game.basSpeed;
+            game.frame = 0;
             rdata.status = game.status;
             startRound(game.aimDir);
             updateRound();

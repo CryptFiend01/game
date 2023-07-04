@@ -9,15 +9,10 @@ function startGroupDebug() {
 }
 
 function updateGroupDebug() {
-    if (game.running == null) {
-        game.running = game.cmds.shift();
-    }
+    let cmdCount = game.cmds.length;
     let d = run(0);
     game.totalDist += d;
-    let stop = false;
     while (d > 0 && d < game.speed) {
-        game.running = game.cmds.shift();
-        stop = true;
         let x = run(d);
         if (x == -1) {
             break;
@@ -26,9 +21,9 @@ function updateGroupDebug() {
         d += x;
     }
 
-    console.log("move finish.");
+    let stop = cmdCount != game.cmds.length;
 
-    //game.speed += game.speedAdd;
+    game.speed += game.speedAdd;
     if (game.timer > 0 && stop) {
         clearInterval(game.timer);
         game.timer = -1;
@@ -63,7 +58,6 @@ function updateDebug() {
         if (cmd.dmg != null && cmd.dmg.hp == 0) {
             rdata.lines = removeDead(rdata.lines, cmd.dmg.id);
         }
-        console.log("move finish.")
         game.running = null;
         clearInterval(game.timer);
         game.timer = -1;
