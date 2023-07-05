@@ -36,17 +36,11 @@ let ldata = {
 
     base : {x: 250, y: 800},
 
+    nextBase : null,
+
     begin : {x: 0, y: 0},
 
     enemys : {},
-
-    times : 10,
-
-    ballCount : 10,
-
-    interLen : 15,
-
-    enemyCount : 0,
 
     cmds: []
 };
@@ -59,14 +53,14 @@ const CmdType = {
     LOSE : 5
 }
 
-function initLogic(base, times, interLen, ballCount) {
+function initLogic(base, interLen, roles) {
     assignPoint(base, ldata.base);
-    ldata.times = times;
     ldata.interLen = interLen;
     ldata.lines.length = 0;
     ldata.balls.clear();
     ldata.enemyCount = 0;
-    ldata.ballCount = ballCount;
+    ldata.baseLine = {x1: 0, y1: base.y, x2: canvas.width, y2: base.y, color: "#aaaaaa", width:1};
+    ldata.roles = roles;
 
     for (let line of config.lines) {
         ldata.lines.push(copyLine(line));
@@ -110,6 +104,15 @@ function getNextCollision(start, dirNorm, ignores) {
         ignores = [];
     }
     return checkNextInterpoint(start, dirNorm, ldata.lines, ignores);
+}
+
+function getNextBase(ball) {
+    if (!ldata.nextBase) {
+        let p = getRaySegmentIntersection(ball, ball.dir, ldata.baseLine);
+        if (p != null) {
+            ldata.nextBase = p;
+        }
+    }
 }
 
 function getReflectNorm(dir, line) {
@@ -170,11 +173,11 @@ function calcCollide(ball) {
         }
     } else {
         console.log("collide null:");
-        showVec("Ball", ball);
-        showVec("Ball Dir", ball.dir);
-        for (let l of ldata.lines) {
-            showLine("line", l);
-        }
+        // showVec("Ball", ball);
+        // showVec("Ball Dir", ball.dir);
+        // for (let l of ldata.lines) {
+        //     showLine("line", l);
+        // }
         ball.dist = 0;
     }
 }
@@ -187,13 +190,19 @@ function checkCollide(deads) {
             if (deads.indexOf(ball.collide.line.mid) != -1) {
                 calcCollide(ball);
             }
-            temp.push(ball);
+            if (ball.collide.point)
+                temp.push(ball);
+            else
+                getNextBase(ball);
         }
     } else {
         // 其他原因（比如召唤，移动）导致重新检测，需要全部重算一遍
         for (let ball of ldata.balls.heap) {
             calcCollide(ball);
-            temp.push(ball);
+            if (ball.collide.point)
+                temp.push(ball);
+            else
+                getNextBase(ball);
         }
     }
 
@@ -209,27 +218,33 @@ function startRound(aimDir) {
 
     let collide = getNextCollision(ldata.base, ldata.begin, null);
     let dist = length({x:collide.point.x - ldata.base.x, y:collide.point.y - ldata.base.y});
-    for (let i = 0; i < ldata.ballCount; i++) {
-        ldata.balls.add({
-            id: i + 1,
-            x: ldata.base.x, 
-            y: ldata.base.y, 
-            collide: collide,
-            dist: dist + i * ldata.interLen,
-            passed: 0,
-            dir: ldata.begin,
-            times: 0,
-            atLine: null,
-            ignores: []
-        });
-        ldata.cmds.push({
-            type: CmdType.CREATE_BALL,
-            id: i + 1,
-            cid: 1001,
-            dir: ldata.begin
-        });
-        //console.log("ball " + (i + 1) + " collide:" + vec2String(ball.collide.point));
+    let n = 0;
+    for (let role of ldata.roles) {
+        for (let i = 0; i < role.count; i++) {
+            ldata.balls.add({
+                id: n + 1,
+                role: role,
+                x: ldata.base.x, 
+                y: ldata.base.y, 
+                collide: collide,
+                dist: dist + n * ldata.interLen,
+                passed: 0,
+                dir: ldata.begin,
+                times: 0,
+                atLine: null,
+                ignores: []
+            });
+            ldata.cmds.push({
+                type: CmdType.CREATE_BALL,
+                id: n + 1,
+                cid: role.id,
+                dir: ldata.begin
+            });
+            ++n;
+        }
     }
+
+    ldata.nextBase = null;
 }
 
 function updateRound() {
@@ -239,7 +254,7 @@ function updateRound() {
         let line = ball.collide.line;
         let cmd = {
             type: CmdType.COLLIDE, 
-            id: ball.id, 
+            id: ball.id,
             dmg: null,
             target: copyPoint(ball.collide.point)
         };
@@ -252,14 +267,18 @@ function updateRound() {
             b.passed += d;
         }
         // 达到撞击次数上限，就不再计算该球
-        if (ball.times < ldata.times) {
+        if (ball.times < ball.role.times) {
             ball.dir = getReflectNorm(ball.dir, ball.collide.line);
             ball.passed = 0; // 只有反弹时才需要将pass设置为0
             cmd.reflect = copyPoint(ball.dir);
             assignPoint(ball.collide.point, ball);
             ball.atLine = ball.collide.line;
             calcCollide(ball);
-            ldata.balls.add(ball);
+            if (ball.collide.point) {
+                ldata.balls.add(ball);
+            } else {
+                getNextBase(ball);
+            }
         }
 
         if (line.mid) {
@@ -281,7 +300,7 @@ function updateRound() {
                     }
                 }
             } else {
-                console.error("collide dead enemy! id=" + cmd.id + " mid=" + ball.collide.line.mid);
+                console.error("collide dead enemy! id=" + cmd.id + " mid=" + line.mid);
             }
         }
 
@@ -290,6 +309,8 @@ function updateRound() {
         //sortBalls();
     }
     ldata.cmds.push({type: CmdType.ROUND_END});
-
+    if (ldata.nextBase) {
+        assignPoint(ldata.nextBase, ldata.base);
+    }
     console.timeEnd("round");
 }

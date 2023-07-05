@@ -17,16 +17,22 @@ let game = {
     status: GameState.GS_AIM,
     aimDir: {x: 0, y: 0},
     collisions : [], // {x: 0, y: 0, radius: 2, color: "#1234bc"}
-    base: {x: 250, y: 800},
+    base: {x: 200, y: 552},
     timer: -1,
     basSpeed: 3,
     speed: 1,
-    speedAdd: 0.1,
+    speedAdd: 0,
     frame: 0,
     running: null,
     totalDist: 0,
     times: 50,
-    ballCount: 50,
+    roles: [
+        { id: 1, count: 10, times: 50, color: "red" },
+        { id: 2, count: 10, times: 50, color: "orange" },
+        { id: 3, count: 10, times: 50, color: "purple" },
+        { id: 4, count: 10, times: 50, color: "skyblue" },
+        { id: 5, count: 10, times: 50, color: "cyan" }
+    ],
     distInterval: 15,
     lastDist: 0,
     gameMode: GameState.GS_PLAY,
@@ -64,12 +70,13 @@ function getNextTarget(ball) {
 function loadBalls() {
     let cmd = game.cmds.shift();
     while (cmd.type == CmdType.CREATE_BALL) {
+        let role = game.roles[cmd.cid - 1];
         let ball = {
             id: cmd.id,
             x: game.base.x,
             y: game.base.y,
             radius: 5,
-            color: "#ac2243",
+            color: role.color,
             dir: {x:cmd.dir.x, y:cmd.dir.y},
             status: BallStatus.CREATING,
             dist: 0,
@@ -87,6 +94,7 @@ function onfinish() {
         game.status = GameState.GS_AIM;
         rdata.balls.length = 0;
         rdata.status = game.status;
+        assignPoint(ldata.base, game.base);
 
         clearInterval(game.timer);
         game.timer = -1;
@@ -143,10 +151,6 @@ function aim() {
     while (game.collisions.length < game.times) {
         let collide = getNextCollision(start, n, ignores);
         if (collide.point == null) {
-            console.log("collide times:" + game.collisions.length);
-            showVec("start", start);
-            showVec("dir", n);
-            console.log("collide:" + objToString(collide));
             break;
         }
             
@@ -245,8 +249,8 @@ function update() {
 
 function initialze() {
     loadData(function () {
-        initLogic(game.base, game.times, game.distInterval, game.ballCount);
-        initRender(ldata.lines, game.status, game.base, game.collisions);
+        initLogic(game.base, game.distInterval, game.roles);
+        initRender(ldata.lines, game.status, game.base, game.collisions, game.roles);
         addEventListener("mousemove", (evt) => {
             let coord = document.getElementById("coord");
             coord.innerHTML = "坐标：" + evt.offsetX + "," + evt.offsetY;

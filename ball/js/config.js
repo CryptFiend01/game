@@ -1,9 +1,23 @@
+let RenderConfig = {
+    width : 8,
+    height : 11,
+    side : 48,
+    xoffset : (canvas.width - 8 * 48) / 2,
+    yoffset : 5
+}
+
+let GameRect = {
+    left: RenderConfig.xoffset,
+    top: RenderConfig.yoffset,
+    right: RenderConfig.width * RenderConfig.side + RenderConfig.xoffset,
+    down: RenderConfig.height * RenderConfig.side + RenderConfig.yoffset
+}
+
 let config = {
     lines : [
-        {x1: 0, y1: 0, x2: canvas.width, y2: 0, color: "#00aa11", hide:0},
-        {x1: canvas.width, y1: 0, x2: canvas.width, y2: canvas.height, color: "#00aa11", hide:0},
-        {x1: canvas.width, y1: canvas.height, x2: 0, y2: canvas.height, color: "#00aa11", hide:0},
-        {x1: 0, y1: canvas.height, x2: 0, y2: 0, color: "#00aa11", hide:0},
+        {x1: GameRect.left, y1: GameRect.top, x2: GameRect.right, y2: GameRect.top, color: "#00aa11", hide:0},
+        {x1: GameRect.right, y1: GameRect.top, x2: GameRect.right, y2: GameRect.down, color: "#00aa11", hide:0},
+        {x1: GameRect.left, y1: GameRect.down, x2: GameRect.left, y2: GameRect.top, color: "#00aa11", hide:0},
     ],
 
     objects: null,
@@ -63,6 +77,14 @@ function loadData(onfinish) {
                         continue;
                     }
                     let obj = objects[mc.type];
+                    if (!m.point) {
+                        let x = Math.floor((m.grid - 1) % RenderConfig.width);
+                        let y = Math.floor((m.grid - 1) / RenderConfig.width);
+                        m.point = {
+                            x: x * RenderConfig.side + obj.anchor.x + RenderConfig.xoffset,
+                            y: y * RenderConfig.side + obj.anchor.y + RenderConfig.yoffset
+                        }
+                    }
                     let lines = makeLines(m.id, m.point, obj);
                     for (let j = 0; j < lines.length; j++) {
                         config.lines.push(lines[j]);

@@ -5,9 +5,10 @@ let rdata = {
     lines : [],
     balls : [],
     status : 1,
+    baseLine: null,
 }
 
-function initRender(lines, status, base, collisions) {
+function initRender(lines, status, base, collisions, roles) {
     rdata.lines.length = 0;
     for (let l of lines) {
         rdata.lines.push(copyLine(l));
@@ -15,10 +16,18 @@ function initRender(lines, status, base, collisions) {
     rdata.status = status;
     rdata.base = base;
     rdata.collisions = collisions;
+    rdata.baseLine = {x1: 0, y1: base.y, x2: canvas.width, y2: base.y, color: "#aaaaaa", width:1}
+    rdata.roles = roles;
 }
 
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    drawDashLine(rdata.baseLine);
+
+    for (let i = 0; i < rdata.roles.length; i++) {
+        drawRole({x: i * 80 + 10, y: rdata.base.y + 60, width: 60, height: 80, color: rdata.roles[i].color});
+    }
 
     for (let l of rdata.lines) {
         drawLine(l);
@@ -129,4 +138,11 @@ function drawDashLine({x1, y1, x2, y2, color, width=2}) {
     ctx.lineTo(x2, y2);
     ctx.stroke();
     ctx.setLineDash(old);
+}
+
+function drawRole({x, y, width, height, color}) {
+    ctx.beginPath();
+    ctx.fillStyle = color;
+    ctx.rect(x, y, width, height);
+    ctx.fill();
 }

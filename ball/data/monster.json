@@ -1,5 +1,9 @@
 [
-    {"id": 1, "type": "brick", "res": "Monster_1", "hp": 100000},
-    {"id": 2, "type": "brick", "res": "Brick_1", "hp": 100000},
-    {"id": 3, "type": "monster", "res": "Boss", "hp": 100000}
+    {"id": 1, "type": "brick", "res": "Monster_1", "hp": 10000},
+    {"id": 2, "type": "bigbrick", "res": "Brick_1", "hp": 10000},
+    {"id": 3, "type": "triangle1", "res": "TriangleBrick_1", "hp":10000},
+    {"id": 4, "type": "triangle2", "res": "TriangleBrick_2", "hp":10000},
+    {"id": 5, "type": "triangle3", "res": "TriangleBrick_3", "hp":10000},
+    {"id": 6, "type": "triangle4", "res": "TriangleBrick_4", "hp":10000},
+    {"id": 101, "type": "monster", "res": "Boss", "hp": 100000}
 ]
