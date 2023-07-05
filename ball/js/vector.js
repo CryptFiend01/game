@@ -159,3 +159,19 @@ function pointInLine(point, line) {
     let d3 = length({x: line.x2 - point.x, y: line.y2 - point.y});
     return (d - d2 + d3) < 1e-9;
 }
+
+function hidenInline(lines) {
+    for (let j = 0; j < lines.length; j++) {
+        let l1 = lines[j];
+        for (let i = 0; i < lines.length; i++) {
+            if (i == j)
+                continue;
+            let l2 = lines[i];
+            if ((l1.x1 == l2.x1 && l1.y1 == l2.y1 && l1.x2 == l2.x2 && l1.y2 == l2.y2) ||
+                (l1.x1 == l2.x2 && l1.y1 == l2.y2 && l1.x2 == l2.x1 && l1.y2 == l2.y1)) {
+                l1.hide = l2.mid;
+                l2.hide = l1.mid;
+            }
+        }
+    }
+}

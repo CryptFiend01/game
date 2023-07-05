@@ -14,11 +14,13 @@ let GameRect = {
 }
 
 let config = {
-    lines : [
+    frameLines : [
         {x1: GameRect.left, y1: GameRect.top, x2: GameRect.right, y2: GameRect.top, color: "#00aa11", hide:0},
         {x1: GameRect.right, y1: GameRect.top, x2: GameRect.right, y2: GameRect.down, color: "#00aa11", hide:0},
         {x1: GameRect.left, y1: GameRect.down, x2: GameRect.left, y2: GameRect.top, color: "#00aa11", hide:0},
     ],
+
+    lines: [],
 
     objects: null,
     monsters: null,
@@ -78,8 +80,8 @@ function loadData(onfinish) {
                     }
                     let obj = objects[mc.type];
                     if (!m.point) {
-                        let x = Math.floor((m.grid - 1) % RenderConfig.width);
-                        let y = Math.floor((m.grid - 1) / RenderConfig.width);
+                        let x = Math.floor(m.grid % RenderConfig.width);
+                        let y = Math.floor(m.grid / RenderConfig.width);
                         m.point = {
                             x: x * RenderConfig.side + obj.anchor.x + RenderConfig.xoffset,
                             y: y * RenderConfig.side + obj.anchor.y + RenderConfig.yoffset
@@ -91,24 +93,13 @@ function loadData(onfinish) {
                     }
                 }
 
+                for (let i = 0; i < config.frameLines.length; i++) {
+                    config.frameLines[i].normal = normalize(normalVector(vector(config.frameLines[i])));
+                }
+
                 // 通过线段数据生成法线向量
                 for (let i = 0; i < config.lines.length; i++) {
                     config.lines[i].normal = normalize(normalVector(vector(config.lines[i])));
-                }
-
-                // 隐去内线
-                for (let j = 0; j < config.lines.length; j++) {
-                    let l1 = config.lines[j];
-                    for (let i = 0; i < config.lines.length; i++) {
-                        if (i == j)
-                            continue;
-                        let l2 = config.lines[i];
-                        if ((l1.x1 == l2.x1 && l1.y1 == l2.y1 && l1.x2 == l2.x2 && l1.y2 == l2.y2) ||
-                            (l1.x1 == l2.x2 && l1.y1 == l2.y2 && l1.x2 == l2.x1 && l1.y2 == l2.y1)) {
-                            l1.hide = l2.mid;
-                            l2.hide = l1.mid;
-                        }
-                    }
                 }
                 onfinish();
             });

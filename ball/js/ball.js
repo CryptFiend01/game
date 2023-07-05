@@ -16,12 +16,12 @@ const GameState = {
 let game = {
     status: GameState.GS_AIM,
     aimDir: {x: 0, y: 0},
-    collisions : [], // {x: 0, y: 0, radius: 2, color: "#1234bc"}
+    collisions : [],
     base: {x: 200, y: 552},
     timer: -1,
     basSpeed: 3,
     speed: 1,
-    speedAdd: 0,
+    speedAdd: 0.1,
     frame: 0,
     running: null,
     totalDist: 0,
@@ -90,6 +90,14 @@ function loadBalls() {
 }
 
 function onfinish() {
+    while (game.running != null) {
+        if (game.running.type == CmdType.PUSH) {
+            setLines(ldata.lines);
+        } else if (game.running.type == CmdType.WIN) {
+            break;
+        }
+        game.running = game.cmds.shift();
+    }
     if (game.cmds.length == 0) {
         game.status = GameState.GS_AIM;
         rdata.balls.length = 0;
@@ -99,7 +107,7 @@ function onfinish() {
         clearInterval(game.timer);
         game.timer = -1;
 
-        if (game.running.type == CmdType.WIN) {
+        if (game.running && game.running.type == CmdType.WIN) {
             console.log("win.");
             game.status = GameState.GS_FINISH;
             rdata.status = game.status;

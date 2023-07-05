@@ -9,6 +9,7 @@
 // {
 //       {type: "create_ball", dir: {x:1, y:2}, id: 1, cid: 2}, ....
 //       {type: "collide", reflect: {x: 3, y:4}, target:{x: 1, y: 1}, dmg: {id:1, dmg:10, hp:180}, skill: {}}, ...
+//       {type: "push", line: 5, moved:[{id:1, x:30, y:50},...]}
 //       {type: "win"}
 //       {type: "lose"}
 // }
@@ -42,15 +43,33 @@ let ldata = {
 
     enemys : {},
 
+    startLine: 0,
+
+    round: 0,
+
+    pushed: -1,
+
     cmds: []
 };
 
 const CmdType = {
     CREATE_BALL : 1,
     COLLIDE : 2,
-    ROUND_END: 3,
-    WIN : 4,
-    LOSE : 5
+    ROLE_SKILL: 3,
+    ENEMY_SKILL: 4,
+    PUSH: 5,
+    ROUND_END: 6,
+    WIN : 7,
+    LOSE : 8
+}
+
+function inRange(line) {
+    let rect = ldata.rect;
+    if (line.y1 < rect.top || line.y1 > rect.down || line.y2 < rect.top || line.y2 > rect.down) {
+        return false;
+    } else {
+        return true;
+    }
 }
 
 function initLogic(base, interLen, roles) {
@@ -61,12 +80,27 @@ function initLogic(base, interLen, roles) {
     ldata.enemyCount = 0;
     ldata.baseLine = {x1: 0, y1: base.y, x2: canvas.width, y2: base.y, color: "#aaaaaa", width:1};
     ldata.roles = roles;
+    ldata.rect = {left: GameRect.left, right: GameRect.right, top: GameRect.top + RenderConfig.side, down: GameRect.down};
+    console.log(objToString(ldata.rect));
+
+    let max_line = config.stage.max_line;
+    if (max_line < RenderConfig.height) {
+        max_line = RenderConfig.height;
+    }
+
+    for (let line of config.frameLines) {
+        ldata.lines.push(copyLine(line));
+    }
+
+    ldata.startLine = max_line - RenderConfig.height;
+    let yoffset = ldata.startLine * RenderConfig.side;
 
     for (let line of config.lines) {
-        ldata.lines.push(copyLine(line));
-        if (!line.mid) {
-            continue;
-        }
+        let l = copyLine(line);
+        l.y1 -= yoffset;
+        l.y2 -= yoffset;
+
+        let visible = inRange(l);
         if (ldata.enemys[line.mid] == null) {
             let monsterData = config.stage_monsters[line.mid];
             let monsterCfg = getMonster(monsterData.cid);
@@ -74,29 +108,29 @@ function initLogic(base, interLen, roles) {
                 id : line.mid,
                 point : monsterData.point,
                 hp : monsterCfg.hp,
-                obj : config.objects[monsterCfg.type]
+                visible : visible,
+                obj : config.objects[monsterCfg.type],
+                lines : [l]
             };
             ldata.enemyCount += 1;
+        } else {
+            // 只要有一部分看不见，整体隐藏
+            let enemy = ldata.enemys[line.mid];
+            enemy.visible &= visible;
+            enemy.lines.push(l);
         }
     }
-}
 
-function sortBalls() {
-    ldata.balls.sort((a, b) => {
-        let da = a.dist - a.passed;
-        let db = b.dist - b.passed;
-        if (da < db) {
-            return -1;
-        } else if (da > db) {
-            return 1;
-        } else {
-            if (a.id < b.id) {
-                return -1;
-            } else {
-                return 1;
-            }
+    // 按照个体设置
+    for (let eid in ldata.enemys) {
+        let enemy = ldata.enemys[eid];
+        if (enemy.visible) {
+            for (let line of enemy.lines)
+                ldata.lines.push(line);
         }
-    });
+    }
+
+    hidenInline(ldata.lines);
 }
 
 function getNextCollision(start, dirNorm, ignores) {
@@ -173,11 +207,6 @@ function calcCollide(ball) {
         }
     } else {
         console.log("collide null:");
-        // showVec("Ball", ball);
-        // showVec("Ball Dir", ball.dir);
-        // for (let l of ldata.lines) {
-        //     showLine("line", l);
-        // }
         ball.dist = 0;
     }
 }
@@ -305,9 +334,63 @@ function updateRound() {
         }
 
         ldata.cmds.push(cmd);
-
-        //sortBalls();
     }
+
+    // 敌方行动
+
+    // 回合结束推进
+    ldata.round += 1;
+    let push_line = 0;
+    if (ldata.lines.length == 0 && ldata.startLine > 0) {
+        push_line = Math.min(ldata.startLine, 10);
+    } else if (ldata.pushed + 1 < config.stage.push.length) {
+        let next_push = config.stage.push[ldata.pushed + 1];
+        if (ldata.round >= next_push.round) {
+            push_line = Math.min(ldata.startLine, next_push.line);
+            ldata.pushed = next_push;
+        }
+    }
+
+    if (push_line > 0) {
+        ldata.lines.length = 0;
+        for (let l of config.frameLines) {
+            ldata.lines.push(copyLine(l));
+        }
+        ldata.startLine -= push_line;
+        let yoffset = push_line * RenderConfig.side;
+        for (let eid in ldata.enemys) {
+            let enemy = ldata.enemys[eid];
+            if (enemy.hp <= 0 ) {
+                continue;
+            }
+            let visible = true;
+            for (let line of enemy.lines) {
+                line.y1 += yoffset;
+                line.y2 += yoffset;
+                if (visible && !inRange(line)) {
+                    visible = false;
+                }
+                line.hide = 0;
+            }
+
+            if (enemy.visible && !visible) {
+                // 底线移除
+            }
+            enemy.visible = visible;
+
+            if (visible) {
+                for (let line of enemy.lines) {
+                    ldata.lines.push(line);
+                }
+            }
+        }
+
+        hidenInline(ldata.lines);
+        
+        ldata.cmds.push({type: CmdType.PUSH, line: push_line});
+    }
+    
+
     ldata.cmds.push({type: CmdType.ROUND_END});
     if (ldata.nextBase) {
         assignPoint(ldata.nextBase, ldata.base);

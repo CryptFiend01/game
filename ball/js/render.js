@@ -20,6 +20,13 @@ function initRender(lines, status, base, collisions, roles) {
     rdata.roles = roles;
 }
 
+function setLines(lines) {
+    rdata.lines.length = 0;
+    for (let l of lines) {
+        rdata.lines.push(copyLine(l));
+    }
+}
+
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
