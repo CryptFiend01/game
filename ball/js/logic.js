@@ -47,7 +47,13 @@ let ldata = {
 
     round: 0,
 
+    ballDmg : 100,
+
+    skills : [],
+
     pushed: -1,
+
+    win : false,
 
     cmds: []
 };
@@ -57,15 +63,26 @@ const CmdType = {
     COLLIDE : 2,
     ROLE_SKILL: 3,
     ENEMY_SKILL: 4,
-    PUSH: 5,
-    ROUND_END: 6,
-    WIN : 7,
-    LOSE : 8
+    REMOVE_SKILL : 5,
+    SKILL_EFFECT : 6,
+    PUSH: 10,
+    ROUND_END: 11,
+    WIN : 12,
+    LOSE : 13
 }
 
 function inRange(line) {
     let rect = ldata.rect;
     if (line.y1 < rect.top || line.y1 > rect.down || line.y2 < rect.top || line.y2 > rect.down) {
+        return false;
+    } else {
+        return true;
+    }
+}
+
+function pointInRange(point) {
+    let rect = ldata.rect;
+    if (point.x < rect.left || point.x > rect.right || point.y < rect.top || point.y > rect.bottom) {
         return false;
     } else {
         return true;
@@ -110,7 +127,13 @@ function initLogic(base, interLen, roles) {
                 hp : monsterCfg.hp,
                 visible : visible,
                 obj : config.objects[monsterCfg.type],
-                lines : [l]
+                lines : [l],
+                rect: {
+                    left: Math.min(l.x1, l.x2), 
+                    top: Math.min(l.y1, l.y2), 
+                    right: Math.max(l.x1, l.x2), 
+                    bottom: Math.max(l.y1, l.y2)
+                }
             };
             ldata.enemyCount += 1;
         } else {
@@ -118,6 +141,18 @@ function initLogic(base, interLen, roles) {
             let enemy = ldata.enemys[line.mid];
             enemy.visible &= visible;
             enemy.lines.push(l);
+
+            let rect = {
+                left: Math.min(l.x1, l.x2), 
+                top: Math.min(l.y1, l.y2), 
+                right: Math.max(l.x1, l.x2), 
+                bottom: Math.max(l.y1, l.y2)
+            }
+
+            enemy.rect.left = Math.min(enemy.rect.left, rect.left);
+            enemy.rect.top = Math.min(enemy.rect.top, rect.top);
+            enemy.rect.right = Math.max(enemy.rect.right, rect.right);
+            enemy.rect.down = Math.max(enemy.rect.down, rect.down);
         }
     }
 
@@ -244,6 +279,87 @@ function checkCollide(deads) {
     }
 }
 
+function getSkillRange(point, width, height) {
+    return {
+        x: (point.x - Math.floor(width / 2)) * RenderConfig.side,
+        y: (point.y - Math.floor(height / 2)) * RenderConfig.side,
+        width: width * RenderConfig.side,
+        height: height * RenderConfig.side
+    }
+}
+
+function rectInserect(rect1, rect2) {
+
+}
+
+function effectSkill(skill) {
+    let effects = [];
+    skill.round += 1;
+    for (let eid in ldata.enemys) {
+        let enemy = ldata.enemys[eid];
+        if (enemy.visible && enemy.hp > 0 && rectInserect(enemy.rect, skill.rect)) {
+            enemy.hp -= skill.dmg;
+            effects.push({id:eid, dmg: skill.dmg, hp: enemy.hp});
+            if (enemy.hp <= 0) {
+                onEmenyDead(eid);
+                ldata.enemyCount -= 1;
+            }
+        }
+    }
+
+    if (ldata.enemyCount <= 0) {
+        ldata.cmds.push({type: CmdType.WIN});
+        ldata.win = true;
+    } else if (ldata.lines.length <= config.frameLines.length && ldata.startLine > 0) {
+        let pushLine = Math.min(ldata.startLine, 10);
+        pushMap(pushLine);
+    }
+
+    return effects;
+}
+
+function checkSkillValid() {
+    let temp = [];
+    for (let skill of ldata.skills) {
+        if (skill.round >= skill.cfg.round) {
+            ldata.cmds.push({type: CmdType.REMOVE_SKILL, cid: skill.cid});
+        } else {
+            temp.push(skill);
+        }
+    }
+    ldata.skills = temp;
+}
+
+function useSkill(role, target) {
+    let cmd = {type: CmdType.ROLE_SKILL, cid: role.id, target: target};
+    ldata.cmds.push(cmd);
+    let cfg = role.skill;
+    if (cfg.type == SkillType.BALL_ADD) {
+        role.ballDmg = cfg.dmg;
+    } else if (cfg.type == SkillType.ROUND_DAMAGE) {
+        let range = getSkillRange(target, width, height);
+        let skill = {cid: role.id, cfg: cfg, rect:{left: range.x, top: range.y, right: range.x + range.width, bottom: range.y + range.height}, round: 0};
+        ldata.skills.push(skill);
+        cmd.range = range;
+        cmd.effects = effectSkill(skill);
+    }
+
+    checkSkillValid();
+}
+
+function skillRound() {
+    for (let skill of ldata.skills) {
+        let cmd = {type: CmdType.SKILL_EFFECT, cid: skill.cid};
+        ldata.cmds.push(cmd);
+        cmd.effects = effectSkill(skill);
+        if (ldata.win) {
+            break;
+        }
+    }
+
+    checkSkillValid();
+}
+
 function startRound(aimDir) {
     ldata.cmds.length = 0;
     assignPoint(aimDir, ldata.begin);
@@ -277,6 +393,50 @@ function startRound(aimDir) {
     }
 
     ldata.nextBase = null;
+}
+
+function pushMap(pushLine) {
+    if (pushLine > 0) {
+        ldata.lines.length = 0;
+        for (let l of config.frameLines) {
+            ldata.lines.push(copyLine(l));
+        }
+        ldata.startLine -= pushLine;
+        let yoffset = pushLine * RenderConfig.side;
+        for (let eid in ldata.enemys) {
+            let enemy = ldata.enemys[eid];
+            if (enemy.hp <= 0 ) {
+                continue;
+            }
+            let visible = true;
+            for (let line of enemy.lines) {
+                line.y1 += yoffset;
+                line.y2 += yoffset;
+                if (visible && !inRange(line)) {
+                    visible = false;
+                }
+                line.hide = 0;
+            }
+
+            if (enemy.visible && !visible) {
+                // 底线移除
+                ldata.enemyCount -= 1;
+                // console.log("enemy " + eid + " invisible.");
+                // console.log("enemyCount:" + ldata.enemyCount);
+            }
+            enemy.visible = visible;
+
+            if (visible) {
+                for (let line of enemy.lines) {
+                    ldata.lines.push(line);
+                }
+            }
+        }
+
+        hidenInline(ldata.lines);
+        
+        ldata.cmds.push({type: CmdType.PUSH, line: pushLine});
+    } 
 }
 
 function updateRound() {
@@ -317,8 +477,8 @@ function updateRound() {
             let enemy = ldata.enemys[line.mid];
             // cmd.dir为null表示小球消失
             if (enemy.hp > 0) {
-                enemy.hp -= 100;
-                cmd.dmg = {id: enemy.id, sub: 100, hp: enemy.hp};            
+                enemy.hp -= ldata.ballDmg;
+                cmd.dmg = {id: enemy.id, sub: ldata.ballDmg, hp: enemy.hp};            
                 if (enemy.hp <= 0) {
                     onEmenyDead(enemy.id);
                     // 中间可以插入一些死亡触发的技能，有新的死亡id可以加入进来，如果触发移动或者召唤，则传入null
@@ -344,58 +504,23 @@ function updateRound() {
 
     // 回合结束推进
     ldata.round += 1;
-    let push_line = 0;
+    let pushLine = 0;
     if (ldata.lines.length <= config.frameLines.length && ldata.startLine > 0) {
-        push_line = Math.min(ldata.startLine, 10);
+        pushLine = Math.min(ldata.startLine, 10);
     } else if (ldata.pushed + 1 < config.stage.push.length) {
         let next_push = config.stage.push[ldata.pushed + 1];
         if (ldata.round >= next_push.round) {
-            push_line = Math.min(ldata.startLine, next_push.line);
+            pushLine = Math.min(ldata.startLine, next_push.line);
             ldata.pushed += 1;
         }
     }
 
-    if (push_line > 0) {
-        ldata.lines.length = 0;
-        for (let l of config.frameLines) {
-            ldata.lines.push(copyLine(l));
-        }
-        ldata.startLine -= push_line;
-        let yoffset = push_line * RenderConfig.side;
-        for (let eid in ldata.enemys) {
-            let enemy = ldata.enemys[eid];
-            if (enemy.hp <= 0 ) {
-                continue;
-            }
-            let visible = true;
-            for (let line of enemy.lines) {
-                line.y1 += yoffset;
-                line.y2 += yoffset;
-                if (visible && !inRange(line)) {
-                    visible = false;
-                }
-                line.hide = 0;
-            }
+    pushMap(pushLine);
 
-            if (enemy.visible && !visible) {
-                // 底线移除
-                ldata.enemyCount -= 1;
-                // console.log("enemy " + eid + " invisible.");
-                // console.log("enemyCount:" + ldata.enemyCount);
-            }
-            enemy.visible = visible;
+    // 技能回合
+    skillRound();
 
-            if (visible) {
-                for (let line of enemy.lines) {
-                    ldata.lines.push(line);
-                }
-            }
-        }
-
-        hidenInline(ldata.lines);
-        
-        ldata.cmds.push({type: CmdType.PUSH, line: push_line});
-    } 
+    ldata.ballDmg = 100;
 
     ldata.cmds.push({type: CmdType.ROUND_END});
     if (ldata.nextBase) {

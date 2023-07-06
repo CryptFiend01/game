@@ -27,6 +27,14 @@ let config = {
     stage: null
 }
 
+const SkillType = {
+    BALL_ADD : 1,
+    RANGE_TRIGGER : 2, 
+    ROUND_DAMAGE : 3,
+    SOLID_BLOCK : 4,
+    DASH_BLOCK : 5
+}
+
 function makeLines(id, point, obj) {
     let lt = {x: point.x - obj.anchor.x, y: point.y - obj.anchor.y};
     let lines = [];

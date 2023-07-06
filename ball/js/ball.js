@@ -6,16 +6,17 @@ const BallStatus = {
 }
 
 const GameState = {
-    GS_AIM : 1,
-    GS_PLAY : 2,
-    GS_FINISH : 3,
-    GS_DEBUG : 4,
-    GS_GROUP_DEBUG : 5,
-    GS_PUSH : 6
+    GS_SKILL : 1,
+    GS_AIM : 2,
+    GS_PLAY : 3,
+    GS_PUSH : 4,
+    GS_FINISH : 5,
+    GS_DEBUG : 6,
+    GS_GROUP_DEBUG : 7,
 }
 
 let game = {
-    status: GameState.GS_AIM,
+    status: GameState.GS_SKILL,
     aimDir: {x: 0, y: 0},
     collisions : [],
     base: {x: 200, y: 552},
@@ -28,17 +29,19 @@ let game = {
     totalDist: 0,
     times: 50,
     roles: [
-        { id: 1, count: 10, times: 50, color: "red" },
-        { id: 2, count: 10, times: 50, color: "orange" },
-        { id: 3, count: 10, times: 50, color: "purple" },
-        { id: 4, count: 10, times: 50, color: "skyblue" },
-        { id: 5, count: 10, times: 50, color: "cyan" }
+        { id: 1, count: 10, times: 50, color: "red", skill: {type: SkillType.BALL_ADD, dmg: 1000, cd: 4} },
+        { id: 2, count: 10, times: 50, color: "orange", skill: {type: SkillType.DASH_BLOCK, round: 2, cd: 2} },
+        { id: 3, count: 10, times: 50, color: "purple", skill: {type: SkillType.RANGE_TRIGGER, width: 4, height: 2, dmg1: 1000, dmg2: 500, round: 3, cd:3, push: true} },
+        { id: 4, count: 10, times: 50, color: "skyblue", skill: {type: SkillType.ROUND_DAMAGE, width: 3, height: 3, dmg: 2000, round: 3, cd:4, push: true} },
+        { id: 5, count: 10, times: 50, color: "cyan", skill: {type: SkillType.SOLID_BLOCK, round: 3, cd: 3} }
     ],
     distInterval: 15,
     lastDist: 0,
     gameMode: GameState.GS_PLAY,
 
     pushed: 0,
+    chooseRole: null,
+    skillRect: null,
 
     cmds : null
 }
@@ -124,24 +127,44 @@ function updatePush() {
     }
 }
 
+function startPush() {
+    game.pushed = 0;
+    rdata.balls.length = 0;
+    clearInterval(game.timer);
+    game.timer = setInterval(updatePush, 50);
+}
+
+function updateSkillEffect(effects) {
+    for (let e of effects) {
+        if (e.hp == 0) {
+            rdata.lines = removeDead(rdata.lines, e.id);
+        }
+    }
+}
+
 function onfinish() {
     while (game.running != null) {
         if (game.running.type == CmdType.PUSH) {
-            game.pushed = 0;
-            rdata.balls.length = 0;
-            clearInterval(game.timer);
-            game.timer = setInterval(updatePush, 50);
+            startPush();
             return;
+        } else if (cmd.type == CmdType.ROLE_SKILL) {
+            addSkillRange(cmd.cid, cmd.range);
+            updateSkillEffect(cmd.effects);
+        } else if (cmd.type == CmdType.REMOVE_SKILL) {
+            removeSkillRange(cmd.cid);
+        } else if (cmd.type == CmdType.SKILL_EFFECT) {
+            updateSkillEffect(cmd.effects);
         } else if (game.running.type == CmdType.WIN) {
             break;
         }
         game.running = game.cmds.shift();
     }
     if (game.cmds.length == 0) {
-        game.status = GameState.GS_AIM;
+        game.status = GameState.GS_SKILL;
         rdata.balls.length = 0;
         rdata.status = game.status;
         assignPoint(ldata.base, game.base);
+        openSkillPanel();
 
         clearInterval(game.timer);
         game.timer = -1;
@@ -293,45 +316,51 @@ function initialze() {
     loadData(function () {
         initLogic(game.base, game.distInterval, game.roles);
         initRender(ldata.lines, game.status, game.base, game.collisions, game.roles);
-        addEventListener("mousemove", (evt) => {
+        draw();
+        canvas.addEventListener("mousemove", (evt) => {
             let coord = document.getElementById("coord");
             coord.innerHTML = "坐标：" + evt.offsetX + "," + evt.offsetY;
-            if (game.status != GameState.GS_AIM) {
-                return;
+            if (game.status == GameState.GS_AIM) {
+                game.collisions.length = 0;
+                let v = {x: evt.offsetX - game.base.x, y: evt.offsetY - game.base.y};
+                //let v = {x: 400 - game.base.x, y: 626 - game.base.y};
+                game.aimDir = normalize(v);
+                coord.innerHTML += "  方向：" + game.aimDir.x + "," + game.aimDir.y;
+                aim();
+            } else if (game.status == GameState.GS_SKILL) {
+                if (game.chooseRole) {
+                    let skill = game.chooseRole.skill;
+                }
             }
-            game.collisions.length = 0;
-            let v = {x: evt.offsetX - game.base.x, y: evt.offsetY - game.base.y};
-            //let v = {x: 400 - game.base.x, y: 626 - game.base.y};
-            game.aimDir = normalize(v);
-            coord.innerHTML += "  方向：" + game.aimDir.x + "," + game.aimDir.y;
-            aim();
         });
 
-        addEventListener("mousedown", (evt) => {
-            if (game.status != GameState.GS_AIM) {
-                return;
-            }
-            game.collisions.length = 0;
-            game.status = game.gameMode;
-            game.totalDist = 0;
-            game.speed = game.basSpeed;
-            game.frame = 0;
-            rdata.status = game.status;
-            startRound(game.aimDir);
-            updateRound();
-            game.cmds = ldata.cmds;
-            console.log("cmd count:" + game.cmds.length);
-            loadBalls();
-            console.log("cmd count:" + game.cmds.length);
-            // for (let i = 0; i < 30; i++) {
-            //     console.log(objToString(game.cmds[i]));
-            // }
-            if (game.status == GameState.GS_PLAY) {
-                game.timer = setInterval(update, 10);
-            } else if (game.status == GameState.GS_DEBUG) {
-                startDebug();
-            } else if (game.status == GameState.GS_GROUP_DEBUG) {
-                startGroupDebug();
+        canvas.addEventListener("mousedown", (evt) => {
+            if (game.status == GameState.GS_AIM) {
+                game.collisions.length = 0;
+                game.status = game.gameMode;
+                game.totalDist = 0;
+                game.speed = game.basSpeed;
+                game.frame = 0;
+                rdata.status = game.status;
+                startRound(game.aimDir);
+                updateRound();
+                game.cmds = ldata.cmds;
+                loadBalls();
+                if (game.status == GameState.GS_PLAY) {
+                    game.timer = setInterval(update, 10);
+                } else if (game.status == GameState.GS_DEBUG) {
+                    startDebug();
+                } else if (game.status == GameState.GS_GROUP_DEBUG) {
+                    startGroupDebug();
+                }
+            } else if (game.status == GameState.GS_SKILL) {
+                if (pointInRange({x: evt.offsetX, y: evt.offsetY})) {
+                    let target = {
+                        x: Math.floor((evt.offsetX - RenderConfig.xoffset) / RenderConfig.side),
+                        y: Math.floor((evt.offsetY - RenderConfig.yoffset) / RenderConfig.side)
+                    }
+                    useSkill(game.chooseRole, target);
+                }
             }
         });
 
@@ -358,6 +387,35 @@ function initialze() {
             }
         })
     });   
+}
+
+function finishSkill() {
+    game.status = GameState.GS_AIM;
+    rdata.status = game.status;
+    const panel = document.getElementById("skills");
+    panel.style.display = 'none';
+}
+
+function openSkillPanel() {
+    const panel = document.getElementById("skills");
+    panel.style.display = 'block';
+}
+
+function clickSkill(n) {
+    let role = game.roles[n-1];
+    if (role.skill.type == SkillType.BALL_ADD) {
+        const btn = document.getElementById("skill"+n);
+        btn.disabled = true;
+        useSkill(role, null);
+        game.cmds = ldata.cmds;
+        game.running = game.cmds.shift();
+        onfinish();
+        draw();
+    } else if (role.skill.type == SkillType.ROUND_DAMAGE) {
+        game.chooseRole = role;
+        game.skillRect = {};
+    }
+    
 }
 
 initialze();

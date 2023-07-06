@@ -4,6 +4,7 @@ const ctx = canvas.getContext("2d");
 let rdata = {
     lines : [],
     balls : [],
+    skillRange : {},
     status : 1,
     baseLine: null,
 }
@@ -25,6 +26,24 @@ function setLines(lines) {
     for (let l of lines) {
         rdata.lines.push(copyLine(l));
     }
+}
+
+function addSkillRange(cid, ranges) {
+    let skillRanges = [];
+    for (let r of ranges) {
+        skillRanges.push({
+            x: r.x,
+            y: r.y,
+            width: r.width,
+            height: r.height,
+            color: "rgba(255, 97, 97, 100)"
+        });
+    }
+    rdata.skillRange[cid] = skillRanges;
+}
+
+function removeSkillRange(cid) {
+    rdata.skillRange[cid] = null;
 }
 
 function draw() {
@@ -88,6 +107,10 @@ function draw() {
         //用渐变填色
         ctx.fillStyle = grandient;
         ctx.fillText('赢   了', canvas.width / 2 - 100, canvas.height / 2 - 10);
+    } else if (rdata.status == GameState.GS_SKILL) {
+        for (let range of rdata.skillRange) {
+            drawRange(range);
+        }
     }
 }
 
@@ -148,6 +171,13 @@ function drawDashLine({x1, y1, x2, y2, color, width=2}) {
 }
 
 function drawRole({x, y, width, height, color}) {
+    ctx.beginPath();
+    ctx.fillStyle = color;
+    ctx.rect(x, y, width, height);
+    ctx.fill();
+}
+
+function drawRange({x, y, width, height, color}) {
     ctx.beginPath();
     ctx.fillStyle = color;
     ctx.rect(x, y, width, height);
