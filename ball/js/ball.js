@@ -10,7 +10,8 @@ const GameState = {
     GS_PLAY : 2,
     GS_FINISH : 3,
     GS_DEBUG : 4,
-    GS_GROUP_DEBUG : 5
+    GS_GROUP_DEBUG : 5,
+    GS_PUSH : 6
 }
 
 let game = {
@@ -36,6 +37,8 @@ let game = {
     distInterval: 15,
     lastDist: 0,
     gameMode: GameState.GS_PLAY,
+
+    pushed: 0,
 
     cmds : null
 }
@@ -89,10 +92,46 @@ function loadBalls() {
     game.running = cmd;
 }
 
+function updatePush() {
+    let totalPush = game.running.line * RenderConfig.side;
+    let pushPixel = 8;
+    game.pushed += pushPixel;
+
+    let temp = [];
+    for (let i = 0; i < 3; i++) {
+        temp.push(rdata.lines[i]);
+    }
+
+    for (let i = 3; i < rdata.lines.length; i++) {
+        let line = rdata.lines[i];
+        line.y1 += pushPixel;
+        line.y2 += pushPixel;
+        if (inRange(line)) {
+            temp.push(line);
+        }
+    }
+    rdata.lines = temp;
+
+    draw();
+
+    //console.log("total:" + totalPush + ", pushed:" + game.pushed);
+
+    if (game.pushed >= totalPush) {
+        console.log("push finish!");
+        game.running = game.cmds.shift();
+        setLines(ldata.lines);
+        onfinish();
+    }
+}
+
 function onfinish() {
     while (game.running != null) {
         if (game.running.type == CmdType.PUSH) {
-            setLines(ldata.lines);
+            game.pushed = 0;
+            rdata.balls.length = 0;
+            clearInterval(game.timer);
+            game.timer = setInterval(updatePush, 50);
+            return;
         } else if (game.running.type == CmdType.WIN) {
             break;
         }
@@ -111,19 +150,14 @@ function onfinish() {
             console.log("win.");
             game.status = GameState.GS_FINISH;
             rdata.status = game.status;
-            draw();
         }
+
+        draw();
     }
 }
 
 function ballMove(ball, dist) {
     let d = dist - ball.dist;
-    // if (ball.nextTarget) {
-    //     let nextDist = length({x:ball.x-ball.nextTarget.x, y:ball.y-ball.nextTarget.y});
-    //     if (nextDist < d) {
-    //         console.error("ball " + ball.id + " move over next target, game.running.id=" + game.running.id);
-    //     }
-    // }
     ball.x += ball.dir.x * d;
     ball.y += ball.dir.y * d;
     ball.totalDist += d;

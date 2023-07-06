@@ -130,6 +130,9 @@ function initLogic(base, interLen, roles) {
         }
     }
 
+    console.log("config enemy count:" + config.stage.monsters.length);
+    console.log("enemyCount:" + ldata.enemyCount);
+
     hidenInline(ldata.lines);
 }
 
@@ -321,6 +324,7 @@ function updateRound() {
                     // 中间可以插入一些死亡触发的技能，有新的死亡id可以加入进来，如果触发移动或者召唤，则传入null
                     checkCollide([enemy.id]);
                     ldata.enemyCount -= 1;
+                    // console.log("enemyCount:" + ldata.enemyCount);
                     if (ldata.enemyCount == 0) {
                         ldata.cmds.push(cmd);
                         ldata.cmds.push({type: CmdType.WIN});
@@ -341,13 +345,13 @@ function updateRound() {
     // 回合结束推进
     ldata.round += 1;
     let push_line = 0;
-    if (ldata.lines.length == 0 && ldata.startLine > 0) {
+    if (ldata.lines.length <= config.frameLines.length && ldata.startLine > 0) {
         push_line = Math.min(ldata.startLine, 10);
     } else if (ldata.pushed + 1 < config.stage.push.length) {
         let next_push = config.stage.push[ldata.pushed + 1];
         if (ldata.round >= next_push.round) {
             push_line = Math.min(ldata.startLine, next_push.line);
-            ldata.pushed = next_push;
+            ldata.pushed += 1;
         }
     }
 
@@ -375,6 +379,9 @@ function updateRound() {
 
             if (enemy.visible && !visible) {
                 // 底线移除
+                ldata.enemyCount -= 1;
+                // console.log("enemy " + eid + " invisible.");
+                // console.log("enemyCount:" + ldata.enemyCount);
             }
             enemy.visible = visible;
 
@@ -388,12 +395,12 @@ function updateRound() {
         hidenInline(ldata.lines);
         
         ldata.cmds.push({type: CmdType.PUSH, line: push_line});
-    }
-    
+    } 
 
     ldata.cmds.push({type: CmdType.ROUND_END});
     if (ldata.nextBase) {
         assignPoint(ldata.nextBase, ldata.base);
     }
+    
     console.timeEnd("round");
 }
