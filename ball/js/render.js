@@ -4,6 +4,7 @@ const ctx = canvas.getContext("2d");
 let rdata = {
     lines : [],
     balls : [],
+    skillSelect: null,
     skillRange : {},
     status : 1,
     baseLine: null,
@@ -36,14 +37,14 @@ function addSkillRange(cid, ranges) {
             y: r.y,
             width: r.width,
             height: r.height,
-            color: "rgba(255, 97, 97, 100)"
+            color: "rgba(255, 97, 97, 0.5)"
         });
     }
     rdata.skillRange[cid] = skillRanges;
 }
 
 function removeSkillRange(cid) {
-    rdata.skillRange[cid] = null;
+    delete rdata.skillRange[cid];
 }
 
 function draw() {
@@ -58,6 +59,12 @@ function draw() {
     for (let l of rdata.lines) {
         drawLine(l);
         drawNormal(l);
+    }
+
+    for (let cid in rdata.skillRange) {
+        let ranges = rdata.skillRange[cid];
+        for (let r of ranges)
+            drawRange(r);
     }
 
     for (let ball of rdata.balls) {
@@ -108,8 +115,9 @@ function draw() {
         ctx.fillStyle = grandient;
         ctx.fillText('赢   了', canvas.width / 2 - 100, canvas.height / 2 - 10);
     } else if (rdata.status == GameState.GS_SKILL) {
-        for (let range of rdata.skillRange) {
-            drawRange(range);
+        if (rdata.skillSelect) {
+            rdata.skillSelect.color = "rgba(49, 194, 238, 0.5)";
+            drawRange(rdata.skillSelect);
         }
     }
 }

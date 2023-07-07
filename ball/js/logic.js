@@ -72,21 +72,11 @@ const CmdType = {
 }
 
 function inRange(line) {
-    let rect = ldata.rect;
-    if (line.y1 < rect.top || line.y1 > rect.down || line.y2 < rect.top || line.y2 > rect.down) {
-        return false;
-    } else {
-        return true;
-    }
+    return lineInRect(line, ldata.rect);
 }
 
 function pointInRange(point) {
-    let rect = ldata.rect;
-    if (point.x < rect.left || point.x > rect.right || point.y < rect.top || point.y > rect.bottom) {
-        return false;
-    } else {
-        return true;
-    }
+    return pointInRect(point, ldata.rect);
 }
 
 function initLogic(base, interLen, roles) {
@@ -97,7 +87,7 @@ function initLogic(base, interLen, roles) {
     ldata.enemyCount = 0;
     ldata.baseLine = {x1: 0, y1: base.y, x2: canvas.width, y2: base.y, color: "#aaaaaa", width:1};
     ldata.roles = roles;
-    ldata.rect = {left: GameRect.left, right: GameRect.right, top: GameRect.top + RenderConfig.side, down: GameRect.down};
+    ldata.rect = {left: GameRect.left, right: GameRect.right, top: GameRect.top + RenderConfig.side, bottom: GameRect.bottom};
     console.log(objToString(ldata.rect));
 
     let max_line = config.stage.max_line;
@@ -112,47 +102,19 @@ function initLogic(base, interLen, roles) {
     ldata.startLine = max_line - RenderConfig.height;
     let yoffset = ldata.startLine * RenderConfig.side;
 
-    for (let line of config.lines) {
-        let l = copyLine(line);
-        l.y1 -= yoffset;
-        l.y2 -= yoffset;
+    ldata.enemys = copyEnemies(config.enemys);
+    for (let eid in ldata.enemys) {
+        ldata.enemyCount += 1;
+        let enemy = ldata.enemys[eid];
+        for (let line of enemy.lines) {
+            line.y1 -= yoffset;
+            line.y2 -= yoffset;
+        }
+        enemy.rect.top -= yoffset;
+        enemy.rect.bottom -= yoffset;
 
-        let visible = inRange(l);
-        if (ldata.enemys[line.mid] == null) {
-            let monsterData = config.stage_monsters[line.mid];
-            let monsterCfg = getMonster(monsterData.cid);
-            ldata.enemys[line.mid] = {
-                id : line.mid,
-                point : monsterData.point,
-                hp : monsterCfg.hp,
-                visible : visible,
-                obj : config.objects[monsterCfg.type],
-                lines : [l],
-                rect: {
-                    left: Math.min(l.x1, l.x2), 
-                    top: Math.min(l.y1, l.y2), 
-                    right: Math.max(l.x1, l.x2), 
-                    bottom: Math.max(l.y1, l.y2)
-                }
-            };
-            ldata.enemyCount += 1;
-        } else {
-            // 只要有一部分看不见，整体隐藏
-            let enemy = ldata.enemys[line.mid];
-            enemy.visible &= visible;
-            enemy.lines.push(l);
-
-            let rect = {
-                left: Math.min(l.x1, l.x2), 
-                top: Math.min(l.y1, l.y2), 
-                right: Math.max(l.x1, l.x2), 
-                bottom: Math.max(l.y1, l.y2)
-            }
-
-            enemy.rect.left = Math.min(enemy.rect.left, rect.left);
-            enemy.rect.top = Math.min(enemy.rect.top, rect.top);
-            enemy.rect.right = Math.max(enemy.rect.right, rect.right);
-            enemy.rect.down = Math.max(enemy.rect.down, rect.down);
+        if (enemy.rect.top < ldata.rect.top || enemy.rect.bottom > ldata.rect.bottom) {
+            enemy.visible = false;
         }
     }
 
@@ -160,8 +122,8 @@ function initLogic(base, interLen, roles) {
     for (let eid in ldata.enemys) {
         let enemy = ldata.enemys[eid];
         if (enemy.visible) {
-            for (let line of enemy.lines)
-                ldata.lines.push(line);
+            for (let l of enemy.lines)
+                ldata.lines.push(l);
         }
     }
 
@@ -281,25 +243,23 @@ function checkCollide(deads) {
 
 function getSkillRange(point, width, height) {
     return {
-        x: (point.x - Math.floor(width / 2)) * RenderConfig.side,
-        y: (point.y - Math.floor(height / 2)) * RenderConfig.side,
+        x: (point.x - Math.floor(width / 2)) * RenderConfig.side + RenderConfig.xoffset,
+        y: (point.y - Math.floor(height / 2)) * RenderConfig.side + RenderConfig.yoffset,
         width: width * RenderConfig.side,
         height: height * RenderConfig.side
     }
 }
 
-function rectInserect(rect1, rect2) {
-
-}
-
 function effectSkill(skill) {
     let effects = [];
     skill.round += 1;
+    //console.log("skill.rect:" + objToString(skill.rect));
     for (let eid in ldata.enemys) {
         let enemy = ldata.enemys[eid];
         if (enemy.visible && enemy.hp > 0 && rectInserect(enemy.rect, skill.rect)) {
-            enemy.hp -= skill.dmg;
-            effects.push({id:eid, dmg: skill.dmg, hp: enemy.hp});
+            //console.log("inserect enemy rect:" + objToString(enemy.rect));
+            enemy.hp -= skill.cfg.dmg;
+            effects.push({id:eid, dmg: skill.cfg.dmg, hp: enemy.hp});
             if (enemy.hp <= 0) {
                 onEmenyDead(eid);
                 ldata.enemyCount -= 1;
@@ -331,16 +291,16 @@ function checkSkillValid() {
 }
 
 function useSkill(role, target) {
-    let cmd = {type: CmdType.ROLE_SKILL, cid: role.id, target: target};
-    ldata.cmds.push(cmd);
     let cfg = role.skill;
+    let cmd = {type: CmdType.ROLE_SKILL, cid: role.id, target: target, cd: cfg.cd, range: []};
+    ldata.cmds.push(cmd);
     if (cfg.type == SkillType.BALL_ADD) {
         role.ballDmg = cfg.dmg;
     } else if (cfg.type == SkillType.ROUND_DAMAGE) {
-        let range = getSkillRange(target, width, height);
+        let range = getSkillRange(target, cfg.width, cfg.height);
         let skill = {cid: role.id, cfg: cfg, rect:{left: range.x, top: range.y, right: range.x + range.width, bottom: range.y + range.height}, round: 0};
         ldata.skills.push(skill);
-        cmd.range = range;
+        cmd.range.push(range);
         cmd.effects = effectSkill(skill);
     }
 
@@ -412,17 +372,18 @@ function pushMap(pushLine) {
             for (let line of enemy.lines) {
                 line.y1 += yoffset;
                 line.y2 += yoffset;
-                if (visible && !inRange(line)) {
-                    visible = false;
-                }
                 line.hide = 0;
+            }
+
+            enemy.rect.top += yoffset;
+            enemy.rect.bottom += yoffset;
+            if (enemy.rect.top < ldata.rect.top || enemy.rect.bottom > ldata.rect.bottom) {
+                visible = false;
             }
 
             if (enemy.visible && !visible) {
                 // 底线移除
                 ldata.enemyCount -= 1;
-                // console.log("enemy " + eid + " invisible.");
-                // console.log("enemyCount:" + ldata.enemyCount);
             }
             enemy.visible = visible;
 

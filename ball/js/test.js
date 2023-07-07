@@ -87,3 +87,13 @@ function testHeap() {
         console.log(h.pop());
     }
 }
+
+function testRect() {
+    let rt1 = {left:104,top:149,right:248,bottom:293};
+    let rt2 = {left:56,top:437,right:152,bottom:533};
+    let rt3 = {left:104,top:293,right:152,bottom:341};
+    console.log("rt2.top=" + rt2.top + ", rt1.bottom=" + rt1.bottom);
+    console.log(rt2.top >= rt1.bottom);
+    console.log(rectInserect(rt2, rt1));
+    console.log(rectInserect(rt3, rt1));
+}

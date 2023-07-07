@@ -59,6 +59,34 @@ function copyPoint(pt) {
     return {x: pt.x, y: pt.y};
 }
 
+function copyRect(rect) {
+    return {left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom};
+}
+
+function rectInserect(rect1, rect2) {
+    if (rect1.left >= rect2.right || rect2.left >= rect1.right ||
+        rect1.top >= rect2.bottom || rect2.top >= rect1.bottom)
+        return false;
+    else
+        return true;
+}
+
+function lineInRect(line, rect) {
+    if (line.y1 < rect.top || line.y1 > rect.bottom || line.y2 < rect.top || line.y2 > rect.bottom) {
+        return false;
+    } else {
+        return true;
+    }
+}
+
+function pointInRect(point, rect) {
+    if (point.x < rect.left || point.x > rect.right || point.y < rect.top || point.y > rect.bottom) {
+        return false;
+    } else {
+        return true;
+    }
+}
+
 function reflectVector(incident, normal) {
     let dt = dot(incident, normal);
     let r = {

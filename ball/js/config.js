@@ -10,17 +10,17 @@ let GameRect = {
     left: RenderConfig.xoffset,
     top: RenderConfig.yoffset,
     right: RenderConfig.width * RenderConfig.side + RenderConfig.xoffset,
-    down: RenderConfig.height * RenderConfig.side + RenderConfig.yoffset
+    bottom: RenderConfig.height * RenderConfig.side + RenderConfig.yoffset
 }
 
 let config = {
     frameLines : [
         {x1: GameRect.left, y1: GameRect.top, x2: GameRect.right, y2: GameRect.top, color: "#00aa11", hide:0},
-        {x1: GameRect.right, y1: GameRect.top, x2: GameRect.right, y2: GameRect.down, color: "#00aa11", hide:0},
-        {x1: GameRect.left, y1: GameRect.down, x2: GameRect.left, y2: GameRect.top, color: "#00aa11", hide:0},
+        {x1: GameRect.right, y1: GameRect.top, x2: GameRect.right, y2: GameRect.bottom, color: "#00aa11", hide:0},
+        {x1: GameRect.left, y1: GameRect.bottom, x2: GameRect.left, y2: GameRect.top, color: "#00aa11", hide:0},
     ],
 
-    lines: [],
+    enemys: [],
 
     objects: null,
     monsters: null,
@@ -45,7 +45,7 @@ function makeLines(id, point, obj) {
         }
         let start = obj.points[i];
         let end = obj.points[j];
-        lines.push({
+        let line = {
             x1: start.x + lt.x,
             y1: start.y + lt.y,
             x2: end.x + lt.x,
@@ -53,9 +53,47 @@ function makeLines(id, point, obj) {
             color: "#00aa11",
             mid: id,
             hide: 0
-        });
+        };
+        line.normal = normalize(normalVector(vector(line)));
+        lines.push(line);
     }
     return lines;
+}
+
+function makeRect(lines) {
+    let rect = {};
+    for (let l of lines) {
+        let rl = {
+            left: Math.min(l.x1, l.x2),
+            top: Math.min(l.y1, l.y2),
+            right: Math.max(l.x1, l.x2),
+            bottom: Math.max(l.y1, l.y2)
+        };
+        if (rect.left == undefined) {
+            rect.left = rl.left;
+        } else {
+            rect.left = Math.min(rect.left, rl.left);
+        }
+
+        if (rect.top == undefined) {
+            rect.top = rl.top;
+        } else {
+            rect.top = Math.min(rect.top, rl.top);
+        }
+
+        if (rect.right == undefined) {
+            rect.right = rl.right;
+        } else {
+            rect.right = Math.max(rect.right, rl.right);
+        }
+
+        if (rect.bottom == undefined) {
+            rect.bottom = rl.bottom;
+        } else {
+            rect.bottom = Math.max(rect.bottom, rl.bottom);
+        }
+    }
+    return rect;
 }
 
 function getMonster(cid) {
@@ -95,22 +133,43 @@ function loadData(onfinish) {
                             y: y * RenderConfig.side + obj.anchor.y + RenderConfig.yoffset
                         }
                     }
+
                     let lines = makeLines(m.id, m.point, obj);
-                    for (let j = 0; j < lines.length; j++) {
-                        config.lines.push(lines[j]);
-                    }
+                    config.enemys.push({
+                        id : m.id,
+                        point : m.point,
+                        hp : mc.hp,
+                        obj : obj,
+                        lines : lines,
+                        rect: makeRect(lines)
+                    });
                 }
 
                 for (let i = 0; i < config.frameLines.length; i++) {
                     config.frameLines[i].normal = normalize(normalVector(vector(config.frameLines[i])));
                 }
-
-                // 通过线段数据生成法线向量
-                for (let i = 0; i < config.lines.length; i++) {
-                    config.lines[i].normal = normalize(normalVector(vector(config.lines[i])));
-                }
                 onfinish();
             });
         });
     });
+}
+
+function copyEnemies(enemys) {
+    let ret = {};
+    for (let enemy of enemys) {
+        let e = {
+            id: enemy.id,
+            point: copyPoint(enemy.point),
+            hp: enemy.hp,
+            visible: true,
+            obj: enemy.obj,
+            lines: [],
+            rect: copyRect(enemy.rect)
+        }
+        for (let l of enemy.lines) {
+            e.lines.push(l);
+        }
+        ret[e.id] = e;
+    }
+    return ret;
 }

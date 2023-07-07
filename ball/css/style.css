@@ -27,6 +27,7 @@ canvas {
 
 .skill1:disabled {
     background-color: gray;
+    color: aliceblue;
 }
 
 .skill2 {
@@ -45,6 +46,7 @@ canvas {
 
 .skill2:disabled {
     background-color: gray;
+    color: aliceblue;
 }
 
 .skill3 {
@@ -63,6 +65,7 @@ canvas {
 
 .skill3:disabled {
     background-color: gray;
+    color: aliceblue;
 }
 
 .skill4 {
@@ -81,6 +84,7 @@ canvas {
 
 .skill4:disabled {
     background-color: gray;
+    color: aliceblue;
 }
 
 .skill5 {
@@ -99,6 +103,7 @@ canvas {
 
 .skill5:disabled {
     background-color: gray;
+    color: aliceblue;
 }
 
 .finish {

@@ -32,7 +32,7 @@ let game = {
         { id: 1, count: 10, times: 50, color: "red", skill: {type: SkillType.BALL_ADD, dmg: 1000, cd: 4} },
         { id: 2, count: 10, times: 50, color: "orange", skill: {type: SkillType.DASH_BLOCK, round: 2, cd: 2} },
         { id: 3, count: 10, times: 50, color: "purple", skill: {type: SkillType.RANGE_TRIGGER, width: 4, height: 2, dmg1: 1000, dmg2: 500, round: 3, cd:3, push: true} },
-        { id: 4, count: 10, times: 50, color: "skyblue", skill: {type: SkillType.ROUND_DAMAGE, width: 3, height: 3, dmg: 2000, round: 3, cd:4, push: true} },
+        { id: 4, count: 10, times: 50, color: "skyblue", skill: {type: SkillType.ROUND_DAMAGE, width: 3, height: 3, dmg: 2000, round: 4, cd:4, push: true} },
         { id: 5, count: 10, times: 50, color: "cyan", skill: {type: SkillType.SOLID_BLOCK, round: 3, cd: 3} }
     ],
     distInterval: 15,
@@ -41,7 +41,7 @@ let game = {
 
     pushed: 0,
     chooseRole: null,
-    skillRect: null,
+    skillCD: [0, 0, 0, 0, 0],
 
     cmds : null
 }
@@ -144,17 +144,43 @@ function updateSkillEffect(effects) {
 
 function onfinish() {
     while (game.running != null) {
-        if (game.running.type == CmdType.PUSH) {
+        let cmd = game.running;
+        if (cmd.type == CmdType.PUSH) {
             startPush();
             return;
         } else if (cmd.type == CmdType.ROLE_SKILL) {
-            addSkillRange(cmd.cid, cmd.range);
-            updateSkillEffect(cmd.effects);
+            console.log("skill cmd:" + objToString(cmd));
+            if (cmd.range) {
+                addSkillRange(cmd.cid, cmd.range);
+            }
+            if (cmd.effects) {
+                updateSkillEffect(cmd.effects);
+            }
+            
+            if (cmd.cd > 0) {
+                const btn = document.getElementById("skill"+cmd.cid);
+                btn.disabled = true;
+                btn.innerHTML = cmd.cd;
+                game.skillCD[cmd.cid - 1] = cmd.cd;
+            }
         } else if (cmd.type == CmdType.REMOVE_SKILL) {
             removeSkillRange(cmd.cid);
         } else if (cmd.type == CmdType.SKILL_EFFECT) {
             updateSkillEffect(cmd.effects);
-        } else if (game.running.type == CmdType.WIN) {
+        } else if (cmd.type == CmdType.ROUND_END) {
+            for (let i = 0; i < game.skillCD.length; i++) {
+                if (game.skillCD[i] > 0) {
+                    game.skillCD[i] -= 1;
+                    const btn = document.getElementById("skill"+(i+1));
+                    if (game.skillCD[i] <= 0) {
+                        btn.innerHTML = "";
+                        btn.disabled = false;
+                    } else {
+                        btn.innerHTML = game.skillCD[i];
+                    }
+                }
+            }
+        } else if (cmd.type == CmdType.WIN) {
             break;
         }
         game.running = game.cmds.shift();
@@ -166,8 +192,10 @@ function onfinish() {
         assignPoint(ldata.base, game.base);
         openSkillPanel();
 
-        clearInterval(game.timer);
-        game.timer = -1;
+        if (game.timer > 0) {
+            clearInterval(game.timer);
+            game.timer = -1;
+        }
 
         if (game.running && game.running.type == CmdType.WIN) {
             console.log("win.");
@@ -312,6 +340,27 @@ function update() {
     draw();
 }
 
+function getGridPoint(x, y) {
+    return {
+        x: Math.floor((x - RenderConfig.xoffset) / RenderConfig.side), 
+        y: Math.floor((y - RenderConfig.yoffset) / RenderConfig.side)
+    };
+}
+
+function getSkillSelectRange(role, x, y) {
+    let skill = role.skill;
+    let p = getGridPoint(x, y);
+    return getSkillRange(p, skill.width, skill.height);
+}
+
+function doUseSkill(role, target) {
+    useSkill(role, target);
+    game.cmds = ldata.cmds;
+    game.running = game.cmds.shift();
+    onfinish();
+    draw();
+}
+
 function initialze() {
     loadData(function () {
         initLogic(game.base, game.distInterval, game.roles);
@@ -328,9 +377,13 @@ function initialze() {
                 coord.innerHTML += "  方向：" + game.aimDir.x + "," + game.aimDir.y;
                 aim();
             } else if (game.status == GameState.GS_SKILL) {
-                if (game.chooseRole) {
-                    let skill = game.chooseRole.skill;
+                if (game.chooseRole && pointInRange({x: evt.offsetX, y: evt.offsetY})) {
+                    let range = getSkillSelectRange(game.chooseRole, evt.offsetX, evt.offsetY);
+                    rdata.skillSelect = range;
+                } else {
+                    rdata.skillSelect = null;
                 }
+                draw();
             }
         });
 
@@ -354,12 +407,11 @@ function initialze() {
                     startGroupDebug();
                 }
             } else if (game.status == GameState.GS_SKILL) {
-                if (pointInRange({x: evt.offsetX, y: evt.offsetY})) {
-                    let target = {
-                        x: Math.floor((evt.offsetX - RenderConfig.xoffset) / RenderConfig.side),
-                        y: Math.floor((evt.offsetY - RenderConfig.yoffset) / RenderConfig.side)
-                    }
-                    useSkill(game.chooseRole, target);
+                if (game.chooseRole && pointInRange({x: evt.offsetX, y: evt.offsetY})) {
+                    let target = getGridPoint(evt.offsetX, evt.offsetY);
+                    doUseSkill(game.chooseRole, target);
+                    rdata.skillSelect = null;
+                    game.chooseRole = null;
                 }
             }
         });
@@ -403,22 +455,20 @@ function openSkillPanel() {
 
 function clickSkill(n) {
     let role = game.roles[n-1];
+    game.chooseRole = null;
+    rdata.skillSelect = null;
     if (role.skill.type == SkillType.BALL_ADD) {
-        const btn = document.getElementById("skill"+n);
-        btn.disabled = true;
-        useSkill(role, null);
-        game.cmds = ldata.cmds;
-        game.running = game.cmds.shift();
-        onfinish();
-        draw();
+        doUseSkill(role, null);
     } else if (role.skill.type == SkillType.ROUND_DAMAGE) {
         game.chooseRole = role;
-        game.skillRect = {};
+        game.skillRect = getSkillRange({x:0, y:0}, role.skill.width, role.skill.height);
+    } else {
+        alert("开发中...");
     }
-    
 }
 
 initialze();
 //test1();
 //test();
 //testHeap();
+//testRect();
