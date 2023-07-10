@@ -21,9 +21,9 @@ let game = {
     collisions : [],
     base: {x: 200, y: 552},
     timer: -1,
-    basSpeed: 3,
+    basSpeed: 8,
     speed: 1,
-    speedAdd: 0.1,
+    speedAdd: 0,
     frame: 0,
     running: null,
     totalDist: 0,
@@ -32,7 +32,7 @@ let game = {
         { id: 1, count: 10, times: 50, color: "red", skill: {type: SkillType.BALL_ADD, dmg: 1000, cd: 4} },
         { id: 2, count: 10, times: 50, color: "orange", skill: {type: SkillType.DASH_BLOCK, round: 2, cd: 2} },
         { id: 3, count: 10, times: 50, color: "purple", skill: {type: SkillType.RANGE_TRIGGER, width: 4, height: 2, dmg1: 1000, dmg2: 500, round: 3, cd:3, push: true} },
-        { id: 4, count: 10, times: 50, color: "skyblue", skill: {type: SkillType.ROUND_DAMAGE, width: 3, height: 3, dmg: 2000, round: 4, cd:4, push: true} },
+        { id: 4, count: 10, times: 50, color: "skyblue", skill: {type: SkillType.ROUND_DAMAGE, width: 3, height: 3, dmg: 5000, round: 4, cd:4, push: true} },
         { id: 5, count: 10, times: 50, color: "cyan", skill: {type: SkillType.SOLID_BLOCK, round: 3, cd: 3} }
     ],
     distInterval: 15,
@@ -98,26 +98,28 @@ function loadBalls() {
 function updatePush() {
     let totalPush = game.running.line * RenderConfig.side;
     let pushPixel = 8;
-    game.pushed += pushPixel;
+    if (rdata.lines.length > 3) {
+        game.pushed += pushPixel;
 
-    let temp = [];
-    for (let i = 0; i < 3; i++) {
-        temp.push(rdata.lines[i]);
-    }
-
-    for (let i = 3; i < rdata.lines.length; i++) {
-        let line = rdata.lines[i];
-        line.y1 += pushPixel;
-        line.y2 += pushPixel;
-        if (inRange(line)) {
-            temp.push(line);
+        let temp = [];
+        for (let i = 0; i < 3; i++) {
+            temp.push(rdata.lines[i]);
         }
+    
+        for (let i = 3; i < rdata.lines.length; i++) {
+            let line = rdata.lines[i];
+            line.y1 += pushPixel;
+            line.y2 += pushPixel;
+            if (inRange(line)) {
+                temp.push(line);
+            }
+        }
+        rdata.lines = temp;
+    
+        draw();
+    } else {
+        game.pushed = totalPush;
     }
-    rdata.lines = temp;
-
-    draw();
-
-    //console.log("total:" + totalPush + ", pushed:" + game.pushed);
 
     if (game.pushed >= totalPush) {
         console.log("push finish!");
@@ -136,7 +138,7 @@ function startPush() {
 
 function updateSkillEffect(effects) {
     for (let e of effects) {
-        if (e.hp == 0) {
+        if (e.hp <= 0) {
             rdata.lines = removeDead(rdata.lines, e.id);
         }
     }
@@ -201,6 +203,8 @@ function onfinish() {
             console.log("win.");
             game.status = GameState.GS_FINISH;
             rdata.status = game.status;
+            rdata.skillSelect = null;
+            rdata.skillRange = {};
         }
 
         draw();
@@ -389,22 +393,24 @@ function initialze() {
 
         canvas.addEventListener("mousedown", (evt) => {
             if (game.status == GameState.GS_AIM) {
-                game.collisions.length = 0;
-                game.status = game.gameMode;
-                game.totalDist = 0;
-                game.speed = game.basSpeed;
-                game.frame = 0;
-                rdata.status = game.status;
-                startRound(game.aimDir);
-                updateRound();
-                game.cmds = ldata.cmds;
-                loadBalls();
-                if (game.status == GameState.GS_PLAY) {
-                    game.timer = setInterval(update, 10);
-                } else if (game.status == GameState.GS_DEBUG) {
-                    startDebug();
-                } else if (game.status == GameState.GS_GROUP_DEBUG) {
-                    startGroupDebug();
+                if (game.aimDir.y < 0) {
+                    game.collisions.length = 0;
+                    game.status = game.gameMode;
+                    game.totalDist = 0;
+                    game.speed = game.basSpeed;
+                    game.frame = 0;
+                    rdata.status = game.status;
+                    startRound(game.aimDir);
+                    updateRound();
+                    game.cmds = ldata.cmds;
+                    loadBalls();
+                    if (game.status == GameState.GS_PLAY) {
+                        game.timer = setInterval(update, 10);
+                    } else if (game.status == GameState.GS_DEBUG) {
+                        startDebug();
+                    } else if (game.status == GameState.GS_GROUP_DEBUG) {
+                        startGroupDebug();
+                    }
                 }
             } else if (game.status == GameState.GS_SKILL) {
                 if (game.chooseRole && pointInRange({x: evt.offsetX, y: evt.offsetY})) {
@@ -442,10 +448,14 @@ function initialze() {
 }
 
 function finishSkill() {
-    game.status = GameState.GS_AIM;
-    rdata.status = game.status;
-    const panel = document.getElementById("skills");
-    panel.style.display = 'none';
+    if (game.status != GameState.GS_FINISH) {
+        game.status = GameState.GS_AIM;
+        rdata.status = game.status;
+        const panel = document.getElementById("skills");
+        panel.style.display = 'none';
+    } else {
+        alert("游戏结束，刷新重开！");
+    }
 }
 
 function openSkillPanel() {
