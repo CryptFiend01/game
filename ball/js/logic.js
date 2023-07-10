@@ -55,16 +55,19 @@ let ldata = {
 
     win : false,
 
-    cmds: []
+    cmds: [],
+
+    ops: []
 };
 
 const CmdType = {
     CREATE_BALL : 1,
     COLLIDE : 2,
-    ROLE_SKILL: 3,
-    ENEMY_SKILL: 4,
-    REMOVE_SKILL : 5,
-    SKILL_EFFECT : 6,
+    HIT: 3,
+    ROLE_SKILL: 4,
+    ENEMY_SKILL: 5,
+    REMOVE_SKILL : 6,
+    SKILL_EFFECT : 7,
     PUSH: 10,
     ROUND_END: 11,
     WIN : 12,
@@ -206,7 +209,6 @@ function calcCollide(ball) {
             ball.dist += (ball.id - 1) * ldata.interLen;
         }
     } else {
-        console.log("collide null:");
         ball.dist = 0;
     }
 }
@@ -291,6 +293,7 @@ function checkSkillValid() {
 }
 
 function useSkill(role, target) {
+    ldata.ops.push({op: "skill", rid: role.id, target: copyPoint(target)});
     let cfg = role.skill;
     let cmd = {type: CmdType.ROLE_SKILL, cid: role.id, target: target, cd: cfg.cd, range: []};
     ldata.cmds.push(cmd);
@@ -321,6 +324,7 @@ function skillRound() {
 }
 
 function startRound(aimDir) {
+    ldata.ops.push({op: "ball", dir: copyPoint(aimDir)})
     ldata.cmds.length = 0;
     assignPoint(aimDir, ldata.begin);
 
@@ -340,7 +344,8 @@ function startRound(aimDir) {
                 dir: ldata.begin,
                 times: 0,
                 atLine: null,
-                ignores: []
+                ignores: [],
+                hit: 0
             });
             ldata.cmds.push({
                 type: CmdType.CREATE_BALL,

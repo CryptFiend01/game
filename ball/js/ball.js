@@ -24,7 +24,6 @@ let game = {
     basSpeed: 8,
     speed: 1,
     speedAdd: 0,
-    frame: 0,
     running: null,
     totalDist: 0,
     times: 50,
@@ -42,6 +41,9 @@ let game = {
     pushed: 0,
     chooseRole: null,
     skillCD: [0, 0, 0, 0, 0],
+
+    replay: [],
+    isPlayReplay: false,
 
     cmds : null
 }
@@ -151,7 +153,6 @@ function onfinish() {
             startPush();
             return;
         } else if (cmd.type == CmdType.ROLE_SKILL) {
-            console.log("skill cmd:" + objToString(cmd));
             if (cmd.range) {
                 addSkillRange(cmd.cid, cmd.range);
             }
@@ -205,9 +206,14 @@ function onfinish() {
             rdata.status = game.status;
             rdata.skillSelect = null;
             rdata.skillRange = {};
+            console.log(JSON.stringify(ldata.ops));
         }
 
         draw();
+
+        if (game.isPlayReplay) {
+            playNext();
+        }
     }
 }
 
@@ -270,8 +276,7 @@ function aim() {
 
 function run(pass) {
     let cmd = game.running;
-    if (cmd.type != CmdType.COLLIDE) {
-        onfinish();
+    if (cmd.type != CmdType.COLLIDE && cmd.type != CmdType.HIT) {
         return -1;
     }
 
@@ -310,7 +315,7 @@ function run(pass) {
         }
 
         // 移除死亡的单位
-        if (cmd.dmg != null && cmd.dmg.hp == 0) {
+        if (cmd.dmg != null && cmd.dmg.hp <= 0) {
             rdata.lines = removeDead(rdata.lines, cmd.dmg.id);
         }
 
@@ -398,7 +403,6 @@ function initialze() {
                     game.status = game.gameMode;
                     game.totalDist = 0;
                     game.speed = game.basSpeed;
-                    game.frame = 0;
                     rdata.status = game.status;
                     startRound(game.aimDir);
                     updateRound();
@@ -447,6 +451,27 @@ function initialze() {
     });   
 }
 
+function playNext() {
+    let op = game.replay.shift();
+    if (op.op == "skill") {
+        let role = game.roles[op.rid - 1];
+        doUseSkill(role, op.target);
+    } else if (op.op == "ball") {
+        assignPoint(op.dir, game.aimDir);
+        game.collisions.length = 0;
+        game.status = GameState.GS_PLAY;
+        game.totalDist = 0;
+        game.speed = game.basSpeed;
+        rdata.status = game.status;
+        startRound(game.aimDir);
+        updateRound();
+        game.cmds = ldata.cmds;
+        loadBalls();
+        //console.log("ball cmds:" + objToString(game.cmds));
+        game.timer = setInterval(update, 10);
+    }
+}
+
 function finishSkill() {
     if (game.status != GameState.GS_FINISH) {
         game.status = GameState.GS_AIM;
@@ -475,6 +500,37 @@ function clickSkill(n) {
     } else {
         alert("开发中...");
     }
+}
+
+function onLoadReplay() {
+    if (game.isPlayReplay) {
+        return;
+    }
+    game.replay = JSON.parse(`[{"op":"ball","dir":{"x":0.49513253046682293,"y":-0.8688174591210289}},{"op":"skill","rid":4,"target":{"x":4,"y":2}},{"op":"ball","dir":{"x":-0.46590041397228493,"y":-0.8848371625674712}},{"op":"ball","dir":{"x":0.9887287120386224,"y":-0.14971818189667802}},{"op":"ball","dir":{"x":0.9812449729172427,"y":-0.19276489079871362}},{"op":"ball","dir":{"x":0.9895165780714621,"y":-0.1444193259980946}},{"op":"ball","dir":{"x":-0.07254272312081671,"y":-0.9973653058544881}},{"op":"skill","rid":4,"target":{"x":2,"y":4}},{"op":"ball","dir":{"x":-0.9554604493220478,"y":-0.2951191789452365}},{"op":"ball","dir":{"x":-0.11739051815670926,"y":-0.9930858302517961}},{"op":"ball","dir":{"x":0.9482040612282301,"y":-0.3176618615293486}},{"op":"ball","dir":{"x":0.9760884762056063,"y":-0.2173736106766812}},{"op":"skill","rid":4,"target":{"x":1,"y":4}},{"op":"ball","dir":{"x":-0.13987816192827124,"y":-0.9901687229031062}}]`);
+}
+
+function checkTime() {
+    console.time("check total");
+    while (game.replay.length > 0) {
+        let rep = game.replay.shift();
+        if (rep.op == "skill") {
+            let role = game.roles[rep.rid - 1];
+            useSkill(role, rep.target);
+        } else if (rep.op == "ball") {
+            startRound(rep.dir);
+            updateRound();
+        }
+    }
+    console.timeEnd("check total");
+}
+
+function onPlay() {
+    if (game.replay.length == 0) {
+        alert("没有有效的录像信息……");
+        return;
+    }
+    game.isPlayReplay = true;
+    playNext();
 }
 
 initialze();

@@ -118,3 +118,17 @@ canvas {
 .finish:hover {
     background-color: rgb(152, 230, 187);
 }
+
+.btn-replay {
+    margin: 5px;
+    border: 0;
+    background-color: rgb(37, 139, 223);
+    border-radius: 5px;
+    color: rgb(241, 241, 241);
+    width: 190px;
+    height: 45px;
+}
+
+.btn-replay:hover {
+    background-color: rgb(152, 177, 230);
+}
