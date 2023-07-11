@@ -49,6 +49,16 @@ let game = {
     cmds : null
 }
 
+function hidden(id) {
+    let e = document.getElementById(id);
+    e.style.display = 'none';
+}
+
+function show(id, display) {
+    let e = document.getElementById(id);
+    e.style.display = display;
+}
+
 function objToString(o) {
     let s = "{";
     let sep = "";
@@ -364,6 +374,7 @@ function getSkillSelectRange(role, x, y) {
 }
 
 function doUseSkill(role, target) {
+    hidden("replay");
     useSkill(role, target);
     game.cmds = ldata.cmds;
     game.running = game.cmds.shift();
@@ -400,6 +411,7 @@ function initialze() {
         canvas.addEventListener("mousedown", (evt) => {
             if (game.status == GameState.GS_AIM) {
                 if (game.aimDir.y < 0) {
+                    hidden("replay");
                     game.collisions.length = 0;
                     game.status = game.gameMode;
                     game.totalDist = 0;
@@ -456,7 +468,7 @@ function playNext() {
     if (game.replay.length == 0) {
         return;
     }
-    
+
     let op = game.replay.shift();
     if (op.op == "skill") {
         let role = game.roles[op.rid - 1];
@@ -481,16 +493,16 @@ function finishSkill() {
     if (game.status != GameState.GS_FINISH) {
         game.status = GameState.GS_AIM;
         rdata.status = game.status;
-        const panel = document.getElementById("skills");
-        panel.style.display = 'none';
+        hidden("skills");
     } else {
         alert("游戏结束，刷新重开！");
     }
 }
 
 function openSkillPanel() {
-    const panel = document.getElementById("skills");
-    panel.style.display = 'block';
+    if (!game.isPlayReplay) {
+        show("skills", "block");
+    }
 }
 
 function clickSkill(n) {
@@ -512,8 +524,7 @@ function onLoadReplay() {
         return;
     }
 
-    const panel = document.getElementById("replay-panel");
-    panel.style.display = 'flex';
+    show("replay-panel", 'flex');
 
     if (game.replayJson == "") {
         game.replayJson = `[{"op":"ball","dir":{"x":0.49513253046682293,"y":-0.8688174591210289}},{"op":"skill","rid":4,"target":{"x":4,"y":2}},{"op":"ball","dir":{"x":-0.46590041397228493,"y":-0.8848371625674712}},{"op":"ball","dir":{"x":0.9887287120386224,"y":-0.14971818189667802}},{"op":"ball","dir":{"x":0.9812449729172427,"y":-0.19276489079871362}},{"op":"ball","dir":{"x":0.9895165780714621,"y":-0.1444193259980946}},{"op":"ball","dir":{"x":-0.07254272312081671,"y":-0.9973653058544881}},{"op":"skill","rid":4,"target":{"x":2,"y":4}},{"op":"ball","dir":{"x":-0.9554604493220478,"y":-0.2951191789452365}},{"op":"ball","dir":{"x":-0.11739051815670926,"y":-0.9930858302517961}},{"op":"ball","dir":{"x":0.9482040612282301,"y":-0.3176618615293486}},{"op":"ball","dir":{"x":0.9760884762056063,"y":-0.2173736106766812}},{"op":"skill","rid":4,"target":{"x":1,"y":4}},{"op":"ball","dir":{"x":-0.13987816192827124,"y":-0.9901687229031062}}]`;
@@ -544,12 +555,13 @@ function onPlay() {
         return;
     }
     game.isPlayReplay = true;
+    hidden("replay");
+    hidden("skills");
     playNext();
 }
 
 function onCancel() {
-    const panel = document.getElementById("replay-panel");
-    panel.style.display = 'none';
+    hidden("replay-panel");
 }
 
 function onSetReplay() {
@@ -563,8 +575,7 @@ function onSetReplay() {
         return;
     }
     
-    const panel = document.getElementById("replay-panel");
-    panel.style.display = 'none';
+    hidden("replay-panel");
     game.replayJson = data;
 }
 
