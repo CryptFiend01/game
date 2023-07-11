@@ -10,11 +10,13 @@ let rdata = {
     baseLine: null,
 }
 
+const ColorSet = {
+    LineSolid : "#00aa11",
+    LineDash : "#ebbef7"
+}
+
 function initRender(lines, status, base, collisions, roles) {
-    rdata.lines.length = 0;
-    for (let l of lines) {
-        rdata.lines.push(copyLine(l));
-    }
+    setLines(lines);
     rdata.status = status;
     rdata.base = base;
     rdata.collisions = collisions;
@@ -25,7 +27,13 @@ function initRender(lines, status, base, collisions, roles) {
 function setLines(lines) {
     rdata.lines.length = 0;
     for (let l of lines) {
-        rdata.lines.push(copyLine(l));
+        let line = copyLine(l);
+        if (line.solid) {
+            line.color = ColorSet.LineSolid;
+        } else {
+            line.color = ColorSet.LineDash;
+        }
+        rdata.lines.push(line);
     }
 }
 

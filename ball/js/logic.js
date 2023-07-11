@@ -33,6 +33,8 @@ function ballLess(a, b) {
 let ldata = {
     lines : [],
 
+    dashLines : [],
+
     balls : new Heap(ballLess), // {x: 250, y: 300, radius: 5, color: "#ac2234"},
 
     base : {x: 250, y: 800},
@@ -48,6 +50,8 @@ let ldata = {
     round: 0,
 
     ballDmg : 100,
+
+    isThrough : false,
 
     skills : [],
 
@@ -108,8 +112,10 @@ function initLogic(base, interLen, roles) {
 
     ldata.enemys = copyEnemies(config.enemys);
     for (let eid in ldata.enemys) {
-        ldata.enemyCount += 1;
         let enemy = ldata.enemys[eid];
+        if (enemy.solid) {
+            ldata.enemyCount += 1;
+        }
         for (let line of enemy.lines) {
             line.y1 -= yoffset;
             line.y2 -= yoffset;
@@ -137,11 +143,11 @@ function initLogic(base, interLen, roles) {
     hidenInline(ldata.lines);
 }
 
-function getNextCollision(start, dirNorm, ignores) {
+function getNextCollision(start, dirNorm, ignores, dashid) {
     if (ignores == null) {
         ignores = [];
     }
-    return checkNextInterpoint(start, dirNorm, ldata.lines, ignores);
+    return checkNextInterpoint(start, dirNorm, ldata.lines, ignores, dashid);
 }
 
 function getNextBase(ball) {
@@ -154,6 +160,9 @@ function getNextBase(ball) {
 }
 
 function getReflectNorm(dir, line) {
+    if (!line.solid || (ldata.isThrough && line.mid > 0)) {
+        return dir;
+    }
     let normal = line.normal;
     let rft = reflectVector(dir, normal);
     let rft_normal = normalize(rft);
@@ -201,8 +210,13 @@ function checkIgnore(ball) {
 
 function calcCollide(ball) {
     checkIgnore(ball);
-    let collide = getNextCollision(ball, ball.dir, ball.ignores);
+    let collide = getNextCollision(ball, ball.dir, ball.ignores, ball.hit);
     ball.collide = collide;
+    if (ball.collide.line && (!ball.collide.line.solid || ldata.isThrough)) {
+        ball.hit = ball.collide.line.mid;
+    } else {
+        ball.hit = 0;
+    }
     if (ball.collide.point != null) {
         ball.dist = length({x:collide.point.x - ball.x, y:collide.point.y - ball.y});
         if (ball.times == 0) {
@@ -259,7 +273,7 @@ function effectSkill(skill) {
     //console.log("skill.rect:" + objToString(skill.rect));
     for (let eid in ldata.enemys) {
         let enemy = ldata.enemys[eid];
-        if (enemy.visible && enemy.hp > 0 && rectInserect(enemy.rect, skill.rect)) {
+        if (enemy.visible && enemy.solid && enemy.hp > 0 && rectInserect(enemy.rect, skill.rect)) {
             //console.log("inserect enemy rect:" + objToString(enemy.rect));
             enemy.hp -= skill.cfg.dmg;
             effects.push({id:eid, dmg: skill.cfg.dmg, hp: enemy.hp});
@@ -299,13 +313,16 @@ function useSkill(role, target) {
     let cmd = {type: CmdType.ROLE_SKILL, cid: role.id, target: target, cd: cfg.cd, range: []};
     ldata.cmds.push(cmd);
     if (cfg.type == SkillType.BALL_ADD) {
-        role.ballDmg = cfg.dmg;
+        ldata.ballDmg = cfg.dmg;
     } else if (cfg.type == SkillType.ROUND_DAMAGE) {
         let range = getSkillRange(target, cfg.width, cfg.height);
         let skill = {cid: role.id, cfg: cfg, rect:{left: range.x, top: range.y, right: range.x + range.width, bottom: range.y + range.height}, round: 0};
         ldata.skills.push(skill);
         cmd.range.push(range);
         cmd.effects = effectSkill(skill);
+    } else if (cfg.type == SkillType.BALL_THROUGH) {
+        ldata.isThrough = true;
+        ldata.ballDmg *= 3;
     }
 
     checkSkillValid();
@@ -329,7 +346,7 @@ function startRound(aimDir) {
     ldata.cmds.length = 0;
     assignPoint(aimDir, ldata.begin);
 
-    let collide = getNextCollision(ldata.base, ldata.begin, null);
+    let collide = getNextCollision(ldata.base, ldata.begin, null, 0);
     let dist = length({x:collide.point.x - ldata.base.x, y:collide.point.y - ldata.base.y});
     let n = 0;
     for (let role of ldata.roles) {
@@ -387,7 +404,7 @@ function pushMap(pushLine) {
                 visible = false;
             }
 
-            if (enemy.visible && !visible) {
+            if (enemy.visible && enemy.solid && !visible) {
                 // 底线移除
                 ldata.enemyCount -= 1;
             }
@@ -419,7 +436,9 @@ function updateRound() {
         };
        
         // 先将球转向,并将所有球的dist减去第一个球的dist
-        ball.times += 1;
+        if (ball.hit == 0) {
+            ball.times += 1;
+        }
         let d = ball.dist - ball.passed; // 本次移动距离为弹射时的总距离-已经走过的距离
         for (let b of ldata.balls.heap) {
             console.assert(b.dist >= 0, "dist can't be nagetive.");
@@ -444,13 +463,20 @@ function updateRound() {
             let enemy = ldata.enemys[line.mid];
             // cmd.dir为null表示小球消失
             if (enemy.hp > 0) {
-                enemy.hp -= ldata.ballDmg;
-                cmd.dmg = {id: enemy.id, sub: ldata.ballDmg, hp: enemy.hp};            
+                if (enemy.solid) {
+                    enemy.hp -= ldata.ballDmg;
+                    cmd.dmg = {id: enemy.id, sub: ldata.ballDmg, hp: enemy.hp}; 
+                } else {
+                    enemy.hp -= 1;
+                    cmd.dmg = {id: enemy.id, sub: 1, hp: enemy.hp};
+                }
+           
                 if (enemy.hp <= 0) {
                     onEmenyDead(enemy.id);
                     // 中间可以插入一些死亡触发的技能，有新的死亡id可以加入进来，如果触发移动或者召唤，则传入null
                     checkCollide([enemy.id]);
-                    ldata.enemyCount -= 1;
+                    if (enemy.solid)
+                        ldata.enemyCount -= 1;
                     // console.log("enemyCount:" + ldata.enemyCount);
                     if (ldata.enemyCount == 0) {
                         ldata.cmds.push(cmd);
@@ -488,6 +514,7 @@ function updateRound() {
     skillRound();
 
     ldata.ballDmg = 100;
+    ldata.isThrough = false;
 
     ldata.cmds.push({type: CmdType.ROUND_END});
     if (ldata.nextBase) {

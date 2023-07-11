@@ -158,11 +158,14 @@ function getIntersection(line1, line2) {
     return { x: a.x + dx , y: a.y + dy };
 }
 
-function checkNextInterpoint(start, dir, lines, ignores) {
+function checkNextInterpoint(start, dir, lines, ignores, dashid) {
     let nearest = 1e10;
     let inter = { point: null, line: null };
     for (let i = 0; i < lines.length; i++) {
         let l = lines[i];
+        if (dashid > 0 && l.mid == dashid) {
+            continue;
+        }
         // 起点所在的线条不检查，防止在同一条线上反复碰撞
         if (ignores.indexOf(l) != -1 || l.hide != 0) {
             continue;
@@ -170,7 +173,7 @@ function checkNextInterpoint(start, dir, lines, ignores) {
         let p = getRaySegmentIntersection(start, dir, l);
         if (p != null) {
             let dist = length({x: p.x - start.x, y: p.y - start.y});
-            if (dist < nearest) {
+            if (dist < nearest || (dist == nearest && !inter.line.solid && l.solid)) {
                 inter.point = p;
                 inter.line = l;
                 nearest = dist;
@@ -191,8 +194,11 @@ function pointInLine(point, line) {
 function hidenInline(lines) {
     for (let j = 0; j < lines.length; j++) {
         let l1 = lines[j];
+        if (!l1.solid) {
+            continue;
+        }
         for (let i = 0; i < lines.length; i++) {
-            if (i == j)
+            if (i == j || !lines[i].solid)
                 continue;
             let l2 = lines[i];
             if ((l1.x1 == l2.x1 && l1.y1 == l2.y1 && l1.x2 == l2.x2 && l1.y2 == l2.y2) ||

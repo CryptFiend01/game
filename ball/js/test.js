@@ -29,7 +29,7 @@ function test() {
 
     console.log("ray: " + objToString(l));
     
-    let collide = checkNextInterpoint(start, dir, lines, [lines[4]]);
+    let collide = checkNextInterpoint(start, dir, lines, [lines[4]], 0);
     if (collide.point == null) {
         console.log("no collide.");
         return;
@@ -52,7 +52,7 @@ function test1() {
     // ldata.lines.push({x1:375,y1:305,x2:345,y2:305,color:"#00aa11",mid:30,hide:0,normal:{x:0,y:-1}});
     // ldata.lines.push({x1:405,y1:365,x2:375,y2:365,color:"#00aa11",mid:35,hide:0,normal:{x:0,y:-1}});
     // ldata.lines.push({x1:375,y1:335,x2:375,y2:305,color:"#00aa11",mid:30,hide:0,normal:{x:0,y:-1}});
-    // let collide = getNextCollision(start, dir, ldata.lines[1]);
+    // let collide = getNextCollision(start, dir, ldata.lines[1], 0);
     // console.log("collide" + objToString(collide));
     // let line1 = {x1: 250, y1: 800, x2: 1164.1154708972479, y2: -260.3739462408073, hide:1, width:1};
     // let line2 = {x1:500,y1:0,x2:500,y2:900,color:"#00aa11",hide:0,normal:{x:-1,y:0}};

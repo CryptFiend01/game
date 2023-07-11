@@ -15,9 +15,9 @@ let GameRect = {
 
 let config = {
     frameLines : [
-        {x1: GameRect.left, y1: GameRect.top, x2: GameRect.right, y2: GameRect.top, color: "#00aa11", hide:0},
-        {x1: GameRect.right, y1: GameRect.top, x2: GameRect.right, y2: GameRect.bottom, color: "#00aa11", hide:0},
-        {x1: GameRect.left, y1: GameRect.bottom, x2: GameRect.left, y2: GameRect.top, color: "#00aa11", hide:0},
+        {x1: GameRect.left, y1: GameRect.top, x2: GameRect.right, y2: GameRect.top, solid: true, hide:0, mid:0},
+        {x1: GameRect.right, y1: GameRect.top, x2: GameRect.right, y2: GameRect.bottom, solid: true, hide:0, mid:0},
+        {x1: GameRect.left, y1: GameRect.bottom, x2: GameRect.left, y2: GameRect.top, solid: true, hide:0, mid:0},
     ],
 
     enemys: [],
@@ -32,10 +32,11 @@ const SkillType = {
     RANGE_TRIGGER : 2, 
     ROUND_DAMAGE : 3,
     SOLID_BLOCK : 4,
-    DASH_BLOCK : 5
+    DASH_BLOCK : 5,
+    BALL_THROUGH : 6
 }
 
-function makeLines(id, point, obj) {
+function makeLines(id, point, obj, solid) {
     let lt = {x: point.x - obj.anchor.x, y: point.y - obj.anchor.y};
     let lines = [];
     for (let i = obj.points.length - 1; i >= 0; i--) {
@@ -50,8 +51,8 @@ function makeLines(id, point, obj) {
             y1: start.y + lt.y,
             x2: end.x + lt.x,
             y2: end.y + lt.y,
-            color: "#00aa11",
             mid: id,
+            solid: solid,
             hide: 0
         };
         line.normal = normalize(normalVector(vector(line)));
@@ -134,11 +135,12 @@ function loadData(onfinish) {
                         }
                     }
 
-                    let lines = makeLines(m.id, m.point, obj);
+                    let lines = makeLines(m.id, m.point, obj, mc.solid);
                     config.enemys.push({
                         id : m.id,
                         point : m.point,
                         hp : mc.hp,
+                        solid : mc.solid,
                         obj : obj,
                         lines : lines,
                         rect: makeRect(lines)
@@ -162,6 +164,7 @@ function copyEnemies(enemys) {
             point: copyPoint(enemy.point),
             hp: enemy.hp,
             visible: true,
+            solid: enemy.solid,
             obj: enemy.obj,
             lines: [],
             rect: copyRect(enemy.rect)

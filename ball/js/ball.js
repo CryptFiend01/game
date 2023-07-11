@@ -29,7 +29,7 @@ let game = {
     times: 50,
     roles: [
         { id: 1, count: 10, times: 50, color: "red", skill: {type: SkillType.BALL_ADD, dmg: 1000, cd: 4} },
-        { id: 2, count: 10, times: 50, color: "orange", skill: {type: SkillType.DASH_BLOCK, round: 2, cd: 2} },
+        { id: 2, count: 10, times: 50, color: "orange", skill: {type: SkillType.BALL_THROUGH, round: 2, cd: 2} },
         { id: 3, count: 10, times: 50, color: "purple", skill: {type: SkillType.RANGE_TRIGGER, width: 4, height: 2, dmg1: 1000, dmg2: 500, round: 3, cd:3, push: true} },
         { id: 4, count: 10, times: 50, color: "skyblue", skill: {type: SkillType.ROUND_DAMAGE, width: 3, height: 3, dmg: 5000, round: 4, cd:4, push: true} },
         { id: 5, count: 10, times: 50, color: "cyan", skill: {type: SkillType.SOLID_BLOCK, round: 3, cd: 3} }
@@ -261,9 +261,10 @@ function moveAll(dist) {
 function aim() {
     let n = game.aimDir;
     let start = game.base;
+    let dashid = 0;
     let ignores = [];
     while (game.collisions.length < game.times) {
-        let collide = getNextCollision(start, n, ignores);
+        let collide = getNextCollision(start, n, ignores, dashid);
         if (collide.point == null) {
             break;
         }
@@ -271,16 +272,25 @@ function aim() {
         game.collisions.push({x: collide.point.x, y: collide.point.y, radius: 2, color: "#1234bc"});
 
         let reflect = getReflectNorm(n, collide.line);
+        //console.log("line " + collide.line.mid + " from dir " + vec2String(n) + " reflect to " + vec2String(reflect) + " collide point:" + vec2String(collide.point));
 
         start = collide.point;
         n = reflect;
-        let temp = [collide.line];
+        let temp = [];
+        if (collide.line.mid == 0 || (!ldata.isThrough && collide.line.solid)) {
+            temp.push(collide.line);
+        }
         for (let l of ignores) {
             if (pointInLine(start, l)) {
                 temp.push(l);
             }
         }
         ignores = temp;
+        if (!collide.line.solid || ldata.isThrough) {
+            dashid = collide.line.mid;
+        } else {
+            dashid = 0;
+        }
     }
     draw();
 }
@@ -448,8 +458,8 @@ function initialze() {
                     game.timer = -1;
                 }
             } else if (game.status == GameState.GS_AIM) {
-                game.logaim = !game.logaim;
-                aim();
+                // aim();
+                console.log(objToString(game.collisions));
             } else if (game.status == GameState.GS_DEBUG) {
                 if (game.timer == -1) {
                     game.running = game.cmds.shift();
@@ -511,6 +521,8 @@ function clickSkill(n) {
     rdata.skillSelect = null;
     if (role.skill.type == SkillType.BALL_ADD) {
         doUseSkill(role, null);
+    } else if (role.skill.type == SkillType.BALL_THROUGH) {
+        doUseSkill(role, null);
     } else if (role.skill.type == SkillType.ROUND_DAMAGE) {
         game.chooseRole = role;
         game.skillRect = getSkillRange({x:0, y:0}, role.skill.width, role.skill.height);
@@ -527,7 +539,7 @@ function onLoadReplay() {
     show("replay-panel", 'flex');
 
     if (game.replayJson == "") {
-        game.replayJson = `[{"op":"ball","dir":{"x":0.49513253046682293,"y":-0.8688174591210289}},{"op":"skill","rid":4,"target":{"x":4,"y":2}},{"op":"ball","dir":{"x":-0.46590041397228493,"y":-0.8848371625674712}},{"op":"ball","dir":{"x":0.9887287120386224,"y":-0.14971818189667802}},{"op":"ball","dir":{"x":0.9812449729172427,"y":-0.19276489079871362}},{"op":"ball","dir":{"x":0.9895165780714621,"y":-0.1444193259980946}},{"op":"ball","dir":{"x":-0.07254272312081671,"y":-0.9973653058544881}},{"op":"skill","rid":4,"target":{"x":2,"y":4}},{"op":"ball","dir":{"x":-0.9554604493220478,"y":-0.2951191789452365}},{"op":"ball","dir":{"x":-0.11739051815670926,"y":-0.9930858302517961}},{"op":"ball","dir":{"x":0.9482040612282301,"y":-0.3176618615293486}},{"op":"ball","dir":{"x":0.9760884762056063,"y":-0.2173736106766812}},{"op":"skill","rid":4,"target":{"x":1,"y":4}},{"op":"ball","dir":{"x":-0.13987816192827124,"y":-0.9901687229031062}}]`;
+        game.replayJson = `[{"op":"ball","dir":{"x":0.5090829050501455,"y":-0.8607174889507616}},{"op":"ball","dir":{"x":0.24641819248869218,"y":-0.9691635952771883}},{"op":"ball","dir":{"x":-0.29154781374430405,"y":-0.956556256736067}},{"op":"ball","dir":{"x":-0.9053573631340193,"y":-0.4246504974906018}},{"op":"ball","dir":{"x":0.9681944120834904,"y":-0.2501990815536782}},{"op":"skill","rid":4,"target":{"x":1,"y":4}},{"op":"skill","rid":1,"target":null},{"op":"ball","dir":{"x":0.9877092297965139,"y":-0.1563025187729783}},{"op":"ball","dir":{"x":0.9334735842808641,"y":-0.35864615911764086}},{"op":"ball","dir":{"x":0.5324021293426343,"y":-0.8464915668046721}},{"op":"ball","dir":{"x":0.7507276110634417,"y":-0.6606118784785647}},{"op":"skill","rid":4,"target":{"x":6,"y":5}},{"op":"ball","dir":{"x":0.01506937596075506,"y":-0.999886450507333}}]`;
     }
 
     const txt = document.getElementById("replay-json");
