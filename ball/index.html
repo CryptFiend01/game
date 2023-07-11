@@ -24,6 +24,14 @@
             <button class="btn-replay" onclick="onPlay()">播放录像</button>
         </div>
     </div>
+    <div id="replay-panel" class="replay-panel">
+        <div class="title"><label style="margin-left: 10px;">录像数据</label></div>
+        <textarea id="replay-json" rows="30"></textarea>
+        <div class="group-btn">
+            <button class="btn-panel" onclick="onSetReplay()">确定</button>
+            <button class="btn-panel" onclick="onCancel()">取消</button>
+        </div>
+    </div>
     <script src="js/vector.js"></script>
     <script src="js/render.js"></script>
     <script src="js/config.js"></script>

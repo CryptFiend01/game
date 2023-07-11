@@ -132,3 +132,59 @@ canvas {
 .btn-replay:hover {
     background-color: rgb(152, 177, 230);
 }
+
+.replay-panel {
+    display: none;
+    position: absolute;
+    align-self: center;
+    background-color: #e2e2e2;
+    border-radius: 5px;
+    flex-direction: column;
+    width: 420px;
+    height: 400px;
+    top: 100px;
+    left: calc(46vw - 210px);
+}
+
+.replay-panel>.title {
+    background-color: rgb(37, 223, 121);
+    border-radius: 5px 5px 0px 0px;
+    color: rgb(54, 53, 52);
+    height: 30px;
+    line-height: 30px;
+}
+
+/* input[type="text"] {
+    margin: 10px 3px 10px 3px;
+    height: 300px;
+    border: 1px solid gray;
+}
+
+input[type="text"]:focus {
+    border: 1px solid rgb(37, 223, 121);
+} */
+
+textarea {
+    margin: 10px 3px 10px 3px;
+}
+
+.group-btn {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    gap: 30px;
+    margin-bottom: 10px;
+}
+
+.btn-panel {
+    border: 0;
+    width: 180px;
+    height: 40px;
+    background-color: rgb(37, 223, 121);
+    border-radius: 5px;
+}
+
+.btn-panel:hover {
+    background-color: rgb(152, 230, 187);
+}

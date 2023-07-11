@@ -68,6 +68,7 @@ const CmdType = {
     ENEMY_SKILL: 5,
     REMOVE_SKILL : 6,
     SKILL_EFFECT : 7,
+    ENEMY_MOVE: 8,
     PUSH: 10,
     ROUND_END: 11,
     WIN : 12,
@@ -293,7 +294,7 @@ function checkSkillValid() {
 }
 
 function useSkill(role, target) {
-    ldata.ops.push({op: "skill", rid: role.id, target: copyPoint(target)});
+    ldata.ops.push({op: "skill", rid: role.id, target: target ? copyPoint(target) : null});
     let cfg = role.skill;
     let cmd = {type: CmdType.ROLE_SKILL, cid: role.id, target: target, cd: cfg.cd, range: []};
     ldata.cmds.push(cmd);
