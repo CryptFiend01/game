@@ -185,6 +185,21 @@ function removeDead(lines, id) {
             if (l.hide == id) {
                 l.hide = 0;
             }
+
+            if (l.hideLines != null) {
+                let temp = [];
+                for (let l1 of l.hideLines) {
+                    let ids = unMixId(l1.mid);
+                    if (ids[0] != id || ids[1] != id) {
+                        temp.push(l1);
+                    }
+                }
+                if (temp.length == null) {
+                    l.hideLines = null;
+                } else {
+                    l.hideLines = temp;
+                }
+            }
             temp.push(l);
         }
     }
@@ -197,8 +212,9 @@ function onEmenyDead(id) {
 
 function checkIgnore(ball) {
     let temp = [];
-    if (ball.atLine) {
-        temp.push(ball.atLine);
+    let collide = ball.collide
+    if (collide.line && (collide.line.mid == 0 || !ldata.isThrough)) {
+        temp.push(collide.line);
     }
     for (let l of ball.ignores) {
         if (pointInLine(ball, l)) {
@@ -450,7 +466,6 @@ function updateRound() {
             ball.passed = 0; // 只有反弹时才需要将pass设置为0
             cmd.reflect = copyPoint(ball.dir);
             assignPoint(ball.collide.point, ball);
-            ball.atLine = ball.collide.line;
             calcCollide(ball);
             if (ball.collide.point) {
                 ldata.balls.add(ball);

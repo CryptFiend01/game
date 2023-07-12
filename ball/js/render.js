@@ -66,6 +66,11 @@ function draw() {
 
     for (let l of rdata.lines) {
         drawLine(l);
+        if (l.hideLines != null) {
+            for (let sl of l.hideLines) {
+                drawLine(sl);
+            }
+        }
         drawNormal(l);
     }
 

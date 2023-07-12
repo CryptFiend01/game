@@ -272,12 +272,11 @@ function aim() {
         game.collisions.push({x: collide.point.x, y: collide.point.y, radius: 2, color: "#1234bc"});
 
         let reflect = getReflectNorm(n, collide.line);
-        //console.log("line " + collide.line.mid + " from dir " + vec2String(n) + " reflect to " + vec2String(reflect) + " collide point:" + vec2String(collide.point));
 
         start = collide.point;
         n = reflect;
         let temp = [];
-        if (collide.line.mid == 0 || (!ldata.isThrough && collide.line.solid)) {
+        if (collide.line.mid == 0 || !ldata.isThrough) {
             temp.push(collide.line);
         }
         for (let l of ignores) {
