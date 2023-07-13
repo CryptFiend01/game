@@ -1,6 +1,6 @@
 [
     {"id": 1, "type": "brick", "res": "Monster_1", "solid": true, "hp": 10000},
-    {"id": 2, "type": "bigbrick", "res": "Brick_1", "solid": true, "hp": 10000},
+    {"id": 2, "type": "bigbrick", "res": "Brick_1", "solid": true, "hp": 10000, "call": [{"cid":9, "count": 4, "type":1}]},
     {"id": 3, "type": "triangle1", "res": "TriangleBrick_1", "solid": true, "hp":10000},
     {"id": 4, "type": "triangle2", "res": "TriangleBrick_2", "solid": true, "hp":10000},
     {"id": 5, "type": "triangle3", "res": "TriangleBrick_3", "solid": true, "hp":10000},

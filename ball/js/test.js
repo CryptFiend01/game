@@ -70,6 +70,28 @@ function test1() {
     drawLine(line2);
 }
 
+function test2() {
+    loadData(function () {
+        let start = {x:362.54771282253984, y:371.7063806406206};
+        let dir = {x:0.98174290591568, y:-0.190212688021163};
+
+        initLogic(game.base, game.distInterval, game.roles);
+        initRender(ldata.lines, game.status, game.base, game.collisions, game.roles);
+
+        ldata.lines = removeDead(ldata.lines, 25);
+        ldata.lines = removeDead(ldata.lines, 26);
+        rdata.lines = removeDead(rdata.lines, 25);
+        rdata.lines = removeDead(rdata.lines, 26);
+        draw();
+
+        let collide =  checkNextInterpoint(start, dir, ldata.lines, [], 0);
+        console.log(objToString(collide));
+
+        let line = {x1: start.x, y1: start.y, x2: collide.point.x, y2: collide.point.y, color:"#aa33aa", hide: 0};
+        drawLine(line);
+    });
+}
+
 function testHeap() {
     let h = new Heap((a, b) => {return a < b;});
     let elements = [100, 80, 96, 12, 300, 234, 113,64,158,77,950];

@@ -49,7 +49,7 @@ let ldata = {
 
     round: 0,
 
-    ballDmg : 100,
+    ballDmg : 500,
 
     isThrough : false,
 
@@ -85,6 +85,11 @@ function inRange(line) {
 
 function pointInRange(point) {
     return pointInRect(point, ldata.rect);
+}
+
+function addCmd(cmd) {
+    cmd.cmdid = ldata.cmds.length + 1;
+    ldata.cmds.push(cmd);
 }
 
 function initLogic(base, interLen, roles) {
@@ -250,6 +255,7 @@ function checkCollide(deads) {
         // 只有目标被移除，只需要检测和这些目标相撞的球
         for (let ball of ldata.balls.heap) {
             if (deads.indexOf(ball.collide.line.mid) != -1) {
+                recoverBallState(ball);
                 calcCollide(ball);
             }
             if (ball.collide.point)
@@ -260,6 +266,7 @@ function checkCollide(deads) {
     } else {
         // 其他原因（比如召唤，移动）导致重新检测，需要全部重算一遍
         for (let ball of ldata.balls.heap) {
+            recoverBallState(ball);
             calcCollide(ball);
             if (ball.collide.point)
                 temp.push(ball);
@@ -301,7 +308,7 @@ function effectSkill(skill) {
     }
 
     if (ldata.enemyCount <= 0) {
-        ldata.cmds.push({type: CmdType.WIN});
+        addCmd({type: CmdType.WIN});
         ldata.win = true;
     } else if (ldata.lines.length <= config.frameLines.length && ldata.startLine > 0) {
         let pushLine = Math.min(ldata.startLine, 10);
@@ -315,7 +322,7 @@ function checkSkillValid() {
     let temp = [];
     for (let skill of ldata.skills) {
         if (skill.round >= skill.cfg.round) {
-            ldata.cmds.push({type: CmdType.REMOVE_SKILL, cid: skill.cid});
+            addCmd({type: CmdType.REMOVE_SKILL, cid: skill.cid});
         } else {
             temp.push(skill);
         }
@@ -327,7 +334,7 @@ function useSkill(role, target) {
     ldata.ops.push({op: "skill", rid: role.id, target: target ? copyPoint(target) : null});
     let cfg = role.skill;
     let cmd = {type: CmdType.ROLE_SKILL, cid: role.id, target: target, cd: cfg.cd, range: []};
-    ldata.cmds.push(cmd);
+    addCmd(cmd);
     if (cfg.type == SkillType.BALL_ADD) {
         ldata.ballDmg = cfg.dmg;
     } else if (cfg.type == SkillType.ROUND_DAMAGE) {
@@ -347,7 +354,7 @@ function useSkill(role, target) {
 function skillRound() {
     for (let skill of ldata.skills) {
         let cmd = {type: CmdType.SKILL_EFFECT, cid: skill.cid};
-        ldata.cmds.push(cmd);
+        addCmd(cmd);
         cmd.effects = effectSkill(skill);
         if (ldata.win) {
             break;
@@ -377,11 +384,11 @@ function startRound(aimDir) {
                 passed: 0,
                 dir: ldata.begin,
                 times: 0,
-                atLine: null,
                 ignores: [],
-                hit: 0
+                hit: 0,
+                oldState: {ignores:[], hit:0, collide:null}
             });
-            ldata.cmds.push({
+            addCmd({
                 type: CmdType.CREATE_BALL,
                 id: n + 1,
                 cid: role.id,
@@ -435,8 +442,34 @@ function pushMap(pushLine) {
 
         hidenInline(ldata.lines);
         
-        ldata.cmds.push({type: CmdType.PUSH, line: pushLine});
+        addCmd({type: CmdType.PUSH, line: pushLine});
     } 
+}
+
+function saveBallState(ball) {
+    ball.oldState.hit = ball.hit;
+    if (ball.collide && ball.collide.point) {
+        ball.oldState.collide = { 
+            point: copyPoint(ball.collide.point),
+            line: ball.collide.line
+        };
+    }
+    ball.oldState.ignores.length = 0;
+    for (let l of ball.ignores) {
+        ball.oldState.ignores.push(l);
+    }
+}
+
+function recoverBallState(ball) {
+    ball.hit = ball.oldState.hit;
+    if (ball.oldState.collide && ball.oldState.collide.point) {
+        ball.collide.point = copyPoint(ball.oldState.collide.point);
+        ball.collide.line = ball.oldState.collide.line;
+    }
+    ball.ignores.length = 0;
+    for (let l of ball.oldState.ignores) {
+        ball.ignores.push(l);
+    }
 }
 
 function updateRound() {
@@ -466,6 +499,7 @@ function updateRound() {
             ball.passed = 0; // 只有反弹时才需要将pass设置为0
             cmd.reflect = copyPoint(ball.dir);
             assignPoint(ball.collide.point, ball);
+            saveBallState(ball);
             calcCollide(ball);
             if (ball.collide.point) {
                 ldata.balls.add(ball);
@@ -494,8 +528,8 @@ function updateRound() {
                         ldata.enemyCount -= 1;
                     // console.log("enemyCount:" + ldata.enemyCount);
                     if (ldata.enemyCount == 0) {
-                        ldata.cmds.push(cmd);
-                        ldata.cmds.push({type: CmdType.WIN});
+                        addCmd(cmd);
+                        addCmd({type: CmdType.WIN});
                         console.timeEnd("round");
                         return;
                     }
@@ -505,7 +539,7 @@ function updateRound() {
             }
         }
 
-        ldata.cmds.push(cmd);
+        addCmd(cmd);
     }
 
     // 敌方行动
@@ -531,7 +565,7 @@ function updateRound() {
     ldata.ballDmg = 100;
     ldata.isThrough = false;
 
-    ldata.cmds.push({type: CmdType.ROUND_END});
+    addCmd({type: CmdType.ROUND_END});
     if (ldata.nextBase) {
         assignPoint(ldata.nextBase, ldata.base);
     }

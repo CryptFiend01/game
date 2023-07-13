@@ -79,7 +79,7 @@ class Heap {
     show() {
         let s = "";
         for (let e of this.heap) {
-            s += objToString(e) + " ";
+            s += objToString(e) + " \n";
         }
         console.log(s);
     }

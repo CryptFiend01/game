@@ -4,7 +4,11 @@ function startDebug() {
 }
 
 function startGroupDebug() {
-    console.log("cmd:" + objToString(game.running));
+    // console.log("cmd:" + objToString(game.running) + " rest cmd count:" + game.cmds.length);
+    // if (game.running.type == CmdType.COLLIDE) {
+    //     let ball = rdata.balls[game.running.id-1];
+    //     console.log("ball " + ball.id + " pos:" + vec2String(ball) + " dir:" + vec2String(ball.dir));
+    // }
     game.timer = setInterval(updateGroupDebug, 10);
 }
 
@@ -13,6 +17,13 @@ function updateGroupDebug() {
     let d = run(0);
     game.totalDist += d;
     while (d > 0 && d < game.speed) {
+        if (cmdCount != game.cmds.length) {
+            console.log("cmd:" + objToString(game.running));
+            if (game.running.type == CmdType.COLLIDE) {
+                let ball = rdata.balls[game.running.id-1];
+                console.log("ball " + ball.id + " pos:" + vec2String(ball) + " dir:" + vec2String(ball.dir));
+            }
+        }
         let x = run(d);
         if (x == -1) {
             break;

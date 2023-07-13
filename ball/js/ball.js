@@ -402,8 +402,9 @@ function initialze() {
             if (game.status == GameState.GS_AIM) {
                 game.collisions.length = 0;
                 let v = {x: evt.offsetX - game.base.x, y: evt.offsetY - game.base.y};
-                //let v = {x: 400 - game.base.x, y: 626 - game.base.y};
+                // let v = {x: 400 - game.base.x, y: 626 - game.base.y};
                 game.aimDir = normalize(v);
+                // game.aimDir = {x:0.9837707636421116, y:-0.17942988770830967};
                 coord.innerHTML += "  方向：" + game.aimDir.x + "," + game.aimDir.y;
                 aim();
             } else if (game.status == GameState.GS_SKILL) {
@@ -420,6 +421,7 @@ function initialze() {
         canvas.addEventListener("mousedown", (evt) => {
             if (game.status == GameState.GS_AIM) {
                 if (game.aimDir.y < 0) {
+                    console.log("dir:" + vec2String(game.aimDir));
                     hidden("replay");
                     game.collisions.length = 0;
                     game.status = game.gameMode;
@@ -435,6 +437,7 @@ function initialze() {
                     } else if (game.status == GameState.GS_DEBUG) {
                         startDebug();
                     } else if (game.status == GameState.GS_GROUP_DEBUG) {
+                        console.log(objToString(game.cmds));
                         startGroupDebug();
                     }
                 }
@@ -458,7 +461,7 @@ function initialze() {
                 }
             } else if (game.status == GameState.GS_AIM) {
                 // aim();
-                console.log(objToString(game.collisions));
+                // console.log(objToString(game.collisions));
             } else if (game.status == GameState.GS_DEBUG) {
                 if (game.timer == -1) {
                     game.running = game.cmds.shift();
@@ -595,3 +598,4 @@ initialze();
 //test();
 //testHeap();
 //testRect();
+//test2();

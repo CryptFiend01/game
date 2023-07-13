@@ -28,7 +28,7 @@
         {"id": 20, "cid": 1, "grid":122},
         {"id": 21, "cid": 1, "grid":125},
         {"id": 22, "cid": 1, "grid":127},
-        {"id": 23, "cid": 2, "grid":99, "call": [{"cid":9, "count": 4, "type":1}]},
+        {"id": 23, "cid": 2, "grid":99},
         {"id": 24, "cid": 6, "grid":136},
         {"id": 25, "cid": 3, "grid":143},
         {"id": 26, "cid": 7, "grid":153},

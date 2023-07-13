@@ -115,8 +115,14 @@ function getRaySegmentIntersection(start, dir, line) {
     const t2 = ((start.y - segmentStart.y) * (dir.x) - (start.x - segmentStart.x) * (dir.y)) / denominator;
 
     if (t1 >= 0 && t2 >= 0 && t2 <= 1) {
-        const intersectionX = start.x + t1 * dir.x;
-        const intersectionY = start.y + t1 * dir.y;
+        let intersectionX = start.x + t1 * dir.x;
+        // if (line.x1 == line.x2) {
+        //     intersectionX = line.x1;
+        // }
+        let intersectionY = start.y + t1 * dir.y;
+        // if (line.y1 == line.y2) {
+        //     intersectionY = line.y1;
+        // }
         return { x: intersectionX, y: intersectionY };
     }
 
