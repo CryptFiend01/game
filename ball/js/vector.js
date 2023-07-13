@@ -116,13 +116,13 @@ function getRaySegmentIntersection(start, dir, line) {
 
     if (t1 >= 0 && t2 >= 0 && t2 <= 1) {
         let intersectionX = start.x + t1 * dir.x;
-        // if (line.x1 == line.x2) {
-        //     intersectionX = line.x1;
-        // }
+        if (line.x1 == line.x2) {
+            intersectionX = line.x1;
+        }
         let intersectionY = start.y + t1 * dir.y;
-        // if (line.y1 == line.y2) {
-        //     intersectionY = line.y1;
-        // }
+        if (line.y1 == line.y2) {
+            intersectionY = line.y1;
+        }
         return { x: intersectionX, y: intersectionY };
     }
 
@@ -164,7 +164,7 @@ function getIntersection(line1, line2) {
     return { x: a.x + dx , y: a.y + dy };
 }
 
-function checkNextInterpoint(start, dir, lines, ignores, dashid) {
+function checkNextInterpoint(start, dir, lines, ignores, dashid, isThrough) {
     let nearest = 1e10;
     let inter = { point: null, line: null };
     for (let i = 0; i < lines.length; i++) {
@@ -173,7 +173,7 @@ function checkNextInterpoint(start, dir, lines, ignores, dashid) {
             continue;
         }
         // 起点所在的线条不检查，防止在同一条线上反复碰撞
-        if (ignores.indexOf(l) != -1 || l.hide != 0) {
+        if (ignores.indexOf(l) != -1 || (l.hide != 0 && !isThrough)) {
             continue;
         }
         let p = getRaySegmentIntersection(start, dir, l);

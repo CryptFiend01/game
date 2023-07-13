@@ -264,7 +264,7 @@ function aim() {
     let dashid = 0;
     let ignores = [];
     while (game.collisions.length < game.times) {
-        let collide = getNextCollision(start, n, ignores, dashid);
+        let collide = getNextCollision(start, n, ignores, dashid, ldata.isThrough);
         if (collide.point == null) {
             break;
         }
@@ -404,7 +404,7 @@ function initialze() {
                 let v = {x: evt.offsetX - game.base.x, y: evt.offsetY - game.base.y};
                 // let v = {x: 400 - game.base.x, y: 626 - game.base.y};
                 game.aimDir = normalize(v);
-                // game.aimDir = {x:0.9837707636421116, y:-0.17942988770830967};
+                //game.aimDir = {x:0.9868925619168516, y:-0.16137865792351033};
                 coord.innerHTML += "  方向：" + game.aimDir.x + "," + game.aimDir.y;
                 aim();
             } else if (game.status == GameState.GS_SKILL) {

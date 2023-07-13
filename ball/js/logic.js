@@ -148,11 +148,11 @@ function initLogic(base, interLen, roles) {
     hidenInline(ldata.lines);
 }
 
-function getNextCollision(start, dirNorm, ignores, dashid) {
+function getNextCollision(start, dirNorm, ignores, dashid, isThrough) {
     if (ignores == null) {
         ignores = [];
     }
-    return checkNextInterpoint(start, dirNorm, ldata.lines, ignores, dashid);
+    return checkNextInterpoint(start, dirNorm, ldata.lines, ignores, dashid, isThrough);
 }
 
 function getNextBase(ball) {
@@ -193,10 +193,14 @@ function removeDead(lines, id) {
 
             if (l.hideLines != null) {
                 let temp = [];
+                //console.log("line " + l.mid + " hideLines:" + objToString(l.hideLines));
                 for (let l1 of l.hideLines) {
                     let ids = unMixId(l1.mid);
-                    if (ids[0] != id || ids[1] != id) {
+                    //console.log(objToString(ids) + " mid:" + l1.mid);
+                    if (ids[0] != id && ids[1] != id) {
                         temp.push(l1);
+                    } else {
+                        //console.log("remove line " + l.mid + " mixid:" + l1.mid);
                     }
                 }
                 if (temp.length == null) {
@@ -231,7 +235,8 @@ function checkIgnore(ball) {
 
 function calcCollide(ball) {
     checkIgnore(ball);
-    let collide = getNextCollision(ball, ball.dir, ball.ignores, ball.hit);
+    let start = {x: ball.x + ball.dir.x * ball.passed, y: ball.y + ball.dir.y * ball.passed};
+    let collide = getNextCollision(start, ball.dir, ball.ignores, ball.hit, ldata.isThrough);
     ball.collide = collide;
     if (ball.collide.line && (!ball.collide.line.solid || ldata.isThrough)) {
         ball.hit = ball.collide.line.mid;
@@ -369,7 +374,7 @@ function startRound(aimDir) {
     ldata.cmds.length = 0;
     assignPoint(aimDir, ldata.begin);
 
-    let collide = getNextCollision(ldata.base, ldata.begin, null, 0);
+    let collide = getNextCollision(ldata.base, ldata.begin, null, 0, ldata.isThrough);
     let dist = length({x:collide.point.x - ldata.base.x, y:collide.point.y - ldata.base.y});
     let n = 0;
     for (let role of ldata.roles) {

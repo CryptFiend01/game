@@ -29,7 +29,7 @@ function test() {
 
     console.log("ray: " + objToString(l));
     
-    let collide = checkNextInterpoint(start, dir, lines, [lines[4]], 0);
+    let collide = checkNextInterpoint(start, dir, lines, [lines[4]], 0, false);
     if (collide.point == null) {
         console.log("no collide.");
         return;
@@ -78,13 +78,13 @@ function test2() {
         initLogic(game.base, game.distInterval, game.roles);
         initRender(ldata.lines, game.status, game.base, game.collisions, game.roles);
 
-        ldata.lines = removeDead(ldata.lines, 25);
-        ldata.lines = removeDead(ldata.lines, 26);
-        rdata.lines = removeDead(rdata.lines, 25);
-        rdata.lines = removeDead(rdata.lines, 26);
+        ldata.lines = removeDead(ldata.lines, 13);
+        //ldata.lines = removeDead(ldata.lines, 26);
+        rdata.lines = removeDead(rdata.lines, 13);
+        //rdata.lines = removeDead(rdata.lines, 26);
         draw();
 
-        let collide =  checkNextInterpoint(start, dir, ldata.lines, [], 0);
+        let collide =  checkNextInterpoint(start, dir, ldata.lines, [], 0, false);
         console.log(objToString(collide));
 
         let line = {x1: start.x, y1: start.y, x2: collide.point.x, y2: collide.point.y, color:"#aa33aa", hide: 0};
