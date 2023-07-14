@@ -36,6 +36,13 @@ const SkillType = {
     BALL_THROUGH : 6
 }
 
+const StageEvent = {
+    DEAD_CALL : 1, // cid, count
+    HIT_MOVE: 2, // 
+    HIT_CHANGE: 3, // shapes|angle 
+    ROUND_MOVE: 4 // move_type
+}
+
 function makeLines(id, point, obj, solid) {
     let lt = {x: point.x - obj.anchor.x, y: point.y - obj.anchor.y};
     let lines = [];
@@ -141,6 +148,7 @@ function loadData(onfinish) {
                         point : m.point,
                         hp : mc.hp,
                         solid : mc.solid,
+                        evt: mc.evt,
                         obj : obj,
                         lines : lines,
                         rect: makeRect(lines)
@@ -165,6 +173,7 @@ function copyEnemies(enemys) {
             hp: enemy.hp,
             visible: true,
             solid: enemy.solid,
+            evt: enemy.evt,
             obj: enemy.obj,
             lines: [],
             rect: copyRect(enemy.rect)

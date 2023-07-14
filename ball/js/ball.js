@@ -217,7 +217,11 @@ function onfinish() {
             rdata.status = game.status;
             rdata.skillSelect = null;
             rdata.skillRange = {};
-            console.log(JSON.stringify(ldata.ops));
+            let replayJson = JSON.stringify(ldata.ops);
+            console.log(replayJson);
+            if (!game.isPlayReplay) {
+                alert("录像数据，可复制保存进行回放：" + replayJson);
+            }
         }
 
         draw();
@@ -532,7 +536,7 @@ function onLoadReplay() {
     show("replay-panel", 'flex');
 
     if (game.replayJson == "") {
-        game.replayJson = `[{"op":"ball","dir":{"x":0.5090829050501455,"y":-0.8607174889507616}},{"op":"ball","dir":{"x":0.24641819248869218,"y":-0.9691635952771883}},{"op":"ball","dir":{"x":-0.29154781374430405,"y":-0.956556256736067}},{"op":"ball","dir":{"x":-0.9053573631340193,"y":-0.4246504974906018}},{"op":"ball","dir":{"x":0.9681944120834904,"y":-0.2501990815536782}},{"op":"skill","rid":4,"target":{"x":1,"y":4}},{"op":"skill","rid":1,"target":null},{"op":"ball","dir":{"x":0.9877092297965139,"y":-0.1563025187729783}},{"op":"ball","dir":{"x":0.9334735842808641,"y":-0.35864615911764086}},{"op":"ball","dir":{"x":0.5324021293426343,"y":-0.8464915668046721}},{"op":"ball","dir":{"x":0.7507276110634417,"y":-0.6606118784785647}},{"op":"skill","rid":4,"target":{"x":6,"y":5}},{"op":"ball","dir":{"x":0.01506937596075506,"y":-0.999886450507333}}]`;
+        game.replayJson = `[{"op":"skill","rid":2,"target":null},{"op":"ball","dir":{"x":0.9945864928494073,"y":-0.10391202164098284}},{"op":"ball","dir":{"x":-0.04834952725659454,"y":-0.9988304777158453}},{"op":"ball","dir":{"x":0.6544105251269783,"y":-0.7561394478553758}},{"op":"skill","rid":1,"target":null},{"op":"ball","dir":{"x":0.12036328578759667,"y":-0.9927299126320378}},{"op":"ball","dir":{"x":0.42800600669585825,"y":-0.9037758893842349}},{"op":"skill","rid":2,"target":null},{"op":"ball","dir":{"x":-0.996481189476606,"y":-0.08381669892860505}},{"op":"ball","dir":{"x":-0.11991433369929438,"y":-0.9927842427100938}}]`;
     }
 
     const txt = document.getElementById("replay-json");
@@ -540,6 +544,9 @@ function onLoadReplay() {
 }
 
 function checkTime() {
+    hidden("skills");
+    hidden("replay");
+    let startTime = Date.now();
     console.time("check total");
     while (game.replay.length > 0) {
         let rep = game.replay.shift();
@@ -552,6 +559,8 @@ function checkTime() {
         }
     }
     console.timeEnd("check total");
+    let endTime = Date.now();
+    alert("耗时:" + (endTime - startTime) + ", 请刷新页面继续！");
 }
 
 function onPlay() {
