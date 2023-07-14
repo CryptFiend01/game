@@ -33,7 +33,8 @@ const SkillType = {
     ROUND_DAMAGE : 3,
     SOLID_BLOCK : 4,
     DASH_BLOCK : 5,
-    BALL_THROUGH : 6
+    BALL_THROUGH : 6,
+    DEAD_TRIGGER : 7
 }
 
 const StageEvent = {
@@ -113,10 +114,23 @@ function getMonster(cid) {
     return null;
 };
 
+function getPointByGrid(grid) {
+    let x = Math.floor(grid % RenderConfig.width);
+    let y = Math.floor(grid / RenderConfig.width);
+    return {
+        x: x * RenderConfig.side + obj.anchor.x + RenderConfig.xoffset,
+        y: y * RenderConfig.side + obj.anchor.y + RenderConfig.yoffset
+    }
+}
+
 function loadData(onfinish) {
     $.getJSON("data/object.json", function(obj_data) {
         var objects = obj_data;
         config.objects = objects;
+        for (let k in config.objects) {
+            let obj = config.objects[k];
+            obj.size = obj.anchor.x * 2 / RenderConfig.side;
+        }
         $.getJSON("data/monster.json", function(mst_data) {
             var monsters = mst_data;
             config.monsters = monsters;
@@ -134,18 +148,14 @@ function loadData(onfinish) {
                     }
                     let obj = objects[mc.type];
                     if (!m.point) {
-                        let x = Math.floor(m.grid % RenderConfig.width);
-                        let y = Math.floor(m.grid / RenderConfig.width);
-                        m.point = {
-                            x: x * RenderConfig.side + obj.anchor.x + RenderConfig.xoffset,
-                            y: y * RenderConfig.side + obj.anchor.y + RenderConfig.yoffset
-                        }
+                        m.point = getPointByGrid(m.grid);
                     }
 
                     let lines = makeLines(m.id, m.point, obj, mc.solid);
                     config.enemys.push({
                         id : m.id,
                         point : m.point,
+                        grid: m.grid,
                         hp : mc.hp,
                         solid : mc.solid,
                         evt: mc.evt,
@@ -170,6 +180,7 @@ function copyEnemies(enemys) {
         let e = {
             id: enemy.id,
             point: copyPoint(enemy.point),
+            grid: enemy.grid,
             hp: enemy.hp,
             visible: true,
             solid: enemy.solid,

@@ -164,6 +164,15 @@ function getIntersection(line1, line2) {
     return { x: a.x + dx , y: a.y + dy };
 }
 
+function getAngle(vector1, vector2) {
+    const dotProduct = vector1[0] * vector2[0] + vector1[1] * vector2[1];
+    const magnitude1 = Math.sqrt(vector1[0] * vector1[0] + vector1[1] * vector1[1]);
+    const magnitude2 = Math.sqrt(vector2[0] * vector2[0] + vector2[1] * vector2[1]);
+    const cosTheta = dotProduct / (magnitude1 * magnitude2);
+    const theta = Math.acos(cosTheta);
+    return theta;
+}
+
 function checkNextInterpoint(start, dir, lines, ignores, dashid, isThrough) {
     let nearest = 1e10;
     let inter = { point: null, line: null };
@@ -175,6 +184,10 @@ function checkNextInterpoint(start, dir, lines, ignores, dashid, isThrough) {
         }
         // 起点所在的线条不检查，防止在同一条线上反复碰撞
         if (ignores.indexOf(l) != -1 || (l.hide != 0 && !isThrough)) {
+            continue;
+        }
+        let angle = getAngle(dir, l.normal);
+        if (angle < Math.PI / 2) {
             continue;
         }
         let p = getRaySegmentIntersection(start, dir, l);
@@ -240,53 +253,66 @@ function unMixId(id) {
     return [Math.floor(id / 1000), id % 1000];
 }
 
+function _hidenLine(l1, lines) {
+    for (let i = 3; i < lines.length; i++) {
+        if (i == j || !lines[i].solid)
+            continue;
+        let l2 = lines[i];
+        if ((l1.x1 == l2.x1 && l1.y1 == l2.y1 && l1.x2 == l2.x2 && l1.y2 == l2.y2) ||
+            (l1.x1 == l2.x2 && l1.y1 == l2.y2 && l1.x2 == l2.x1 && l1.y2 == l2.y1)) {
+            l1.hide = l2.mid;
+            l2.hide = l1.mid;
+        } else {
+            let p11 = {x: l1.x1, y: l1.y1};
+            let p12 = {x: l1.x2, y: l1.y2};
+            let p21 = {x: l2.x1, y: l2.y1};
+            let p22 = {x: l2.x2, y: l2.y2};
+            if (pointInLine(p11, l2) && pointInLine(p12, l2)) {
+                l1.hide = l2.mid;
+                addHideLine(l2, l1);
+            } else if (pointInLine(p21, l1) && pointInLine(p22, l1)) {
+                l2.hide = l1.mid;
+                addHideLine(l1, l2);
+            } else if (pointInLine(p11, l2)) {
+                if (pointInLine(p21, l1) && !vecEqual(p11, p21)) {
+                    let line = {x1: p11.x, y1: p11.y, x2: p21.x, y2: p21.y, hide:mixId(l1.mid, l2.mid)};
+                    addHideLine(l1, line);
+                    addHideLine(l2, line);
+                } else if (pointInLine(p22, l1) && !vecEqual(p11, p22)) {
+                    let line = {x1: p11.x, y1: p11.y, x2: p22.x, y2: p22.y, hide:mixId(l1.mid, l2.mid)};
+                    addHideLine(l1, line);
+                    addHideLine(l2, line);
+                }
+            } else if (pointInLine(p12, l2)) {
+                if (pointInLine(p21, l1) && !vecEqual(p12, p21)) {
+                    let line = {x1: p12.x, y1: p12.y, x2: p21.x, y2: p21.y, hide:mixId(l1.mid, l2.mid)};
+                    addHideLine(l1, line);
+                    addHideLine(l2, line);
+                } else if (pointInLine(p22, l1) && !vecEqual(p12, p22)) {
+                    let line = {x1: p12.x, y1: p12.y, x2: p22.x, y2: p22.y, hide:mixId(l1.mid, l2.mid)};
+                    addHideLine(l1, line);
+                    addHideLine(l2, line);
+                }
+            }
+        }
+    }
+}
+
+function hidenPartLines(parts, lines) {
+    for (let l1 of parts) {
+        if (!l1.solid) {
+            continue;
+        }
+        _hidenLine(l1, lines);
+    }
+}
+
 function hidenInline(lines) {
     for (let j = 3; j < lines.length; j++) {
         let l1 = lines[j];
         if (!l1.solid) {
             continue;
         }
-        for (let i = 3; i < lines.length; i++) {
-            if (i == j || !lines[i].solid)
-                continue;
-            let l2 = lines[i];
-            if ((l1.x1 == l2.x1 && l1.y1 == l2.y1 && l1.x2 == l2.x2 && l1.y2 == l2.y2) ||
-                (l1.x1 == l2.x2 && l1.y1 == l2.y2 && l1.x2 == l2.x1 && l1.y2 == l2.y1)) {
-                l1.hide = l2.mid;
-                l2.hide = l1.mid;
-            } else {
-                let p11 = {x: l1.x1, y: l1.y1};
-                let p12 = {x: l1.x2, y: l1.y2};
-                let p21 = {x: l2.x1, y: l2.y1};
-                let p22 = {x: l2.x2, y: l2.y2};
-                if (pointInLine(p11, l2) && pointInLine(p12, l2)) {
-                    l1.hide = l2.mid;
-                    addHideLine(l2, l1);
-                } else if (pointInLine(p21, l1) && pointInLine(p22, l1)) {
-                    l2.hide = l1.mid;
-                    addHideLine(l1, l2);
-                } else if (pointInLine(p11, l2)) {
-                    if (pointInLine(p21, l1) && !vecEqual(p11, p21)) {
-                        let line = {x1: p11.x, y1: p11.y, x2: p21.x, y2: p21.y, hide:mixId(l1.mid, l2.mid)};
-                        addHideLine(l1, line);
-                        addHideLine(l2, line);
-                    } else if (pointInLine(p22, l1) && !vecEqual(p11, p22)) {
-                        let line = {x1: p11.x, y1: p11.y, x2: p22.x, y2: p22.y, hide:mixId(l1.mid, l2.mid)};
-                        addHideLine(l1, line);
-                        addHideLine(l2, line);
-                    }
-                } else if (pointInLine(p12, l2)) {
-                    if (pointInLine(p21, l1) && !vecEqual(p12, p21)) {
-                        let line = {x1: p12.x, y1: p12.y, x2: p21.x, y2: p21.y, hide:mixId(l1.mid, l2.mid)};
-                        addHideLine(l1, line);
-                        addHideLine(l2, line);
-                    } else if (pointInLine(p22, l1) && !vecEqual(p12, p22)) {
-                        let line = {x1: p12.x, y1: p12.y, x2: p22.x, y2: p22.y, hide:mixId(l1.mid, l2.mid)};
-                        addHideLine(l1, line);
-                        addHideLine(l2, line);
-                    }
-                }
-            }
-        }
+        _hidenLine(l1, lines);
     }
 }

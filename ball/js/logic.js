@@ -61,7 +61,11 @@ let ldata = {
 
     cmds: [],
 
-    ops: []
+    ops: [],
+
+    takegrids: [],
+
+    callid : 1
 };
 
 const CmdType = {
@@ -90,6 +94,22 @@ function pointInRange(point) {
 function addCmd(cmd) {
     cmd.cmdid = ldata.cmds.length + 1;
     ldata.cmds.push(cmd);
+}
+
+function resetTakeGrids() {
+    ldata.takegrids.length = 0;
+
+    for (let i = 0; i < RenderConfig.width * RenderConfig.height; i++) {
+        ldata.takegrids.push(0);
+    }
+
+    for (let eid in ldata.enemys) {
+        let enemy = ldata.enemys[eid];
+        if (enemy.visible && enemy.hp > 0) {
+            ldata.takegrids[enemy.grid] = enemy.id;
+            // 超过1格的，将周围格子加上去。
+        }
+    }
 }
 
 function initLogic(base, interLen, roles) {
@@ -127,6 +147,7 @@ function initLogic(base, interLen, roles) {
         }
         enemy.rect.top -= yoffset;
         enemy.rect.bottom -= yoffset;
+        enemy.grid -= ldata.startLine * RenderConfig.width;
 
         if (enemy.rect.top < ldata.rect.top || enemy.rect.bottom > ldata.rect.bottom) {
             enemy.visible = false;
@@ -146,6 +167,8 @@ function initLogic(base, interLen, roles) {
     console.log("enemyCount:" + ldata.enemyCount);
 
     hidenInline(ldata.lines);
+
+    resetTakeGrids();
 }
 
 function getNextCollision(start, dirNorm, ignores, dashid, isThrough) {
@@ -193,14 +216,10 @@ function removeDead(lines, id) {
 
             if (l.hideLines != null) {
                 let temp = [];
-                //console.log("line " + l.mid + " hideLines:" + objToString(l.hideLines));
                 for (let l1 of l.hideLines) {
                     let ids = unMixId(l1.mid);
-                    //console.log(objToString(ids) + " mid:" + l1.mid);
                     if (ids[0] != id && ids[1] != id) {
                         temp.push(l1);
-                    } else {
-                        //console.log("remove line " + l.mid + " mixid:" + l1.mid);
                     }
                 }
                 if (temp.length == null) {
@@ -215,8 +234,61 @@ function removeDead(lines, id) {
     return temp;
 }
 
-function onEmenyDead(id) {
+function addEnemy(id, mc, obj, grid) {
+    let point = getPointByGrid(grid);
+    let lines = makeLines(id, point, obj, mc.solid);
+    let enemy = {
+        id : id,
+        point : point,
+        grid: grid,
+        hp : mc.hp,
+        solid : mc.solid,
+        evt: mc.evt,
+        obj : obj,
+        lines : lines,
+        rect: makeRect(lines)
+    };
+
+    for (let l of lines) {
+        ldata.lines.push(l);
+    }
+    ldata.enemys[id] = enemy;
+    hidenPartLines(lines, ldata.lines);
+}
+
+function addEnemies(cid, count, grid) {
+    let mc = getMonster(cid);
+    let obj = config.objects[mc.type];
+    let freeGrids = [];
+    let g = grid;
+    for (let i = 0; i < count; i++) {
+        while (ldata.takegrids[g] != 0) {
+            ++g;
+        }
+        freeGrids.push(g);
+    }
+    for (let i = 0; i < count; i++) {
+        addEnemy(ldata.callid + i, mc, obj, freeGrids[i]);
+    }
+    ldata.callid += count;
+}
+
+function onEnemyDead(id) {
+    let deads = [id];
     ldata.lines = removeDead(ldata.lines, id);
+    let enemy = ldata.enemys[id];
+    if (enemy.evt && enemy.evt.type == StageEvent.DEAD_CALL) {
+        addEnemies(enemy.evt.cid, enemy.evt.count, enemy.grid);
+        return null;
+    } else {
+        for (let skill of ldata.skills) {
+            if (skill.type == SkillType.DEAD_TRIGGER) {
+                // 死亡触发技能
+            }
+        }
+    }
+
+    return deads;
 }
 
 function resetIgnore(start, ignores, collide) {
@@ -243,6 +315,7 @@ function calcCollide(ball) {
     let start = {x: ball.x + ball.dir.x * ball.passed, y: ball.y + ball.dir.y * ball.passed};
     let collide = getNextCollision(start, ball.dir, ball.ignores, ball.hit, ldata.isThrough);
     ball.collide = collide;
+    // 虚线物体或者当前为穿透球，需要记录正在那个敌方体内，再次碰撞其他物体前不会反复计算碰撞伤害
     if (ball.collide.line && (!ball.collide.line.solid || ldata.isThrough)) {
         ball.hit = ball.collide.line.mid;
     } else {
@@ -311,7 +384,7 @@ function effectSkill(skill) {
             enemy.hp -= skill.cfg.dmg;
             effects.push({id:eid, dmg: skill.cfg.dmg, hp: enemy.hp});
             if (enemy.hp <= 0) {
-                onEmenyDead(eid);
+                onEnemyDead(eid);
                 ldata.enemyCount -= 1;
             }
         }
@@ -433,6 +506,7 @@ function pushMap(pushLine) {
 
             enemy.rect.top += yoffset;
             enemy.rect.bottom += yoffset;
+            enemy.grid += pushLine * ldata.startLine * RenderConfig.widt;
             if (enemy.rect.top < ldata.rect.top || enemy.rect.bottom > ldata.rect.bottom) {
                 visible = false;
             }
@@ -451,6 +525,8 @@ function pushMap(pushLine) {
         }
 
         hidenInline(ldata.lines);
+
+        resetTakeGrids();
         
         addCmd({type: CmdType.PUSH, line: pushLine});
     } 
@@ -531,9 +607,9 @@ function updateRound() {
                 }
            
                 if (enemy.hp <= 0) {
-                    onEmenyDead(enemy.id);
+                    let deads = onEnemyDead(enemy.id);
                     // 中间可以插入一些死亡触发的技能，有新的死亡id可以加入进来，如果触发移动或者召唤，则传入null
-                    checkCollide([enemy.id]);
+                    checkCollide(deads);
                     if (enemy.solid)
                         ldata.enemyCount -= 1;
                     // console.log("enemyCount:" + ldata.enemyCount);
