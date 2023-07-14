@@ -275,16 +275,7 @@ function aim() {
 
         start = collide.point;
         n = reflect;
-        let temp = [];
-        if (collide.line.mid == 0 || !ldata.isThrough) {
-            temp.push(collide.line);
-        }
-        for (let l of ignores) {
-            if (pointInLine(start, l)) {
-                temp.push(l);
-            }
-        }
-        ignores = temp;
+        ignores = resetIgnore(start, ignores, collide);
         if (!collide.line.solid || ldata.isThrough) {
             dashid = collide.line.mid;
         } else {

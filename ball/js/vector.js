@@ -169,6 +169,7 @@ function checkNextInterpoint(start, dir, lines, ignores, dashid, isThrough) {
     let inter = { point: null, line: null };
     for (let i = 0; i < lines.length; i++) {
         let l = lines[i];
+        // 检测是否碰到虚线
         if (dashid > 0 && l.mid == dashid) {
             continue;
         }
@@ -178,6 +179,7 @@ function checkNextInterpoint(start, dir, lines, ignores, dashid, isThrough) {
         }
         let p = getRaySegmentIntersection(start, dir, l);
         if (p != null) {
+            // 检测是否碰到内部隐藏虚线，非完整隐藏线段
             if (hitHide(p, l)) {
                 continue;
             }

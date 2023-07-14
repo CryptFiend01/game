@@ -26,18 +26,23 @@ function updateGroupDebug() {
         }
         let x = run(d);
         if (x == -1) {
+            d = -1;
             break;
         }
         game.totalDist += x;
         d += x;
     }
 
-    let stop = cmdCount != game.cmds.length;
+    if (d == -1) {
+        onfinish();
+    } else {
+        let stop = cmdCount != game.cmds.length;
 
-    game.speed += game.speedAdd;
-    if (game.timer > 0 && stop) {
-        clearInterval(game.timer);
-        game.timer = -1;
+        game.speed += game.speedAdd;
+        if (game.timer > 0 && stop) {
+            clearInterval(game.timer);
+            game.timer = -1;
+        }
     }
     draw();
 }

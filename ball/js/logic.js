@@ -219,22 +219,27 @@ function onEmenyDead(id) {
     ldata.lines = removeDead(ldata.lines, id);
 }
 
-function checkIgnore(ball) {
+function resetIgnore(start, ignores, collide) {
     let temp = [];
-    let collide = ball.collide
-    if (collide.line && (collide.line.mid == 0 || !ldata.isThrough)) {
+    // 任何情况，本次碰撞线加入下次碰撞检测的忽略组中
+    if (collide.line) {
         temp.push(collide.line);
     }
-    for (let l of ball.ignores) {
-        if (pointInLine(ball, l)) {
+    for (let l of ignores) {
+        if (pointInLine(start, l)) {
             temp.push(l);
         }
     }
-    ball.ignores = temp;
+    return temp;
+}
+
+function checkIgnore(ball) {
+    ball.ignores = resetIgnore(ball, ball.ignores, ball.collide);
 }
 
 function calcCollide(ball) {
     checkIgnore(ball);
+    // 计算新的碰撞时，球可能已经移动的了一段距离，逻辑部分不会实时改变球的坐标，所以需要重新计算当前位置，这部分可以考虑每次直接把球的当前点算出来
     let start = {x: ball.x + ball.dir.x * ball.passed, y: ball.y + ball.dir.y * ball.passed};
     let collide = getNextCollision(start, ball.dir, ball.ignores, ball.hit, ldata.isThrough);
     ball.collide = collide;
