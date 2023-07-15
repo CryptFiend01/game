@@ -255,7 +255,7 @@ function unMixId(id) {
 
 function _hidenLine(l1, lines) {
     for (let i = 3; i < lines.length; i++) {
-        if (i == j || !lines[i].solid)
+        if (l1 === lines[i] || !lines[i].solid)
             continue;
         let l2 = lines[i];
         if ((l1.x1 == l2.x1 && l1.y1 == l2.y1 && l1.x2 == l2.x2 && l1.y2 == l2.y2) ||

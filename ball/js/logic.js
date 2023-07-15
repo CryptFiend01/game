@@ -235,7 +235,7 @@ function removeDead(lines, id) {
 }
 
 function addEnemy(id, mc, obj, grid) {
-    let point = getPointByGrid(grid);
+    let point = getPointByGrid(obj, grid);
     let lines = makeLines(id, point, obj, mc.solid);
     let enemy = {
         id : id,

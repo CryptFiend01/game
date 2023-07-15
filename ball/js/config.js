@@ -114,7 +114,7 @@ function getMonster(cid) {
     return null;
 };
 
-function getPointByGrid(grid) {
+function getPointByGrid(obj, grid) {
     let x = Math.floor(grid % RenderConfig.width);
     let y = Math.floor(grid / RenderConfig.width);
     return {
@@ -148,7 +148,7 @@ function loadData(onfinish) {
                     }
                     let obj = objects[mc.type];
                     if (!m.point) {
-                        m.point = getPointByGrid(m.grid);
+                        m.point = getPointByGrid(obj, m.grid);
                     }
 
                     let lines = makeLines(m.id, m.point, obj, mc.solid);
