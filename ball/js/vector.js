@@ -87,6 +87,47 @@ function pointInRect(point, rect) {
     }
 }
 
+function pointOnSide(point, rect) {
+    return point.x == rect.left || point.x == rect.right || point.y == rect.top || point.y == rect.down;
+}
+
+function pointToLineDistance(point, line) {
+    let px = point.x;
+    let py = point.y;
+    let x1 = line.x1;
+    let y1 = line.y1;
+    let x2 = line.x2;
+    let y2 = line.y2;
+
+    var A = px - x1;
+    var B = py - y1;
+    var C = x2 - x1;
+    var D = y2 - y1;
+  
+    var dot = A * C + B * D;
+    var len_sq = C * C + D * D;
+    var param = dot / len_sq;
+  
+    var xx, yy;
+  
+    if (param < 0 || (x1 === x2 && y1 === y2)) {
+      xx = x1;
+      yy = y1;
+    } else if (param > 1) {
+      xx = x2;
+      yy = y2;
+    } else {
+      xx = x1 + param * C;
+      yy = y1 + param * D;
+    }
+  
+    var dx = px - xx;
+    var dy = py - yy;
+  
+    return Math.sqrt(dx * dx + dy * dy);
+}
+   
+
 function reflectVector(incident, normal) {
     let dt = dot(incident, normal);
     let r = {

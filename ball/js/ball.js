@@ -21,7 +21,7 @@ let game = {
     collisions : [],
     base: {x: 200, y: 552},
     timer: -1,
-    basSpeed: 8,
+    basSpeed: 2,
     speed: 1,
     speedAdd: 0,
     running: null,
@@ -36,7 +36,7 @@ let game = {
     ],
     distInterval: 15,
     lastDist: 0,
-    gameMode: GameState.GS_PLAY,
+    gameMode: GameState.GS_GROUP_DEBUG,
 
     pushed: 0,
     chooseRole: null,
@@ -194,6 +194,7 @@ function onfinish() {
                     }
                 }
             }
+            resetSkillRoles();
         } else if (cmd.type == CmdType.WIN) {
             break;
         }
@@ -334,6 +335,22 @@ function run(pass) {
             rdata.lines = removeDead(rdata.lines, cmd.dmg.id);
         }
 
+        // 处理事件
+        if (cmd.evts) {
+            for (let evt of cmd.evts) {
+                if (evt.type == EvtType.NEW_ENEMY) {
+                    let mc = getMonster(evt.cid);
+                    let obj = config.objects[mc.type];
+                    let point = getPointByGrid(obj, evt.grid);
+                    let lines = makeLines(evt.id, point, obj, mc.solid);
+                    for (let l of lines) {
+                        l.color = ColorSet.LineSolid;
+                        rdata.lines.push(l);
+                    }
+                }
+            }
+        }
+
         game.running = game.cmds.shift();
         return dist;
     } else {
@@ -382,6 +399,7 @@ function doUseSkill(role, target) {
     useSkill(role, target);
     game.cmds = ldata.cmds;
     game.running = game.cmds.shift();
+    rdata.skillRoles[role.id-1] = 1;
     onfinish();
     draw();
 }
@@ -536,7 +554,7 @@ function onLoadReplay() {
     show("replay-panel", 'flex');
 
     if (game.replayJson == "") {
-        game.replayJson = `[{"op":"skill","rid":2,"target":null},{"op":"ball","dir":{"x":0.9945864928494073,"y":-0.10391202164098284}},{"op":"ball","dir":{"x":-0.04834952725659454,"y":-0.9988304777158453}},{"op":"ball","dir":{"x":0.6544105251269783,"y":-0.7561394478553758}},{"op":"skill","rid":1,"target":null},{"op":"ball","dir":{"x":0.12036328578759667,"y":-0.9927299126320378}},{"op":"ball","dir":{"x":0.42800600669585825,"y":-0.9037758893842349}},{"op":"skill","rid":2,"target":null},{"op":"ball","dir":{"x":-0.996481189476606,"y":-0.08381669892860505}},{"op":"ball","dir":{"x":-0.11991433369929438,"y":-0.9927842427100938}}]`;
+        game.replayJson = `[{"op":"skill","rid":2,"target":null},{"op":"ball","dir":{"x":0.9869119380695537,"y":-0.16126012059960027}},{"op":"skill","rid":4,"target":{"x":0,"y":6}},{"op":"ball","dir":{"x":0.0300342913720735,"y":-0.999548868911259}},{"op":"skill","rid":2,"target":null},{"op":"ball","dir":{"x":0.9979571934826578,"y":-0.06388614854737555}}]`;
     }
 
     const txt = document.getElementById("replay-json");

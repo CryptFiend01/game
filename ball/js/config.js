@@ -44,6 +44,13 @@ const StageEvent = {
     ROUND_MOVE: 4 // move_type
 }
 
+const EvtType = {
+    NEW_ENEMY : 1, // {id: 1, cid:1, grid:1}
+    ENEMY_MOVE : 2, // {id: 1, grid: 2}
+    SKILL_TRIGGER : 3, // {skill:1...}
+    ROTATE : 4
+}
+
 function makeLines(id, point, obj, solid) {
     let lt = {x: point.x - obj.anchor.x, y: point.y - obj.anchor.y};
     let lines = [];

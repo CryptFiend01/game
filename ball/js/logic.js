@@ -8,7 +8,7 @@
 // }
 // {
 //       {type: "create_ball", dir: {x:1, y:2}, id: 1, cid: 2}, ....
-//       {type: "collide", reflect: {x: 3, y:4}, target:{x: 1, y: 1}, dmg: {id:1, dmg:10, hp:180}, skill: {}}, ...
+//       {type: "collide", reflect: {x: 3, y:4}, target:{x: 1, y: 1}, dmg: {id:1, dmg:10, hp:180}, evts: [{type:1, id:1001, cid:9, grid:3}]}, ...
 //       {type: "push", line: 5, moved:[{id:1, x:30, y:50},...]}
 //       {type: "win"}
 //       {type: "lose"}
@@ -61,11 +61,13 @@ let ldata = {
 
     cmds: [],
 
+    afterCmds: [],
+
     ops: [],
 
     takegrids: [],
 
-    callid : 1
+    callid : 1001
 };
 
 const CmdType = {
@@ -103,11 +105,31 @@ function resetTakeGrids() {
         ldata.takegrids.push(0);
     }
 
+    let setTakeGrid = (grid, eid) => {
+        if (grid < 0 || grid >= ldata.takegrids.length) {
+            return;
+        }
+        if (ldata.takegrids[grid] != 0) {
+            console.error("grid " + grid + " has taked");
+        } else {
+            ldata.takegrids[grid] = eid;
+        }
+    }
+
     for (let eid in ldata.enemys) {
         let enemy = ldata.enemys[eid];
         if (enemy.visible && enemy.hp > 0) {
-            ldata.takegrids[enemy.grid] = enemy.id;
-            // 超过1格的，将周围格子加上去。
+            if (enemy.obj.size == 1) {
+                setTakeGrid(enemy.grid, enemy.id);
+            } else {
+                // 超过1格的，将周围格子加上去。
+                for (let i = 0; i < enemy.obj.size; i++) {
+                    for (let j = 0; j < enemy.obj.size; j++) {
+                        let grid = enemy.grid + j + i * RenderConfig.width;
+                        setTakeGrid(grid, enemy.id);
+                    }
+                }
+            }
         }
     }
 }
@@ -234,6 +256,64 @@ function removeDead(lines, id) {
     return temp;
 }
 
+function changeBallInEnemy(ball, start, e) {
+    //ball.hit = e.id;
+    let dist = 0;
+    let nearestLine = null;
+    for (let l of e.lines) {
+        if (l.hide || l.hideLines) {
+            continue;
+        }
+        let d = pointToLineDistance(start, l);
+        if (nearestLine == null || d < dist) {
+            dist = d;
+            nearestLine = l;
+        }
+    }
+
+    let cmd = {
+        type: CmdType.COLLIDE, 
+        id: ball.id,
+        target: start
+    };
+
+    if (!nearestLine) {
+        // 被一个中间物包围，那就直接删除这个球
+        ldata.afterCmds.push(cmd);
+    } else {
+        // 在最近直线上从中线弹出出去
+        let point = {
+            x: nearestLine.x1 + (nearestLine.x2 - nearestLine.x1) / 2, 
+            y: nearestLine.y1 + (nearestLine.y2 - nearestLine.y1) / 2
+        };
+        // 以中点为目标，到达之后方向不变
+        let dir = normalVector({x: point.x - start.x, y: point.y - start.y});
+        cmd.target = point;
+        cmd.dir = dir;
+        ldata.afterCmds.push(cmd);
+    }
+}
+
+function checkBallInEnemies(newEnemies) {
+    // 被包含在新的敌人内部的球直接穿透过去，不检测对于该敌人的碰撞
+    if (!ldata.isThrough) {
+        for (let ball of ldata.balls.heap) {
+            // 已经在内部的球不应该会在新生成的球内
+            if (ball.hit != 0) {
+                continue;
+            }
+            let start = {x: ball.x + ball.dir.x * ball.passed, y: ball.y + ball.dir.y * ball.passed};
+            for (let e of newEnemies) {
+                if (pointInRect(start, e.rect) && !pointOnSide(start, e.rect)) {
+                    console.log("ball " + ball.id + vec2String(start) + " is in new enemy " + e.id + " rect:" + objToString(e.rect));
+                    changeBallInEnemy(ball, start, e);
+                    break;
+                }
+            }
+        }
+    }
+}
+
 function addEnemy(id, mc, obj, grid) {
     let point = getPointByGrid(obj, grid);
     let lines = makeLines(id, point, obj, mc.solid);
@@ -242,6 +322,7 @@ function addEnemy(id, mc, obj, grid) {
         point : point,
         grid: grid,
         hp : mc.hp,
+        visible: true,
         solid : mc.solid,
         evt: mc.evt,
         obj : obj,
@@ -253,10 +334,13 @@ function addEnemy(id, mc, obj, grid) {
         ldata.lines.push(l);
     }
     ldata.enemys[id] = enemy;
+    ldata.enemyCount += 1;
     hidenPartLines(lines, ldata.lines);
+    return enemy;
 }
 
 function addEnemies(cid, count, grid) {
+    let evts = [];
     let mc = getMonster(cid);
     let obj = config.objects[mc.type];
     let freeGrids = [];
@@ -266,20 +350,44 @@ function addEnemies(cid, count, grid) {
             ++g;
         }
         freeGrids.push(g);
+        ++g;
     }
+
+    let newEnemies = [];
     for (let i = 0; i < count; i++) {
-        addEnemy(ldata.callid + i, mc, obj, freeGrids[i]);
+        let id = ldata.callid + i;
+        //console.log("add enemy " + id + " at grid:" + freeGrids[i]);
+        let e = addEnemy(id, mc, obj, freeGrids[i]);
+        evts.push({type: EvtType.NEW_ENEMY, id: id, cid: cid, grid: freeGrids[i]});
+        newEnemies.push(e);
     }
     ldata.callid += count;
+
+    return {evts: evts, enemies: newEnemies};
 }
 
 function onEnemyDead(id) {
-    let deads = [id];
+    let ret = {deads:[id]};
+
+    // 移除向量
     ldata.lines = removeDead(ldata.lines, id);
     let enemy = ldata.enemys[id];
+    // 清空格子占据信息
+    for (let i = 0; i < enemy.obj.size; i++) {
+        for (let j = 0; j < enemy.obj.size; j++) {
+            let grid = enemy.grid + j + i * RenderConfig.width;
+            ldata.takegrids[grid] = 0;
+        }
+    }
+
+    // 处理死亡事件
     if (enemy.evt && enemy.evt.type == StageEvent.DEAD_CALL) {
-        addEnemies(enemy.evt.cid, enemy.evt.count, enemy.grid);
-        return null;
+        ret.deads = null;
+        let r = addEnemies(enemy.evt.cid, enemy.evt.count, enemy.grid);
+        ret.evts = r.evts;
+        ret.enemies = r.enemies;
+        //console.log("add evts:" + objToString(ret.evts));
+        return ret;
     } else {
         for (let skill of ldata.skills) {
             if (skill.type == SkillType.DEAD_TRIGGER) {
@@ -288,7 +396,7 @@ function onEnemyDead(id) {
         }
     }
 
-    return deads;
+    return ret;
 }
 
 function resetIgnore(start, ignores, collide) {
@@ -382,9 +490,11 @@ function effectSkill(skill) {
         if (enemy.visible && enemy.solid && enemy.hp > 0 && rectInserect(enemy.rect, skill.rect)) {
             //console.log("inserect enemy rect:" + objToString(enemy.rect));
             enemy.hp -= skill.cfg.dmg;
-            effects.push({id:eid, dmg: skill.cfg.dmg, hp: enemy.hp});
+            let cmd = {id:eid, dmg: skill.cfg.dmg, hp: enemy.hp};
+            effects.push(cmd);
             if (enemy.hp <= 0) {
-                onEnemyDead(eid);
+                let ret = onEnemyDead(eid);
+                cmd.evts = ret.evts;
                 ldata.enemyCount -= 1;
             }
         }
@@ -502,11 +612,12 @@ function pushMap(pushLine) {
                 line.y1 += yoffset;
                 line.y2 += yoffset;
                 line.hide = 0;
+                line.hideLines = null;
             }
 
             enemy.rect.top += yoffset;
             enemy.rect.bottom += yoffset;
-            enemy.grid += pushLine * ldata.startLine * RenderConfig.widt;
+            enemy.grid += pushLine * RenderConfig.width;
             if (enemy.rect.top < ldata.rect.top || enemy.rect.bottom > ldata.rect.bottom) {
                 visible = false;
             }
@@ -607,9 +718,10 @@ function updateRound() {
                 }
            
                 if (enemy.hp <= 0) {
-                    let deads = onEnemyDead(enemy.id);
+                    let ret = onEnemyDead(enemy.id);
+                    cmd.evts = ret.evts;
                     // 中间可以插入一些死亡触发的技能，有新的死亡id可以加入进来，如果触发移动或者召唤，则传入null
-                    checkCollide(deads);
+                    checkCollide(ret.deads);
                     if (enemy.solid)
                         ldata.enemyCount -= 1;
                     // console.log("enemyCount:" + ldata.enemyCount);
@@ -618,6 +730,8 @@ function updateRound() {
                         addCmd({type: CmdType.WIN});
                         console.timeEnd("round");
                         return;
+                    } else if (ret.enemies) {
+                        //checkBallInEnemies(ret.enemies);
                     }
                 }
             } else {
@@ -626,6 +740,12 @@ function updateRound() {
         }
 
         addCmd(cmd);
+        if (ldata.afterCmds.length > 0) {
+            for (let c of ldata.afterCmds) {
+                addCmd(c);
+            }
+            ldata.afterCmds.length = 0;
+        }
     }
 
     // 敌方行动

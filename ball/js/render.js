@@ -6,6 +6,7 @@ let rdata = {
     balls : [],
     skillSelect: null,
     skillRange : {},
+    skillRoles : [0,0,0,0,0],
     status : 1,
     baseLine: null,
 }
@@ -55,13 +56,19 @@ function removeSkillRange(cid) {
     delete rdata.skillRange[cid];
 }
 
+function resetSkillRoles() {
+    for (let i = 0; i < rdata.skillRoles.length; i++) {
+        rdata.skillRoles[i] = 0;
+    }
+}
+
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     drawDashLine(rdata.baseLine);
 
     for (let i = 0; i < rdata.roles.length; i++) {
-        drawRole({x: i * 80 + 10, y: rdata.base.y + 60, width: 60, height: 80, color: rdata.roles[i].color});
+        drawRole({x: i * 80 + 10, y: rdata.base.y + 60, width: 60, height: 80, color: rdata.roles[i].color, border:rdata.skillRoles[i] != 0});
     }
 
     for (let l of rdata.lines) {
@@ -191,10 +198,16 @@ function drawDashLine({x1, y1, x2, y2, color, width=2}) {
     ctx.setLineDash(old);
 }
 
-function drawRole({x, y, width, height, color}) {
+function drawRole({x, y, width, height, color, border}) {
     ctx.beginPath();
     ctx.fillStyle = color;
+    if (border) {
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = "#33bb33";
+    }
     ctx.rect(x, y, width, height);
+    if (border)
+        ctx.stroke();
     ctx.fill();
 }
 
