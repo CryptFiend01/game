@@ -226,7 +226,7 @@ function ballMove(ball, dist) {
 function getShortestBall() {
     let shortest = {dist:1e9, bid:0, target:{x:0,y:0}};
     for (let ball of rdata.balls) {
-        let d = length({x:ball.x-ball.nextTarget.x, y:ball.y-ball.nextTarget.y});
+        let d = distance({x:ball.x-ball.nextTarget.x, y:ball.y-ball.nextTarget.y});
         if (d < shortest.dist) {
             shortest.bid = ball.id;
             shortest.dist = d;
@@ -301,7 +301,7 @@ function run(pass) {
     }
     let rest = game.speed - pass;
     let v = {x: cmd.target.x - ball.x, y: cmd.target.y - ball.y};
-    let dist = length(v);
+    let dist = distance(v);
     if (dist <= rest) {
         moveAll(dist);
 

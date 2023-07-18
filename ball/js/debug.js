@@ -59,7 +59,7 @@ function updateDebug() {
         ball.status = BallStatus.MOVING;
     }
     let d = game.speed - ball.dist;
-    let dist = length({x: cmd.target.x - ball.x, y: cmd.target.y - ball.y});
+    let dist = distance({x: cmd.target.x - ball.x, y: cmd.target.y - ball.y});
     if (dist <= d) {
         if (cmd.reflect == null) {
             ball.status = BallStatus.DESTROY;

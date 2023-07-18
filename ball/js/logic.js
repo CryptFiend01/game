@@ -425,7 +425,7 @@ function calcCollide(ball) {
         ball.hit = 0;
     }
     if (ball.collide.point != null) {
-        ball.dist = length({x:collide.point.x - ball.x, y:collide.point.y - ball.y});
+        ball.dist = distance({x:collide.point.x - ball.x, y:collide.point.y - ball.y});
         if (ball.ctimes == 0) {
             // 还未第一次触发弹射的球，因为目标消失而重新计算碰撞点，需要加上起点等待距离
             ball.dist += (ball.id - 1) * ldata.interLen;
@@ -558,7 +558,7 @@ function startRound(aimDir) {
     assignPoint(aimDir, ldata.begin);
 
     let collide = getNextCollision(ldata.base, ldata.begin, null, 0, ldata.isThrough);
-    let dist = length({x:collide.point.x - ldata.base.x, y:collide.point.y - ldata.base.y});
+    let dist = distance({x:collide.point.x - ldata.base.x, y:collide.point.y - ldata.base.y});
     let n = 0;
     for (let role of ldata.roles) {
         for (let i = 0; i < role.count; i++) {

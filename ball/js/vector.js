@@ -9,12 +9,12 @@ function normalVector(v) {
     return {x : -v.y, y : v.x};
 }
 
-function length(v) {
+function distance(v) {
     return Math.sqrt(v.x * v.x + v.y * v.y);
 }
 
 function normalize(v) {
-    let d = length(v);
+    let d = distance(v);
     return {x: v.x / d, y: v.y / d};
 }
 
@@ -191,8 +191,8 @@ function getIntersection(line1, line2) {
 
 function getAngle(v1, v2) {
     const dotProduct = v1.x * v2.x + v1.y * v2.y;
-    const magnitude1 = length(v1);
-    const magnitude2 = length(v2);
+    const magnitude1 = distance(v1);
+    const magnitude2 = distance(v2);
     const cosTheta = dotProduct / (magnitude1 * magnitude2);
     const theta = Math.acos(cosTheta);
     return Math.PI - theta;
@@ -221,7 +221,7 @@ function checkNextInterpoint(start, dir, lines, ignores, dashid, isThrough) {
             if (hitHide(p, l)) {
                 continue;
             }
-            let dist = length({x: p.x - start.x, y: p.y - start.y});
+            let dist = distance({x: p.x - start.x, y: p.y - start.y});
             if (dist < nearest || (dist == nearest && !inter.line.solid && l.solid)) {
                 inter.point = p;
                 inter.line = l;
@@ -243,9 +243,9 @@ function pointInLine(point, line) {
         let right = Math.max(line.x1, line.x2);
         return point.y == line.y1 && point.x >= left && point.x <= right;
     } else {
-        let d = length({x: line.x2 - line.x1, y: line.y2 - line.y1});
-        let d2 = length({x: line.x1 - point.x, y: line.y1 - point.y});
-        let d3 = length({x: line.x2 - point.x, y: line.y2 - point.y});
+        let d = distance({x: line.x2 - line.x1, y: line.y2 - line.y1});
+        let d2 = distance({x: line.x1 - point.x, y: line.y1 - point.y});
+        let d3 = distance({x: line.x2 - point.x, y: line.y2 - point.y});
         return (d - d2 - d3) == 0;
     }
 }
