@@ -70,21 +70,6 @@ let ldata = {
     callid : 1001
 };
 
-const CmdType = {
-    CREATE_BALL : 1,
-    COLLIDE : 2,
-    HIT: 3,
-    ROLE_SKILL: 4,
-    ENEMY_SKILL: 5,
-    REMOVE_SKILL : 6,
-    SKILL_EFFECT : 7,
-    ENEMY_MOVE: 8,
-    PUSH: 10,
-    ROUND_END: 11,
-    WIN : 12,
-    LOSE : 13
-}
-
 function inRange(line) {
     return lineInRect(line, ldata.rect);
 }
@@ -96,6 +81,16 @@ function pointInRange(point) {
 function addCmd(cmd) {
     cmd.cmdid = ldata.cmds.length + 1;
     ldata.cmds.push(cmd);
+}
+
+function getBallPos(ball) {
+    let pos = {x: ball.x + ball.dir.x * ball.passed, y: ball.y + ball.dir.y * ball.passed};
+    // 首次碰撞，需要将前置等待时间减去
+    if (ball.ctimes == 0) {
+        pos.x -= (ball.id - 1) * ldata.interLen * ball.dir.x;
+        pos.y -= (ball.id - 1) * ldata.interLen * ball.dir.y;
+    }
+    return pos;
 }
 
 function resetTakeGrids() {
@@ -302,7 +297,7 @@ function checkBallInEnemies(newEnemies) {
             if (ball.hit != 0) {
                 continue;
             }
-            let start = {x: ball.x + ball.dir.x * ball.passed, y: ball.y + ball.dir.y * ball.passed};
+            let start = getBallPos(ball);
             for (let e of newEnemies) {
                 if (pointInRect(start, e.rect) && !pointOnSide(start, e.rect)) {
                     console.log("ball " + ball.id + vec2String(start) + " is in new enemy " + e.id + " rect:" + objToString(e.rect));
@@ -420,7 +415,7 @@ function checkIgnore(ball) {
 function calcCollide(ball) {
     checkIgnore(ball);
     // 计算新的碰撞时，球可能已经移动的了一段距离，逻辑部分不会实时改变球的坐标，所以需要重新计算当前位置，这部分可以考虑每次直接把球的当前点算出来
-    let start = {x: ball.x + ball.dir.x * ball.passed, y: ball.y + ball.dir.y * ball.passed};
+    let start = getBallPos(ball);
     let collide = getNextCollision(start, ball.dir, ball.ignores, ball.hit, ldata.isThrough);
     ball.collide = collide;
     // 虚线物体或者当前为穿透球，需要记录正在那个敌方体内，再次碰撞其他物体前不会反复计算碰撞伤害
@@ -431,7 +426,7 @@ function calcCollide(ball) {
     }
     if (ball.collide.point != null) {
         ball.dist = length({x:collide.point.x - ball.x, y:collide.point.y - ball.y});
-        if (ball.times == 0) {
+        if (ball.ctimes == 0) {
             // 还未第一次触发弹射的球，因为目标消失而重新计算碰撞点，需要加上起点等待距离
             ball.dist += (ball.id - 1) * ldata.interLen;
         }
@@ -577,6 +572,7 @@ function startRound(aimDir) {
                 passed: 0,
                 dir: ldata.begin,
                 times: 0,
+                ctimes: 0, // 碰撞次数，穿透球不计算times，这个用来计数碰撞次数
                 ignores: [],
                 hit: 0,
                 oldState: {ignores:[], hit:0, collide:null}
@@ -685,6 +681,7 @@ function updateRound() {
         if (ball.hit == 0) {
             ball.times += 1;
         }
+        ball.ctimes += 1;
         let d = ball.dist - ball.passed; // 本次移动距离为弹射时的总距离-已经走过的距离
         for (let b of ldata.balls.heap) {
             console.assert(b.dist >= 0, "dist can't be nagetive.");

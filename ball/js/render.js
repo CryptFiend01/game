@@ -11,11 +11,6 @@ let rdata = {
     baseLine: null,
 }
 
-const ColorSet = {
-    LineSolid : "#00aa11",
-    LineDash : "#ebbef7"
-}
-
 function initRender(lines, status, base, collisions, roles) {
     setLines(lines);
     rdata.status = status;
@@ -89,7 +84,7 @@ function draw() {
 
     for (let ball of rdata.balls) {
         // 起点或者消失的球不画
-        if (ball.status != BallStatus.CREATING && ball.status != BallStatus.DESTROY) {
+        if (ball.status != BallStatus.CREATING && ball.status != BallStatus.DESTROY && ball.y < RenderConfig.height * RenderConfig.side + 24) {
             drawBall(ball);
         }
     }

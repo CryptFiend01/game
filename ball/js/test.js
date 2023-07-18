@@ -119,3 +119,67 @@ function testRect() {
     console.log(rectInserect(rt2, rt1));
     console.log(rectInserect(rt3, rt1));
 }
+
+function testVectorAngle() {
+    let base = {x: 200, y: 300};
+    let ray = {x1: base.x, y1: base.y, x2: base.x + 1, y2: base.y + 1, color: ColorSet.LineDash};
+    let lines = [];
+    lines.push({x1:375,y1:305,x2:345,y2:305,color:"#00aa11",mid:1,hide:0,solid:true});
+    lines.push({x1:405,y1:365,x2:375,y2:365,color:"#00aa11",mid:2,hide:0,solid:true});
+    lines.push({x1:375,y1:335,x2:375,y2:305,color:"#00aa11",mid:3,hide:0,solid:true});
+    let reflects = [];
+    for (let l of lines) {
+        l.normal = normalize(normalVector(vector(l)));
+    }
+    let drawLines = () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawDashLine(ray);
+
+        for (let l of lines) {
+            drawLine(l);
+            drawNormal(l);
+        }
+
+        for (let r of reflects) {
+            drawDashLine(r);
+        }
+    }
+    canvas.addEventListener("click", function(evt) {
+        base.x = evt.offsetX;
+        base.y = evt.offsetY;
+        ray.x1 = base.x;
+        ray.y1 = base.y;
+        drawLines();
+    });
+
+    canvas.addEventListener("mousemove", function( evt) {
+        ray.x2 = evt.offsetX;
+        ray.y2 = evt.offsetY;
+
+        let dir = normalize(vector(ray));
+
+        reflects.length = 0;
+        for (let l of lines) {
+            let angle = getAngle(dir, l.normal);
+            if (angle > Math.PI / 2) {
+                continue;
+            }
+            let p = getRaySegmentIntersection(base, dir, l);
+            if (p != null) {
+                let rdir = getReflectNorm(dir, l);
+                reflects.push({x1: p.x, y1: p.y, x2: p.x + rdir.x * 100, y2: p.y + rdir.y * 100});
+            }
+        }
+        drawLines();
+    });
+
+    addEventListener("keydown", function(evt) {
+        let dir = normalize(vector(ray));
+        for (let l of lines) {
+            let angle = getAngle(dir, l.normal);
+            console.log("dir:" + vec2String(dir) + " to l" + l.mid + ".normal " + vec2String(l.normal) + " angle:" + (angle / Math.PI * 180));
+        }
+    });
+
+    drawLines();
+}

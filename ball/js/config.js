@@ -27,30 +27,6 @@ let config = {
     stage: null
 }
 
-const SkillType = {
-    BALL_ADD : 1,
-    RANGE_TRIGGER : 2, 
-    ROUND_DAMAGE : 3,
-    SOLID_BLOCK : 4,
-    DASH_BLOCK : 5,
-    BALL_THROUGH : 6,
-    DEAD_TRIGGER : 7
-}
-
-const StageEvent = {
-    DEAD_CALL : 1, // cid, count
-    HIT_MOVE: 2, // 
-    HIT_CHANGE: 3, // shapes|angle 
-    ROUND_MOVE: 4 // move_type
-}
-
-const EvtType = {
-    NEW_ENEMY : 1, // {id: 1, cid:1, grid:1}
-    ENEMY_MOVE : 2, // {id: 1, grid: 2}
-    SKILL_TRIGGER : 3, // {skill:1...}
-    ROTATE : 4
-}
-
 function makeLines(id, point, obj, solid) {
     let lt = {x: point.x - obj.anchor.x, y: point.y - obj.anchor.y};
     let lines = [];

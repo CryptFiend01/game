@@ -1,19 +1,3 @@
-function showVec(name, v) {
-    console.log(name + ": [" + v.x + "," + v.y + "]");
-}
-
-function showLine(name, l) {
-    console.log(name + ": [" + l.x1 + "," + l.y1 + "," + l.x2 + "," + l.y2 + "]");
-}
-
-function vec2String(v) {
-    return "[" + v.x + "," + v.y + "]";
-}
-
-function line2String(l) {
-    return "[" + l.x1 + "," + l.y1 + "," + l.x2 + "," + l.y2 + "]";
-}
-
 function vector(line) {
     return {
         x : line.x2 - line.x1,
@@ -205,13 +189,13 @@ function getIntersection(line1, line2) {
     return { x: a.x + dx , y: a.y + dy };
 }
 
-function getAngle(vector1, vector2) {
-    const dotProduct = vector1[0] * vector2[0] + vector1[1] * vector2[1];
-    const magnitude1 = Math.sqrt(vector1[0] * vector1[0] + vector1[1] * vector1[1]);
-    const magnitude2 = Math.sqrt(vector2[0] * vector2[0] + vector2[1] * vector2[1]);
+function getAngle(v1, v2) {
+    const dotProduct = v1.x * v2.x + v1.y * v2.y;
+    const magnitude1 = length(v1);
+    const magnitude2 = length(v2);
     const cosTheta = dotProduct / (magnitude1 * magnitude2);
     const theta = Math.acos(cosTheta);
-    return theta;
+    return Math.PI - theta;
 }
 
 function checkNextInterpoint(start, dir, lines, ignores, dashid, isThrough) {
@@ -228,7 +212,7 @@ function checkNextInterpoint(start, dir, lines, ignores, dashid, isThrough) {
             continue;
         }
         let angle = getAngle(dir, l.normal);
-        if (angle < Math.PI / 2) {
+        if (angle > Math.PI / 2) {
             continue;
         }
         let p = getRaySegmentIntersection(start, dir, l);
