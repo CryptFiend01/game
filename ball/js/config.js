@@ -1,16 +1,13 @@
-let RenderConfig = {
-    width : 8,
-    height : 11,
-    side : 48,
-    xoffset : (canvas.width - 8 * 48) / 2,
-    yoffset : 5
+let Offset = {
+    x : (canvas.width - Board.WIDTH * Board.SIDE) / 2,
+    y : 5
 }
 
 let GameRect = {
-    left: RenderConfig.xoffset,
-    top: RenderConfig.yoffset,
-    right: RenderConfig.width * RenderConfig.side + RenderConfig.xoffset,
-    bottom: RenderConfig.height * RenderConfig.side + RenderConfig.yoffset
+    left: Offset.x,
+    top: Offset.y,
+    right: Board.WIDTH * Board.SIDE + Offset.x,
+    bottom: Board.HEIGHT * Board.SIDE + Offset.y
 }
 
 let config = {
@@ -96,11 +93,11 @@ function getMonster(cid) {
 };
 
 function getPointByGrid(obj, grid) {
-    let x = Math.floor(grid % RenderConfig.width);
-    let y = Math.floor(grid / RenderConfig.width);
+    let x = Math.floor(grid % Board.WIDTH);
+    let y = Math.floor(grid / Board.WIDTH);
     return {
-        x: x * RenderConfig.side + obj.anchor.x + RenderConfig.xoffset,
-        y: y * RenderConfig.side + obj.anchor.y + RenderConfig.yoffset
+        x: x * Board.SIDE + obj.anchor.x + Offset.x,
+        y: y * Board.SIDE + obj.anchor.y + Offset.y
     }
 }
 
@@ -110,7 +107,7 @@ function loadData(onfinish) {
         config.objects = objects;
         for (let k in config.objects) {
             let obj = config.objects[k];
-            obj.size = obj.anchor.x * 2 / RenderConfig.side;
+            obj.size = obj.anchor.x * 2 / Board.SIDE;
         }
         $.getJSON("data/monster.json", function(mst_data) {
             var monsters = mst_data;

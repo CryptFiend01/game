@@ -46,3 +46,9 @@ const OpType = {
     BALL : 1,
     SKILL : 2
 }
+
+const Board = {
+    WIDTH : 8,
+    HEIGHT : 11,
+    SIDE : 48
+}

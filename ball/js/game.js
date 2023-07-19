@@ -77,7 +77,7 @@ function loadBalls() {
 }
 
 function updatePush() {
-    let totalPush = game.running.line * RenderConfig.side;
+    let totalPush = game.running.line * Board.SIDE;
     let pushPixel = 8;
     if (rdata.lines.length > 3) {
         game.pushed += pushPixel;
@@ -310,8 +310,8 @@ function update() {
 
 function getGridPoint(x, y) {
     return {
-        x: Math.floor((x - RenderConfig.xoffset) / RenderConfig.side), 
-        y: Math.floor((y - RenderConfig.yoffset) / RenderConfig.side)
+        x: Math.floor((x - Offset.x) / Board.SIDE), 
+        y: Math.floor((y - Offset.y) / Board.SIDE)
     };
 }
 

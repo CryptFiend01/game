@@ -70,7 +70,7 @@ function addCmd(cmd) {
 function resetTakeGrids() {
     ldata.takegrids.length = 0;
 
-    for (let i = 0; i < RenderConfig.width * RenderConfig.height; i++) {
+    for (let i = 0; i < Board.WIDTH * Board.HEIGHT; i++) {
         ldata.takegrids.push(0);
     }
 
@@ -94,7 +94,7 @@ function resetTakeGrids() {
                 // 超过1格的，将周围格子加上去。
                 for (let i = 0; i < enemy.obj.size; i++) {
                     for (let j = 0; j < enemy.obj.size; j++) {
-                        let grid = enemy.grid + j + i * RenderConfig.width;
+                        let grid = enemy.grid + j + i * Board.WIDTH;
                         setTakeGrid(grid, enemy.id);
                     }
                 }
@@ -111,19 +111,19 @@ function initLogic(base, interLen, roles) {
     ldata.enemyCount = 0;
     ldata.baseLine = new Line({x1: 0, y1: base.y, x2: canvas.width, y2: base.y, color: "#aaaaaa", width:1});
     ldata.roles = roles;
-    ldata.rect = {left: GameRect.left, right: GameRect.right, top: GameRect.top + RenderConfig.side, bottom: GameRect.bottom};
+    ldata.rect = {left: GameRect.left, right: GameRect.right, top: GameRect.top + Board.SIDE, bottom: GameRect.bottom};
 
     let max_line = config.stage.max_line;
-    if (max_line < RenderConfig.height) {
-        max_line = RenderConfig.height;
+    if (max_line < Board.HEIGHT) {
+        max_line = Board.HEIGHT;
     }
 
     for (let line of config.frameLines) {
         ldata.lines.push(line);
     }
 
-    ldata.startLine = max_line - RenderConfig.height;
-    let yoffset = ldata.startLine * RenderConfig.side;
+    ldata.startLine = max_line - Board.HEIGHT;
+    let yoffset = ldata.startLine * Board.SIDE;
 
     ldata.enemys = copyEnemies(config.enemys);
     for (let eid in ldata.enemys) {
@@ -137,7 +137,7 @@ function initLogic(base, interLen, roles) {
         }
         enemy.rect.top -= yoffset;
         enemy.rect.bottom -= yoffset;
-        enemy.grid -= ldata.startLine * RenderConfig.width;
+        enemy.grid -= ldata.startLine * Board.WIDTH;
 
         if (enemy.rect.top < ldata.rect.top || enemy.rect.bottom > ldata.rect.bottom) {
             enemy.visible = false;
@@ -179,64 +179,6 @@ function removeDead(lines, id) {
         }
     }
     return temp;
-}
-
-function changeBallInEnemy(ball, start, e) {
-    //ball.hit = e.id;
-    let dist = 0;
-    let nearestLine = null;
-    for (let l of e.lines) {
-        if (l.isHiden()) {
-            continue;
-        }
-        let d = pointToLineDistance(start, l);
-        if (nearestLine == null || d < dist) {
-            dist = d;
-            nearestLine = l;
-        }
-    }
-
-    let cmd = {
-        type: CmdType.COLLIDE, 
-        id: ball.id,
-        target: start
-    };
-
-    if (!nearestLine) {
-        // 被一个中间物包围，那就直接删除这个球
-        ldata.afterCmds.push(cmd);
-    } else {
-        // 在最近直线上从中线弹出出去
-        let point = {
-            x: nearestLine.x1 + (nearestLine.x2 - nearestLine.x1) / 2, 
-            y: nearestLine.y1 + (nearestLine.y2 - nearestLine.y1) / 2
-        };
-        // 以中点为目标，到达之后方向不变
-        let dir = normalVector({x: point.x - start.x, y: point.y - start.y});
-        cmd.target = point;
-        cmd.dir = dir;
-        ldata.afterCmds.push(cmd);
-    }
-}
-
-function checkBallInEnemies(newEnemies) {
-    // 被包含在新的敌人内部的球直接穿透过去，不检测对于该敌人的碰撞
-    if (!ldata.isThrough) {
-        for (let ball of ldata.balls.heap) {
-            // 已经在内部的球不应该会在新生成的球内
-            if (ball.hit != 0) {
-                continue;
-            }
-            let start = ball.getPos();
-            for (let e of newEnemies) {
-                if (pointInRect(start, e.rect) && !pointOnSide(start, e.rect)) {
-                    console.log("ball " + ball.id + vec2String(start) + " is in new enemy " + e.id + " rect:" + objToString(e.rect));
-                    changeBallInEnemy(ball, start, e);
-                    break;
-                }
-            }
-        }
-    }
 }
 
 function addEnemy(id, mc, obj, grid) {
@@ -300,7 +242,7 @@ function onEnemyDead(id) {
     // 清空格子占据信息
     for (let i = 0; i < enemy.obj.size; i++) {
         for (let j = 0; j < enemy.obj.size; j++) {
-            let grid = enemy.grid + j + i * RenderConfig.width;
+            let grid = enemy.grid + j + i * Board.WIDTH;
             ldata.takegrids[grid] = 0;
         }
     }
@@ -372,10 +314,10 @@ function checkCollide(deads) {
 
 function getSkillRange(point, width, height) {
     return {
-        x: (point.x - Math.floor(width / 2)) * RenderConfig.side + RenderConfig.xoffset,
-        y: (point.y - Math.floor(height / 2)) * RenderConfig.side + RenderConfig.yoffset,
-        width: width * RenderConfig.side,
-        height: height * RenderConfig.side
+        x: (point.x - Math.floor(width / 2)) * Board.SIDE + Offset.x,
+        y: (point.y - Math.floor(height / 2)) * Board.SIDE + Offset.y,
+        width: width * Board.SIDE,
+        height: height * Board.SIDE
     }
 }
 
@@ -496,7 +438,7 @@ function pushMap(pushLine) {
             ldata.lines.push(l);
         }
         ldata.startLine -= pushLine;
-        let yoffset = pushLine * RenderConfig.side;
+        let yoffset = pushLine * Board.SIDE;
         for (let eid in ldata.enemys) {
             let enemy = ldata.enemys[eid];
             if (enemy.hp <= 0 ) {
@@ -509,7 +451,7 @@ function pushMap(pushLine) {
 
             enemy.rect.top += yoffset;
             enemy.rect.bottom += yoffset;
-            enemy.grid += pushLine * RenderConfig.width;
+            enemy.grid += pushLine * Board.WIDTH;
             if (enemy.rect.top < ldata.rect.top || enemy.rect.bottom > ldata.rect.bottom) {
                 visible = false;
             }
@@ -582,14 +524,11 @@ function updateRound() {
                     checkCollide(ret.deads);
                     if (enemy.solid)
                         ldata.enemyCount -= 1;
-                    // console.log("enemyCount:" + ldata.enemyCount);
                     if (ldata.enemyCount == 0) {
                         addCmd(cmd);
                         addCmd({type: CmdType.WIN});
                         console.timeEnd("round");
                         return;
-                    } else if (ret.enemies) {
-                        //checkBallInEnemies(ret.enemies);
                     }
                 }
             } else {
