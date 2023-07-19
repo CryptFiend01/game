@@ -19,7 +19,7 @@ let ldata = {
 
     dashLines : [],
 
-    balls : new Heap(ballLess), // {x: 250, y: 300, radius: 5, color: "#ac2234"},
+    balls : new Heap(ballLess),
 
     base : {x: 250, y: 800},
 
@@ -44,8 +44,6 @@ let ldata = {
     win : false,
 
     cmds: [],
-
-    afterCmds: [],
 
     ops: [],
 
@@ -109,7 +107,7 @@ function initLogic(base, interLen, roles) {
     ldata.lines.length = 0;
     ldata.balls.clear();
     ldata.enemyCount = 0;
-    ldata.baseLine = new Line({x1: 0, y1: base.y, x2: canvas.width, y2: base.y, color: "#aaaaaa", width:1});
+    ldata.baseLine = new Line({x1: 0, y1: base.y, x2: canvas.width, y2: base.y});
     ldata.roles = roles;
     ldata.rect = {left: GameRect.left, right: GameRect.right, top: GameRect.top + Board.SIDE, bottom: GameRect.bottom};
 
@@ -397,40 +395,6 @@ function skillRound() {
     checkSkillValid();
 }
 
-function startRound(aimDir) {
-    ldata.ops.push({op: OpType.BALL, dir: copyPoint(aimDir)})
-    ldata.cmds.length = 0;
-    assignPoint(aimDir, ldata.begin);
-
-    let collide = checkNextInterpoint(ldata.base, ldata.begin, [], 0);
-    let dist = distance({x:collide.point.x - ldata.base.x, y:collide.point.y - ldata.base.y});
-    let n = 0;
-    for (let role of ldata.roles) {
-        for (let i = 0; i < role.count; i++) {
-            let ball = new Ball({
-                id: n + 1,
-                role: role,
-                x: ldata.base.x, 
-                y: ldata.base.y, 
-                collide: collide,
-                dist: dist + n * ldata.interLen,
-                dir: ldata.begin,
-                interLen: n * ldata.interLen
-            });
-            ldata.balls.add(ball);
-            addCmd({
-                type: CmdType.CREATE_BALL,
-                id: n + 1,
-                cid: role.id,
-                dir: ldata.begin
-            });
-            ++n;
-        }
-    }
-
-    ldata.nextBase = null;
-}
-
 function pushMap(pushLine) {
     if (pushLine > 0) {
         ldata.lines.length = 0;
@@ -477,8 +441,7 @@ function pushMap(pushLine) {
     } 
 }
 
-function updateRound() {
-    console.time("round");
+function ballRound() {
     while (!ldata.balls.empty()) {
         let ball = ldata.balls.pop();
         let line = ball.nextCollideLine();
@@ -537,18 +500,14 @@ function updateRound() {
         }
 
         addCmd(cmd);
-        if (ldata.afterCmds.length > 0) {
-            for (let c of ldata.afterCmds) {
-                addCmd(c);
-            }
-            ldata.afterCmds.length = 0;
-        }
     }
+}
 
-    // 敌方行动
+function enemyRound() {
 
-    // 回合结束推进
-    ldata.round += 1;
+}
+
+function pushRound() {
     let pushLine = 0;
     if (ldata.lines.length <= config.frameLines.length && ldata.startLine > 0) {
         pushLine = Math.min(ldata.startLine, 10);
@@ -559,12 +518,10 @@ function updateRound() {
             ldata.pushed += 1;
         }
     }
-
     pushMap(pushLine);
+}
 
-    // 技能回合
-    skillRound();
-
+function endRound() {
     ldata.ballDmg = 100;
     ldata.isThrough = false;
 
@@ -572,6 +529,59 @@ function updateRound() {
     if (ldata.nextBase) {
         assignPoint(ldata.nextBase, ldata.base);
     }
+}
+
+function startRound(aimDir) {
+    ldata.ops.push({op: OpType.BALL, dir: copyPoint(aimDir)})
+    ldata.cmds.length = 0;
+    assignPoint(aimDir, ldata.begin);
+
+    let collide = checkNextInterpoint(ldata.base, ldata.begin, [], 0);
+    let dist = distance({x:collide.point.x - ldata.base.x, y:collide.point.y - ldata.base.y});
+    let n = 0;
+    for (let role of ldata.roles) {
+        for (let i = 0; i < role.count; i++) {
+            let ball = new Ball({
+                id: n + 1,
+                role: role,
+                x: ldata.base.x, 
+                y: ldata.base.y, 
+                collide: collide,
+                dist: dist + n * ldata.interLen,
+                dir: ldata.begin,
+                interLen: n * ldata.interLen
+            });
+            ldata.balls.add(ball);
+            addCmd({
+                type: CmdType.CREATE_BALL,
+                id: n + 1,
+                cid: role.id,
+                dir: ldata.begin
+            });
+            ++n;
+        }
+    }
+
+    ldata.nextBase = null;
+}
+
+function updateRound() {
+    console.time("round");
+    // 剩余距离最短的球弹射
+    ballRound();
+
+    // 敌方行动
+    enemyRound();
+
+    // 回合结束推进
+    ldata.round += 1;
+    pushRound();
+
+    // 技能回合
+    skillRound();
+
+    // 回合结束重置
+    endRound();
     
     console.timeEnd("round");
 }
