@@ -14,22 +14,6 @@
 //       {type: "lose"}
 // }
 
-function ballLess(a, b) {
-    let da = a.dist - a.passed;
-    let db = b.dist - b.passed;
-    if (da < db) {
-        return true;
-    } else if (da > db) {
-        return false;
-    } else {
-        if (a.id < b.id) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-}
-
 let ldata = {
     lines : [],
 
@@ -83,16 +67,6 @@ function addCmd(cmd) {
     ldata.cmds.push(cmd);
 }
 
-function getBallPos(ball) {
-    let pos = {x: ball.x + ball.dir.x * ball.passed, y: ball.y + ball.dir.y * ball.passed};
-    // 首次碰撞，需要将前置等待时间减去
-    if (ball.ctimes == 0) {
-        pos.x -= (ball.id - 1) * ldata.interLen * ball.dir.x;
-        pos.y -= (ball.id - 1) * ldata.interLen * ball.dir.y;
-    }
-    return pos;
-}
-
 function resetTakeGrids() {
     ldata.takegrids.length = 0;
 
@@ -135,10 +109,9 @@ function initLogic(base, interLen, roles) {
     ldata.lines.length = 0;
     ldata.balls.clear();
     ldata.enemyCount = 0;
-    ldata.baseLine = {x1: 0, y1: base.y, x2: canvas.width, y2: base.y, color: "#aaaaaa", width:1};
+    ldata.baseLine = new Line({x1: 0, y1: base.y, x2: canvas.width, y2: base.y, color: "#aaaaaa", width:1});
     ldata.roles = roles;
     ldata.rect = {left: GameRect.left, right: GameRect.right, top: GameRect.top + RenderConfig.side, bottom: GameRect.bottom};
-    console.log(objToString(ldata.rect));
 
     let max_line = config.stage.max_line;
     if (max_line < RenderConfig.height) {
@@ -146,7 +119,7 @@ function initLogic(base, interLen, roles) {
     }
 
     for (let line of config.frameLines) {
-        ldata.lines.push(copyLine(line));
+        ldata.lines.push(line);
     }
 
     ldata.startLine = max_line - RenderConfig.height;
@@ -188,13 +161,6 @@ function initLogic(base, interLen, roles) {
     resetTakeGrids();
 }
 
-function getNextCollision(start, dirNorm, ignores, dashid, isThrough) {
-    if (ignores == null) {
-        ignores = [];
-    }
-    return checkNextInterpoint(start, dirNorm, ldata.lines, ignores, dashid, isThrough);
-}
-
 function getNextBase(ball) {
     if (!ldata.nextBase) {
         let p = getRaySegmentIntersection(ball, ball.dir, ldata.baseLine);
@@ -204,47 +170,11 @@ function getNextBase(ball) {
     }
 }
 
-function getReflectNorm(dir, line) {
-    if (!line.solid || (ldata.isThrough && line.mid > 0)) {
-        return dir;
-    }
-    let normal = line.normal;
-    let rft = reflectVector(dir, normal);
-    let rft_normal = normalize(rft);
-    if (rft_normal.x == 0 || rft_normal.y == 0) {
-        let angle = Math.PI / 36;
-        // 旋转一个角度
-        let rotate = {
-            x : rft_normal.x * Math.cos(angle) - rft_normal.y * Math.sin(angle),
-            y : rft_normal.x * Math.sin(angle) + rft_normal.y * Math.cos(angle)
-        };
-        rft_normal = rotate;
-    }
-    return rft_normal;
-}
-
 function removeDead(lines, id) {
     let temp = [];
     for (let l of lines) {
         if (!l.mid || l.mid != id) {
-            if (l.hide == id) {
-                l.hide = 0;
-            }
-
-            if (l.hideLines != null) {
-                let temp = [];
-                for (let l1 of l.hideLines) {
-                    let ids = unMixId(l1.mid);
-                    if (ids[0] != id && ids[1] != id) {
-                        temp.push(l1);
-                    }
-                }
-                if (temp.length == null) {
-                    l.hideLines = null;
-                } else {
-                    l.hideLines = temp;
-                }
-            }
+            l.unHide(id);
             temp.push(l);
         }
     }
@@ -256,7 +186,7 @@ function changeBallInEnemy(ball, start, e) {
     let dist = 0;
     let nearestLine = null;
     for (let l of e.lines) {
-        if (l.hide || l.hideLines) {
+        if (l.isHiden()) {
             continue;
         }
         let d = pointToLineDistance(start, l);
@@ -297,7 +227,7 @@ function checkBallInEnemies(newEnemies) {
             if (ball.hit != 0) {
                 continue;
             }
-            let start = getBallPos(ball);
+            let start = ball.getPos();
             for (let e of newEnemies) {
                 if (pointInRect(start, e.rect) && !pointOnSide(start, e.rect)) {
                     console.log("ball " + ball.id + vec2String(start) + " is in new enemy " + e.id + " rect:" + objToString(e.rect));
@@ -353,7 +283,7 @@ function addEnemies(cid, count, grid) {
         let id = ldata.callid + i;
         //console.log("add enemy " + id + " at grid:" + freeGrids[i]);
         let e = addEnemy(id, mc, obj, freeGrids[i]);
-        evts.push({type: EvtType.NEW_ENEMY, id: id, cid: cid, grid: freeGrids[i]});
+        evts.push({type: EvtType.CALL_ENEMY, id: id, cid: cid, grid: freeGrids[i]});
         newEnemies.push(e);
     }
     ldata.callid += count;
@@ -408,43 +338,16 @@ function resetIgnore(start, ignores, collide) {
     return temp;
 }
 
-function checkIgnore(ball) {
-    ball.ignores = resetIgnore(ball, ball.ignores, ball.collide);
-}
-
-function calcCollide(ball) {
-    checkIgnore(ball);
-    // 计算新的碰撞时，球可能已经移动的了一段距离，逻辑部分不会实时改变球的坐标，所以需要重新计算当前位置，这部分可以考虑每次直接把球的当前点算出来
-    let start = getBallPos(ball);
-    let collide = getNextCollision(start, ball.dir, ball.ignores, ball.hit, ldata.isThrough);
-    ball.collide = collide;
-    // 虚线物体或者当前为穿透球，需要记录正在那个敌方体内，再次碰撞其他物体前不会反复计算碰撞伤害
-    if (ball.collide.line && (!ball.collide.line.solid || ldata.isThrough)) {
-        ball.hit = ball.collide.line.mid;
-    } else {
-        ball.hit = 0;
-    }
-    if (ball.collide.point != null) {
-        ball.dist = distance({x:collide.point.x - ball.x, y:collide.point.y - ball.y});
-        if (ball.ctimes == 0) {
-            // 还未第一次触发弹射的球，因为目标消失而重新计算碰撞点，需要加上起点等待距离
-            ball.dist += (ball.id - 1) * ldata.interLen;
-        }
-    } else {
-        ball.dist = 0;
-    }
-}
-
 function checkCollide(deads) {
     let temp = [];
     if (deads) {
         // 只有目标被移除，只需要检测和这些目标相撞的球
         for (let ball of ldata.balls.heap) {
-            if (deads.indexOf(ball.collide.line.mid) != -1) {
-                recoverBallState(ball);
-                calcCollide(ball);
+            if (deads.indexOf(ball.nextCollideId()) != -1) {
+                ball.recoverState();
+                ball.calcCollide();
             }
-            if (ball.collide.point)
+            if (ball.nextCollidePoint())
                 temp.push(ball);
             else
                 getNextBase(ball);
@@ -452,9 +355,9 @@ function checkCollide(deads) {
     } else {
         // 其他原因（比如召唤，移动）导致重新检测，需要全部重算一遍
         for (let ball of ldata.balls.heap) {
-            recoverBallState(ball);
-            calcCollide(ball);
-            if (ball.collide.point)
+            ball.recoverState();
+            ball.calcCollide(ball);
+            if (ball.nextCollidePoint())
                 temp.push(ball);
             else
                 getNextBase(ball);
@@ -557,26 +460,22 @@ function startRound(aimDir) {
     ldata.cmds.length = 0;
     assignPoint(aimDir, ldata.begin);
 
-    let collide = getNextCollision(ldata.base, ldata.begin, null, 0, ldata.isThrough);
+    let collide = checkNextInterpoint(ldata.base, ldata.begin, [], 0);
     let dist = distance({x:collide.point.x - ldata.base.x, y:collide.point.y - ldata.base.y});
     let n = 0;
     for (let role of ldata.roles) {
         for (let i = 0; i < role.count; i++) {
-            ldata.balls.add({
+            let ball = new Ball({
                 id: n + 1,
                 role: role,
                 x: ldata.base.x, 
                 y: ldata.base.y, 
                 collide: collide,
                 dist: dist + n * ldata.interLen,
-                passed: 0,
                 dir: ldata.begin,
-                times: 0,
-                ctimes: 0, // 碰撞次数，穿透球不计算times，这个用来计数碰撞次数
-                ignores: [],
-                hit: 0,
-                oldState: {ignores:[], hit:0, collide:null}
+                interLen: n * ldata.interLen
             });
+            ldata.balls.add(ball);
             addCmd({
                 type: CmdType.CREATE_BALL,
                 id: n + 1,
@@ -594,7 +493,7 @@ function pushMap(pushLine) {
     if (pushLine > 0) {
         ldata.lines.length = 0;
         for (let l of config.frameLines) {
-            ldata.lines.push(copyLine(l));
+            ldata.lines.push(l);
         }
         ldata.startLine -= pushLine;
         let yoffset = pushLine * RenderConfig.side;
@@ -605,10 +504,7 @@ function pushMap(pushLine) {
             }
             let visible = true;
             for (let line of enemy.lines) {
-                line.y1 += yoffset;
-                line.y2 += yoffset;
-                line.hide = 0;
-                line.hideLines = null;
+                line.moveLine(yoffset);
             }
 
             enemy.rect.top += yoffset;
@@ -639,63 +535,28 @@ function pushMap(pushLine) {
     } 
 }
 
-function saveBallState(ball) {
-    ball.oldState.hit = ball.hit;
-    if (ball.collide && ball.collide.point) {
-        ball.oldState.collide = { 
-            point: copyPoint(ball.collide.point),
-            line: ball.collide.line
-        };
-    }
-    ball.oldState.ignores.length = 0;
-    for (let l of ball.ignores) {
-        ball.oldState.ignores.push(l);
-    }
-}
-
-function recoverBallState(ball) {
-    ball.hit = ball.oldState.hit;
-    if (ball.oldState.collide && ball.oldState.collide.point) {
-        ball.collide.point = copyPoint(ball.oldState.collide.point);
-        ball.collide.line = ball.oldState.collide.line;
-    }
-    ball.ignores.length = 0;
-    for (let l of ball.oldState.ignores) {
-        ball.ignores.push(l);
-    }
-}
-
 function updateRound() {
     console.time("round");
     while (!ldata.balls.empty()) {
         let ball = ldata.balls.pop();
-        let line = ball.collide.line;
+        let line = ball.nextCollideLine();
+        // 距离最短，移动后发生碰撞才会创建命令
         let cmd = {
             type: CmdType.COLLIDE, 
             id: ball.id,
             dmg: null,
-            target: copyPoint(ball.collide.point)
+            target: copyPoint(ball.nextCollidePoint())
         };
        
         // 先将球转向,并将所有球的dist减去第一个球的dist
-        if (ball.hit == 0) {
-            ball.times += 1;
-        }
-        ball.ctimes += 1;
-        let d = ball.dist - ball.passed; // 本次移动距离为弹射时的总距离-已经走过的距离
+        let d = ball.restDist(); // 本次移动距离为弹射时的总距离-已经走过的距离
         for (let b of ldata.balls.heap) {
-            console.assert(b.dist >= 0, "dist can't be nagetive.");
-            b.passed += d;
+            b.move(d);
         }
-        // 达到撞击次数上限，就不再计算该球
-        if (ball.times < ball.role.times) {
-            ball.dir = getReflectNorm(ball.dir, ball.collide.line);
-            ball.passed = 0; // 只有反弹时才需要将pass设置为0
+
+        if (ball.update()) {
             cmd.reflect = copyPoint(ball.dir);
-            assignPoint(ball.collide.point, ball);
-            saveBallState(ball);
-            calcCollide(ball);
-            if (ball.collide.point) {
+            if (ball.nextCollidePoint()) {
                 ldata.balls.add(ball);
             } else {
                 getNextBase(ball);
@@ -774,4 +635,31 @@ function updateRound() {
     }
     
     console.timeEnd("round");
+}
+
+function aim(base, dir, times) {
+    let n = dir;
+    let start = base;
+    let hitid = 0;
+    let ignores = [];
+    let collisions = [];
+    while (collisions.length < times) {
+        let collide = checkNextInterpoint(start, n, ignores, hitid);
+        if (!collide.point || !collide.line) {
+            break;
+        }
+            
+        collisions.push({x: collide.point.x, y: collide.point.y});
+        let reflect = collide.line.getReflectNorm(n);
+
+        start = collide.point;
+        n = reflect;
+        ignores = resetIgnore(start, ignores, collide);
+        if (!collide.line.solid || ldata.isThrough) {
+            hitid = collide.line.mid;
+        } else {
+            hitid = 0;
+        }
+    }
+    return collisions;
 }

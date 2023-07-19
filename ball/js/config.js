@@ -15,9 +15,9 @@ let GameRect = {
 
 let config = {
     frameLines : [
-        {x1: GameRect.left, y1: GameRect.top, x2: GameRect.right, y2: GameRect.top, solid: true, hide:0, mid:0},
-        {x1: GameRect.right, y1: GameRect.top, x2: GameRect.right, y2: GameRect.bottom, solid: true, hide:0, mid:0},
-        {x1: GameRect.left, y1: GameRect.bottom, x2: GameRect.left, y2: GameRect.top, solid: true, hide:0, mid:0},
+        new Line({x1: GameRect.left, y1: GameRect.top, x2: GameRect.right, y2: GameRect.top, solid: true, hide:0, mid:0}),
+        new Line({x1: GameRect.right, y1: GameRect.top, x2: GameRect.right, y2: GameRect.bottom, solid: true, hide:0, mid:0}),
+        new Line({x1: GameRect.left, y1: GameRect.bottom, x2: GameRect.left, y2: GameRect.top, solid: true, hide:0, mid:0}),
     ],
 
     enemys: [],
@@ -37,16 +37,14 @@ function makeLines(id, point, obj, solid) {
         }
         let start = obj.points[i];
         let end = obj.points[j];
-        let line = {
+        let line = new Line({
             x1: start.x + lt.x,
             y1: start.y + lt.y,
             x2: end.x + lt.x,
             y2: end.y + lt.y,
             mid: id,
             solid: solid,
-            hide: 0
-        };
-        line.normal = normalize(normalVector(vector(line)));
+        });
         lines.push(line);
     }
     return lines;
@@ -147,10 +145,6 @@ function loadData(onfinish) {
                         rect: makeRect(lines)
                     });
                 }
-
-                for (let i = 0; i < config.frameLines.length; i++) {
-                    config.frameLines[i].normal = normalize(normalVector(vector(config.frameLines[i])));
-                }
                 onfinish();
             });
         });
@@ -173,7 +167,7 @@ function copyEnemies(enemys) {
             rect: copyRect(enemy.rect)
         }
         for (let l of enemy.lines) {
-            e.lines.push(l);
+            e.lines.push(new Line(l));
         }
         ret[e.id] = e;
     }

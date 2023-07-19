@@ -72,17 +72,14 @@ function loadBalls() {
     let cmd = game.cmds.shift();
     while (cmd.type == CmdType.CREATE_BALL) {
         let role = game.roles[cmd.cid - 1];
-        let ball = {
+        let ball = new Ball({
             id: cmd.id,
             x: game.base.x,
             y: game.base.y,
-            radius: 5,
             color: role.color,
             dir: {x:cmd.dir.x, y:cmd.dir.y},
-            status: BallStatus.CREATING,
-            dist: 0,
-            totalDist: 0
-        };
+            dist: 0
+        });
         getNextTarget(ball);
         rdata.balls.push(ball);
         cmd = game.cmds.shift();
@@ -219,21 +216,7 @@ function ballMove(ball, dist) {
     let d = dist - ball.dist;
     ball.x += ball.dir.x * d;
     ball.y += ball.dir.y * d;
-    ball.totalDist += d;
     ball.status = BallStatus.MOVED;
-}
-
-function getShortestBall() {
-    let shortest = {dist:1e9, bid:0, target:{x:0,y:0}};
-    for (let ball of rdata.balls) {
-        let d = distance({x:ball.x-ball.nextTarget.x, y:ball.y-ball.nextTarget.y});
-        if (d < shortest.dist) {
-            shortest.bid = ball.id;
-            shortest.dist = d;
-            assignPoint(ball.nextTarget, shortest.target);
-        }
-    }
-    return shortest;
 }
 
 function moveAll(dist) {
@@ -243,33 +226,6 @@ function moveAll(dist) {
             ballMove(ball, dist);
         }
     }
-}
-
-function aim() {
-    let n = game.aimDir;
-    let start = game.base;
-    let dashid = 0;
-    let ignores = [];
-    while (game.collisions.length < game.times) {
-        let collide = getNextCollision(start, n, ignores, dashid, ldata.isThrough);
-        if (collide.point == null) {
-            break;
-        }
-            
-        game.collisions.push({x: collide.point.x, y: collide.point.y, radius: 2, color: "#1234bc"});
-
-        let reflect = getReflectNorm(n, collide.line);
-
-        start = collide.point;
-        n = reflect;
-        ignores = resetIgnore(start, ignores, collide);
-        if (!collide.line.solid || ldata.isThrough) {
-            dashid = collide.line.mid;
-        } else {
-            dashid = 0;
-        }
-    }
-    draw();
 }
 
 function run(pass) {
@@ -309,7 +265,7 @@ function run(pass) {
             ball.status = BallStatus.DESTROY;
         } else {
             assignPoint(cmd.reflect, ball.dir);
-            getNextTarget(ball);
+            // getNextTarget(ball);
         }
 
         // 移除死亡的单位
@@ -320,7 +276,7 @@ function run(pass) {
         // 处理事件
         if (cmd.evts) {
             for (let evt of cmd.evts) {
-                if (evt.type == EvtType.NEW_ENEMY) {
+                if (evt.type == EvtType.CALL_ENEMY) {
                     let mc = getMonster(evt.cid);
                     let obj = config.objects[mc.type];
                     let point = getPointByGrid(obj, evt.grid);
@@ -429,3 +385,4 @@ initialze();
 //testHeap();
 //testRect();
 //test2();
+//test3();

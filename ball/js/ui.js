@@ -19,7 +19,12 @@ function addUIEvents() {
             game.aimDir = normalize(v);
             //game.aimDir = {x:0.9868925619168516, y:-0.16137865792351033};
             coord.innerHTML += "  方向：" + game.aimDir.x + "," + game.aimDir.y;
-            aim();
+            let collisions = aim(game.base, game.aimDir, game.times);
+            for (let c of collisions) {
+                c.radius = 2;
+                c.color = "#1234bc";
+                game.collisions.push(c);
+            }
         } else if (game.status == GameState.GS_SKILL) {
             if (game.chooseRole && pointInRange({x: evt.offsetX, y: evt.offsetY})) {
                 let range = getSkillSelectRange(game.chooseRole, evt.offsetX, evt.offsetY);
@@ -27,8 +32,8 @@ function addUIEvents() {
             } else {
                 rdata.skillSelect = null;
             }
-            draw();
         }
+        draw();
     });
 
     canvas.addEventListener("mousedown", (evt) => {
@@ -118,7 +123,7 @@ function onLoadReplay() {
     show("replay-panel", 'flex');
 
     if (game.replayJson == "") {
-        game.replayJson = `[{"op":"skill","rid":2,"target":null},{"op":"ball","dir":{"x":0.9869119380695537,"y":-0.16126012059960027}},{"op":"skill","rid":4,"target":{"x":0,"y":6}},{"op":"ball","dir":{"x":0.0300342913720735,"y":-0.999548868911259}},{"op":"skill","rid":2,"target":null},{"op":"ball","dir":{"x":0.9979571934826578,"y":-0.06388614854737555}}]`;
+        game.replayJson = `[{"op":"ball","dir":{"x":0.5309467985175279,"y":-0.8474051552498294}},{"op":"skill","rid":2,"target":null},{"op":"ball","dir":{"x":0.9949510593619092,"y":-0.10036129470375862}},{"op":"ball","dir":{"x":0.5656097273199471,"y":-0.8246730481597269}},{"op":"skill","rid":2,"target":null},{"op":"ball","dir":{"x":-0.9965963250631024,"y":-0.08243642926958385}},{"op":"skill","rid":1,"target":null},{"op":"ball","dir":{"x":0.10099083203164258,"y":-0.9948873563602849}}]`;
     }
 
     const txt = document.getElementById("replay-json");

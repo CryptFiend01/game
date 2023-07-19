@@ -1,3 +1,16 @@
+function getShortestBall() {
+    let shortest = {dist:1e9, bid:0, target:{x:0,y:0}};
+    for (let ball of rdata.balls) {
+        let d = distance({x:ball.x-ball.nextTarget.x, y:ball.y-ball.nextTarget.y});
+        if (d < shortest.dist) {
+            shortest.bid = ball.id;
+            shortest.dist = d;
+            assignPoint(ball.nextTarget, shortest.target);
+        }
+    }
+    return shortest;
+}
+
 function startDebug() {
     console.log("cmd:" + objToString(game.running));
     game.timer = setInterval(updateDebug, 10);

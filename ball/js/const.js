@@ -36,7 +36,7 @@ const StageEvent = {
 }
 
 const EvtType = {
-    NEW_ENEMY : 1, // {id: 1, cid:1, grid:1}
+    CALL_ENEMY : 1, // {id: 1, cid:1, grid:1}
     ENEMY_MOVE : 2, // {id: 1, grid: 2}
     SKILL_TRIGGER : 3, // {skill:1...}
     ROTATE : 4
