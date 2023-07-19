@@ -337,10 +337,10 @@ function playNext() {
     }
 
     let op = game.replay.shift();
-    if (op.op == "skill") {
+    if (op.op == OpType.SKILL) {
         let role = game.roles[op.rid - 1];
         doUseSkill(role, op.target);
-    } else if (op.op == "ball") {
+    } else if (op.op == OpType.BALL) {
         assignPoint(op.dir, game.aimDir);
         game.collisions.length = 0;
         game.status = GameState.GS_PLAY;

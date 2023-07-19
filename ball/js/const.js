@@ -41,3 +41,8 @@ const EvtType = {
     SKILL_TRIGGER : 3, // {skill:1...}
     ROTATE : 4
 }
+
+const OpType = {
+    BALL : 1,
+    SKILL : 2
+}

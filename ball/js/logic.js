@@ -422,7 +422,7 @@ function checkSkillValid() {
 }
 
 function useSkill(role, target) {
-    ldata.ops.push({op: "skill", rid: role.id, target: target ? copyPoint(target) : null});
+    ldata.ops.push({op: OpType.SKILL, rid: role.id, target: target ? copyPoint(target) : null});
     let cfg = role.skill;
     let cmd = {type: CmdType.ROLE_SKILL, cid: role.id, target: target, cd: cfg.cd, range: []};
     addCmd(cmd);
@@ -456,7 +456,7 @@ function skillRound() {
 }
 
 function startRound(aimDir) {
-    ldata.ops.push({op: "ball", dir: copyPoint(aimDir)})
+    ldata.ops.push({op: OpType.BALL, dir: copyPoint(aimDir)})
     ldata.cmds.length = 0;
     assignPoint(aimDir, ldata.begin);
 

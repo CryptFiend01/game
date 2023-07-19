@@ -123,7 +123,7 @@ function onLoadReplay() {
     show("replay-panel", 'flex');
 
     if (game.replayJson == "") {
-        game.replayJson = `[{"op":"ball","dir":{"x":0.5309467985175279,"y":-0.8474051552498294}},{"op":"skill","rid":2,"target":null},{"op":"ball","dir":{"x":0.9949510593619092,"y":-0.10036129470375862}},{"op":"ball","dir":{"x":0.5656097273199471,"y":-0.8246730481597269}},{"op":"skill","rid":2,"target":null},{"op":"ball","dir":{"x":-0.9965963250631024,"y":-0.08243642926958385}},{"op":"skill","rid":1,"target":null},{"op":"ball","dir":{"x":0.10099083203164258,"y":-0.9948873563602849}}]`;
+        game.replayJson = `[{"op":1,"dir":{"x":0.5309467985175279,"y":-0.8474051552498294}},{"op":2,"rid":2,"target":null},{"op":1,"dir":{"x":0.9949510593619092,"y":-0.10036129470375862}},{"op":1,"dir":{"x":0.5656097273199471,"y":-0.8246730481597269}},{"op":2,"rid":2,"target":null},{"op":1,"dir":{"x":-0.9965963250631024,"y":-0.08243642926958385}},{"op":2,"rid":1,"target":null},{"op":1,"dir":{"x":0.10099083203164258,"y":-0.9948873563602849}}]`;
     }
 
     const txt = document.getElementById("replay-json");
@@ -137,10 +137,10 @@ function checkTime() {
     console.time("check total");
     while (game.replay.length > 0) {
         let rep = game.replay.shift();
-        if (rep.op == "skill") {
+        if (rep.op == OpType.SKILL) {
             let role = game.roles[rep.rid - 1];
             useSkill(role, rep.target);
-        } else if (rep.op == "ball") {
+        } else if (rep.op == OpType.BALL) {
             startRound(rep.dir);
             updateRound();
         }
