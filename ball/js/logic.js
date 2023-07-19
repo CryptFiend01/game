@@ -17,8 +17,6 @@
 let ldata = {
     lines : [],
 
-    dashLines : [],
-
     balls : new Heap(ballLess),
 
     base : {x: 250, y: 800},
