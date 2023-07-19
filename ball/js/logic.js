@@ -59,7 +59,7 @@ function pointInRange(point) {
 }
 
 function addCmd(cmd) {
-    cmd.cmdid = ldata.cmds.length + 1;
+    cmd.id = ldata.cmds.length + 1;
     ldata.cmds.push(cmd);
 }
 
@@ -432,7 +432,7 @@ function ballRound() {
         // 距离最短，移动后发生碰撞才会创建命令
         let cmd = {
             type: CmdType.COLLIDE, 
-            id: ball.id,
+            bid: ball.id,
             dmg: null,
             target: copyPoint(ball.nextCollidePoint())
         };
@@ -479,7 +479,7 @@ function ballRound() {
                     }
                 }
             } else {
-                console.error("collide dead enemy! id=" + cmd.id + " mid=" + line.mid);
+                console.error("collide dead enemy! id=" + cmd.bid + " mid=" + line.mid);
             }
         }
 
@@ -538,7 +538,7 @@ function startRound(aimDir) {
             ldata.balls.add(ball);
             addCmd({
                 type: CmdType.CREATE_BALL,
-                id: n + 1,
+                bid: n + 1,
                 cid: role.id,
                 dir: ldata.begin
             });

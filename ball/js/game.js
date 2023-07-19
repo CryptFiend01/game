@@ -63,7 +63,7 @@ function loadBalls() {
     while (cmd.type == CmdType.CREATE_BALL) {
         let role = game.roles[cmd.cid - 1];
         let ball = new Ball({
-            id: cmd.id,
+            id: cmd.bid,
             x: game.base.x,
             y: game.base.y,
             color: role.color,
@@ -237,7 +237,7 @@ function run(pass) {
         }
     }
 
-    let ball = rdata.balls[cmd.id-1];
+    let ball = rdata.balls[cmd.bid-1];
     if (ball.status != BallStatus.MOVING) {
         console.error("Ball " + ball.id + " is not moving.");
         console.log("cmd:" + objToString(cmd));

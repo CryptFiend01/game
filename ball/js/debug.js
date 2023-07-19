@@ -66,7 +66,7 @@ function updateDebug() {
         onfinish();
         return;
     }
-    let ball = rdata.balls[cmd.id-1];
+    let ball = rdata.balls[cmd.bid-1];
     ball.dist = 0;
     if (ball.status == BallStatus.CREATING) {
         ball.status = BallStatus.MOVING;
