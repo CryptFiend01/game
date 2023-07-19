@@ -31,7 +31,7 @@ function test() {
     
     ldata.lines = lines;
     ldata.isThrough = false;
-    let collide = checkNextInterpoint(start, dir, [lines[4]], 0);
+    let collide = checkNextCollide(start, dir, [lines[4]], 0);
     if (collide.point == null) {
         console.log("no collide.");
         return;
@@ -76,7 +76,7 @@ function test2() {
         draw();
 
         ldata.isThrough = false;
-        let collide =  checkNextInterpoint(start, dir, [], 0);
+        let collide =  checkNextCollide(start, dir, [], 0);
         console.log(objToString(collide));
 
         let line = new Line({x1: start.x, y1: start.y, x2: collide.point.x, y2: collide.point.y, color:"#aa33aa"});

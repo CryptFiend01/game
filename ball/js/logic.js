@@ -264,20 +264,6 @@ function onEnemyDead(id) {
     return ret;
 }
 
-function resetIgnore(start, ignores, collide) {
-    let temp = [];
-    // 任何情况，本次碰撞线加入下次碰撞检测的忽略组中
-    if (collide.line) {
-        temp.push(collide.line);
-    }
-    for (let l of ignores) {
-        if (pointInLine(start, l)) {
-            temp.push(l);
-        }
-    }
-    return temp;
-}
-
 function checkCollide(deads) {
     let temp = [];
     if (deads) {
@@ -454,11 +440,12 @@ function ballRound() {
         };
        
         // 先将球转向,并将所有球的dist减去第一个球的dist
-        let d = ball.restDist(); // 本次移动距离为弹射时的总距离-已经走过的距离
+        let d = ball.restDist();
         for (let b of ldata.balls.heap) {
             b.move(d);
         }
 
+        // 更新球的状态，最快的球移动到碰撞点，计算弹射后的方向和下次碰撞点
         if (ball.update()) {
             cmd.reflect = copyPoint(ball.dir);
             if (ball.nextCollidePoint()) {
@@ -535,7 +522,7 @@ function startRound(aimDir) {
     ldata.cmds.length = 0;
     assignPoint(aimDir, ldata.begin);
 
-    let collide = checkNextInterpoint(ldata.base, ldata.begin, [], 0);
+    let collide = checkNextCollide(ldata.base, ldata.begin, [], 0);
     let dist = distance({x:collide.point.x - ldata.base.x, y:collide.point.y - ldata.base.y});
     let n = 0;
     for (let role of ldata.roles) {
@@ -583,31 +570,4 @@ function updateRound() {
     endRound();
     
     console.timeEnd("round");
-}
-
-function aim(base, dir, times) {
-    let n = dir;
-    let start = base;
-    let hitid = 0;
-    let ignores = [];
-    let collisions = [];
-    while (collisions.length < times) {
-        let collide = checkNextInterpoint(start, n, ignores, hitid);
-        if (!collide.point || !collide.line) {
-            break;
-        }
-            
-        collisions.push({x: collide.point.x, y: collide.point.y});
-        let reflect = collide.line.getReflectNorm(n);
-
-        start = collide.point;
-        n = reflect;
-        ignores = resetIgnore(start, ignores, collide);
-        if (!collide.line.solid || ldata.isThrough) {
-            hitid = collide.line.mid;
-        } else {
-            hitid = 0;
-        }
-    }
-    return collisions;
 }
