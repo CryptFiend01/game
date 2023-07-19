@@ -58,16 +58,6 @@ function initialze() {
     });   
 }
 
-function getNextTarget(ball) {
-    ball.nextTarget = null;
-    for (let cmd of game.cmds) {
-        if (cmd.type == CmdType.COLLIDE && cmd.id == ball.id) {
-            ball.nextTarget = cmd.target;
-            break;
-        }
-    }
-}
-
 function loadBalls() {
     let cmd = game.cmds.shift();
     while (cmd.type == CmdType.CREATE_BALL) {
@@ -80,7 +70,6 @@ function loadBalls() {
             dir: {x:cmd.dir.x, y:cmd.dir.y},
             dist: 0
         });
-        getNextTarget(ball);
         rdata.balls.push(ball);
         cmd = game.cmds.shift();
     }
@@ -265,7 +254,6 @@ function run(pass) {
             ball.status = BallStatus.DESTROY;
         } else {
             assignPoint(cmd.reflect, ball.dir);
-            // getNextTarget(ball);
         }
 
         // 移除死亡的单位
