@@ -490,7 +490,6 @@ function ballRound() {
                     if (ldata.enemyCount == 0) {
                         addCmd(cmd);
                         addCmd({type: CmdType.WIN});
-                        console.timeEnd("round");
                         return;
                     }
                 }
@@ -524,11 +523,11 @@ function pushRound() {
 function endRound() {
     ldata.ballDmg = 100;
     ldata.isThrough = false;
-
-    addCmd({type: CmdType.ROUND_END});
     if (ldata.nextBase) {
         assignPoint(ldata.nextBase, ldata.base);
     }
+
+    addCmd({type: CmdType.ROUND_END, base: copyPoint(ldata.base)});
 }
 
 function startRound(aimDir) {
