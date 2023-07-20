@@ -14,6 +14,8 @@
 //       {type: "lose"}
 // }
 
+const BASE_DMG = 500;
+
 let ldata = {
     lines : [],
 
@@ -31,7 +33,7 @@ let ldata = {
 
     round: 0,
 
-    ballDmg : 500,
+    ballDmg : BASE_DMG,
 
     isThrough : false,
 
@@ -367,6 +369,9 @@ function useSkill(role, target) {
 }
 
 function skillRound() {
+    if (ldata.win) {
+        return;
+    }
     for (let skill of ldata.skills) {
         let cmd = {type: CmdType.SKILL_EFFECT, cid: skill.cid};
         addCmd(cmd);
@@ -394,7 +399,7 @@ function pushMap(pushLine) {
             }
             let visible = true;
             for (let line of enemy.lines) {
-                line.moveLine(yoffset);
+                line.move(yoffset);
             }
 
             enemy.rect.top += yoffset;
@@ -474,6 +479,7 @@ function ballRound() {
                         ldata.enemyCount -= 1;
                     if (ldata.enemyCount == 0) {
                         addCmd(cmd);
+                        ldata.win = true;
                         addCmd({type: CmdType.WIN});
                         return;
                     }
@@ -488,10 +494,15 @@ function ballRound() {
 }
 
 function enemyRound() {
-
+    if (ldata.win) {
+        return;
+    }
 }
 
 function pushRound() {
+    if (ldata.win) {
+        return;
+    }
     let pushLine = 0;
     if (ldata.lines.length <= config.frameLines.length && ldata.startLine > 0) {
         pushLine = Math.min(ldata.startLine, 10);
@@ -506,7 +517,10 @@ function pushRound() {
 }
 
 function endRound() {
-    ldata.ballDmg = 100;
+    if (ldata.win) {
+        return;
+    }
+    ldata.ballDmg = BASE_DMG;
     ldata.isThrough = false;
     if (ldata.nextBase) {
         assignPoint(ldata.nextBase, ldata.base);

@@ -79,7 +79,7 @@ class Line {
         }
     }
 
-    moveLine(yoffset) {
+    move(yoffset) {
         this.y1 += yoffset;
         this.y2 += yoffset;
         this.hide = 0;
