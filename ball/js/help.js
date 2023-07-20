@@ -31,6 +31,15 @@ function copyLine(line) {
     return l;
 }
 
+function getPointByGrid(obj, grid) {
+    let x = Math.floor(grid % Board.WIDTH);
+    let y = Math.floor(grid / Board.WIDTH);
+    return {
+        x: x * Board.SIDE + obj.anchor.x + Offset.x,
+        y: y * Board.SIDE + obj.anchor.y + Offset.y
+    }
+}
+
 function resetIgnore(start, ignores, collide) {
     let temp = [];
     // 任何情况，本次碰撞线加入下次碰撞检测的忽略组中

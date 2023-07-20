@@ -92,15 +92,6 @@ function getMonster(cid) {
     return null;
 };
 
-function getPointByGrid(obj, grid) {
-    let x = Math.floor(grid % Board.WIDTH);
-    let y = Math.floor(grid / Board.WIDTH);
-    return {
-        x: x * Board.SIDE + obj.anchor.x + Offset.x,
-        y: y * Board.SIDE + obj.anchor.y + Offset.y
-    }
-}
-
 function loadData(onfinish) {
     $.getJSON("data/object.json", function(obj_data) {
         var objects = obj_data;
