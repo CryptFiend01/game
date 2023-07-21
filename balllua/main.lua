@@ -33,14 +33,6 @@ local function main()
     end
     local t2 = os.clock()
     print("use time "..(t2 - t1).."ms")
-
-    -- local replay = Logic.get_replay()
-    -- print(Help.table_to_string(replay))
 end
 
 main()
-
--- local line = {normal={y=0,x=-1,},mid=0,x2=392,y2=533,y1=5,x1=392,solid=true,hide_lines={},hide=0,}
--- local start = {y=552,x=250} 
--- local dir = {y=-0.14142135623731,x=0.98994949366117}
--- local p = Basic.ray_line_intersection(start, dir, line)
