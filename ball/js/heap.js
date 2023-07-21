@@ -83,4 +83,10 @@ class Heap {
         }
         console.log(s);
     }
+
+    foreach(f) {
+        for (let e of this.heap) {
+            f(e)
+        }
+    }
 }

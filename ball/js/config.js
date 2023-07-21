@@ -11,76 +11,11 @@ let GameRect = {
 }
 
 let config = {
-    frameLines : [
-        new Line({x1: GameRect.left, y1: GameRect.top, x2: GameRect.right, y2: GameRect.top, solid: true, hide:0, mid:0}),
-        new Line({x1: GameRect.right, y1: GameRect.top, x2: GameRect.right, y2: GameRect.bottom, solid: true, hide:0, mid:0}),
-        new Line({x1: GameRect.left, y1: GameRect.bottom, x2: GameRect.left, y2: GameRect.top, solid: true, hide:0, mid:0}),
-    ],
-
     enemys: [],
 
     objects: null,
     monsters: null,
     stage: null
-}
-
-function makeLines(id, point, obj, solid) {
-    let lt = {x: point.x - obj.anchor.x, y: point.y - obj.anchor.y};
-    let lines = [];
-    for (let i = obj.points.length - 1; i >= 0; i--) {
-        let j = i - 1;
-        if (j < 0) {
-            j = obj.points.length - 1;
-        }
-        let start = obj.points[i];
-        let end = obj.points[j];
-        let line = new Line({
-            x1: start.x + lt.x,
-            y1: start.y + lt.y,
-            x2: end.x + lt.x,
-            y2: end.y + lt.y,
-            mid: id,
-            solid: solid,
-        });
-        lines.push(line);
-    }
-    return lines;
-}
-
-function makeRect(lines) {
-    let rect = {};
-    for (let l of lines) {
-        let rl = {
-            left: Math.min(l.x1, l.x2),
-            top: Math.min(l.y1, l.y2),
-            right: Math.max(l.x1, l.x2),
-            bottom: Math.max(l.y1, l.y2)
-        };
-        if (rect.left == undefined) {
-            rect.left = rl.left;
-        } else {
-            rect.left = Math.min(rect.left, rl.left);
-        }
-
-        if (rect.top == undefined) {
-            rect.top = rl.top;
-        } else {
-            rect.top = Math.min(rect.top, rl.top);
-        }
-
-        if (rect.right == undefined) {
-            rect.right = rl.right;
-        } else {
-            rect.right = Math.max(rect.right, rl.right);
-        }
-
-        if (rect.bottom == undefined) {
-            rect.bottom = rl.bottom;
-        } else {
-            rect.bottom = Math.max(rect.bottom, rl.bottom);
-        }
-    }
-    return rect;
 }
 
 function getMonster(cid) {

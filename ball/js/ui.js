@@ -8,6 +8,10 @@ function show(id, display) {
     e.style.display = display;
 }
 
+function pointInRange(point) {
+    return pointInRect(point, ldata.rect);
+}
+
 function addUIEvents() {
     canvas.addEventListener("mousemove", (evt) => {
         let coord = document.getElementById("coord");
@@ -135,6 +139,7 @@ function checkTime() {
     hidden("replay");
     let startTime = Date.now();
     console.time("check total");
+    initLogic(game.base, game.distInterval, game.roles);
     while (game.replay.length > 0) {
         let rep = game.replay.shift();
         if (rep.op == OpType.SKILL) {

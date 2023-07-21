@@ -126,3 +126,34 @@ class Line {
         return this.hide > 0 || this.hideLines.length > 0;
     }
 }
+
+function mixId(id1, id2) {
+    return id1 * 1000 + id2;
+}
+
+function unMixId(id) {
+    return [Math.floor(id / 1000), id % 1000];
+}
+
+function makeLines(id, point, obj, solid) {
+    let lt = {x: point.x - obj.anchor.x, y: point.y - obj.anchor.y};
+    let lines = [];
+    for (let i = obj.points.length - 1; i >= 0; i--) {
+        let j = i - 1;
+        if (j < 0) {
+            j = obj.points.length - 1;
+        }
+        let start = obj.points[i];
+        let end = obj.points[j];
+        let line = new Line({
+            x1: start.x + lt.x,
+            y1: start.y + lt.y,
+            x2: end.x + lt.x,
+            y2: end.y + lt.y,
+            mid: id,
+            solid: solid,
+        });
+        lines.push(line);
+    }
+    return lines;
+}

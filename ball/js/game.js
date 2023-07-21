@@ -273,7 +273,7 @@ function run(pass) {
                         l.color = ColorSet.LineSolid;
                         rdata.lines.push(l);
                     }
-                    hidenPartLines(lines, rdata.lines);
+                    hidenPartLines(lines, rdata.lines, frameLines.length);
                 }
             }
         }
@@ -306,6 +306,10 @@ function update() {
     game.speed += game.speedAdd;
     
     draw();
+}
+
+function inRange(line) {
+    return lineInRect(line, ldata.rect);
 }
 
 function getGridPoint(x, y) {

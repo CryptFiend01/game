@@ -16,6 +16,12 @@
 
 const BASE_DMG = 500;
 
+let frameLines = [
+    new Line({x1: GameRect.left, y1: GameRect.top, x2: GameRect.right, y2: GameRect.top, solid: true, hide:0, mid:0}),
+    new Line({x1: GameRect.right, y1: GameRect.top, x2: GameRect.right, y2: GameRect.bottom, solid: true, hide:0, mid:0}),
+    new Line({x1: GameRect.left, y1: GameRect.bottom, x2: GameRect.left, y2: GameRect.top, solid: true, hide:0, mid:0}),
+];
+
 let ldata = {
     lines : [],
 
@@ -51,14 +57,6 @@ let ldata = {
 
     callid : 1001
 };
-
-function inRange(line) {
-    return lineInRect(line, ldata.rect);
-}
-
-function pointInRange(point) {
-    return pointInRect(point, ldata.rect);
-}
 
 function addCmd(cmd) {
     cmd.id = ldata.cmds.length + 1;
@@ -116,7 +114,7 @@ function initLogic(base, interLen, roles) {
         max_line = Board.HEIGHT;
     }
 
-    for (let line of config.frameLines) {
+    for (let line of frameLines) {
         ldata.lines.push(line);
     }
 
@@ -154,7 +152,7 @@ function initLogic(base, interLen, roles) {
     console.log("config enemy count:" + config.stage.monsters.length);
     console.log("enemyCount:" + ldata.enemyCount);
 
-    hidenInline(ldata.lines);
+    hidenInline(ldata.lines, frameLines.length);
 
     resetTakeGrids();
 }
@@ -200,7 +198,7 @@ function addEnemy(id, mc, obj, grid) {
     }
     ldata.enemys[id] = enemy;
     ldata.enemyCount += 1;
-    hidenPartLines(lines, ldata.lines);
+    hidenPartLines(lines, ldata.lines, frameLines.length);
     return enemy;
 }
 
@@ -268,7 +266,7 @@ function checkCollide(deads) {
     let temp = [];
     if (deads) {
         // 只有目标被移除，只需要检测和这些目标相撞的球
-        for (let ball of ldata.balls.heap) {
+        ldata.balls.foreach((ball) => {
             if (deads.indexOf(ball.nextCollideId()) != -1) {
                 ball.recoverState();
                 ball.calcCollide();
@@ -277,17 +275,17 @@ function checkCollide(deads) {
                 temp.push(ball);
             else
                 getNextBase(ball);
-        }
+        });
     } else {
         // 其他原因（比如召唤，移动）导致重新检测，需要全部重算一遍
-        for (let ball of ldata.balls.heap) {
+        ldata.balls.foreach((ball) => {
             ball.recoverState();
             ball.calcCollide(ball);
             if (ball.nextCollidePoint())
                 temp.push(ball);
             else
                 getNextBase(ball);
-        }
+        });
     }
 
     ldata.balls.clear();
@@ -327,7 +325,7 @@ function effectSkill(skill) {
     if (ldata.enemyCount <= 0) {
         addCmd({type: CmdType.WIN});
         ldata.win = true;
-    } else if (ldata.lines.length <= config.frameLines.length && ldata.startLine > 0) {
+    } else if (ldata.lines.length <= frameLines.length && ldata.startLine > 0) {
         let pushLine = Math.min(ldata.startLine, 10);
         pushMap(pushLine);
     }
@@ -387,7 +385,7 @@ function skillRound() {
 function pushMap(pushLine) {
     if (pushLine > 0) {
         ldata.lines.length = 0;
-        for (let l of config.frameLines) {
+        for (let l of frameLines) {
             ldata.lines.push(l);
         }
         ldata.startLine -= pushLine;
@@ -422,7 +420,7 @@ function pushMap(pushLine) {
             }
         }
 
-        hidenInline(ldata.lines);
+        hidenInline(ldata.lines, frameLines.length);
 
         resetTakeGrids();
         
@@ -444,9 +442,9 @@ function ballRound() {
        
         // 先将球转向,并将所有球的dist减去第一个球的dist
         let d = ball.restDist();
-        for (let b of ldata.balls.heap) {
+        ldata.balls.foreach((b) => {
             b.move(d);
-        }
+        });
 
         // 更新球的状态，最快的球移动到碰撞点，计算弹射后的方向和下次碰撞点
         if (ball.update()) {
@@ -504,7 +502,7 @@ function pushRound() {
         return;
     }
     let pushLine = 0;
-    if (ldata.lines.length <= config.frameLines.length && ldata.startLine > 0) {
+    if (ldata.lines.length <= frameLines.length && ldata.startLine > 0) {
         pushLine = Math.min(ldata.startLine, 10);
     } else if (ldata.pushed + 1 < config.stage.push.length) {
         let next_push = config.stage.push[ldata.pushed + 1];
