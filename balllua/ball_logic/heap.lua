@@ -84,4 +84,10 @@ function Heap:clear()
     self.array = {}
 end
 
+function Heap:foreach(f)
+    for _, e in ipairs(self.array) do
+        f(e)
+    end
+end
+
 return Heap
