@@ -312,7 +312,7 @@ function effectSkill(skill) {
         if (enemy.visible && enemy.solid && enemy.hp > 0 && rectInserect(enemy.rect, skill.rect)) {
             //console.log("inserect enemy rect:" + objToString(enemy.rect));
             enemy.hp -= skill.cfg.dmg;
-            let cmd = {id:eid, dmg: skill.cfg.dmg, hp: enemy.hp};
+            let cmd = {dmg:{id:eid, dmg: skill.cfg.dmg, hp: enemy.hp}};
             effects.push(cmd);
             if (enemy.hp <= 0) {
                 let ret = onEnemyDead(eid);

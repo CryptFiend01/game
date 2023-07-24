@@ -328,7 +328,7 @@ local function effect_skill(skill)
     for eid, enemy in ipairs(data.enemys) do
         if enemy.visible and enemy.solid and enemy.hp > 0 and Basic.rect_inserect(enemy.rect, skill.rect) then
             sub_enemy_hp(enemy, skill.cfg.dmg)
-            local cmd = {id = eid, dmg = skill.cfg.dmg, hp = enemy.hp}
+            local cmd = {dmg={id = eid, dmg = skill.cfg.dmg, hp = enemy.hp}}
             table.insert(effects, cmd)
             if enemy.hp <= 0 then
                 local ret = on_enemy_dead(eid)

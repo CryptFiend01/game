@@ -119,7 +119,7 @@ function startPush() {
 
 function updateSkillEffect(effects) {
     for (let e of effects) {
-        if (e.hp <= 0) {
+        if (e.dmg.hp <= 0) {
             rdata.lines = removeDead(rdata.lines, e.id);
         }
     }
