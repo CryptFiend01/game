@@ -365,6 +365,7 @@ local function check_skill_valid()
 end
 
 local function use_skill(role, target)
+    data.cmds = {}
     local op = {op = Const.OpType.SKILL, rid = role.id}
     if target then
         op.target = Basic.copy_point(target)

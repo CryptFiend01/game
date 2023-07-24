@@ -23,6 +23,37 @@ local function table_to_string(t)
     return s
 end
 
+local function table_to_json(t)
+    local is_kv = true
+    local s = ''
+    local sep = ''
+    for k, v in pairs(t) do
+        s = s .. sep
+        if sep == '' then
+            sep = ','
+        end
+        if type(k) ~= "string" then
+            is_kv = false
+        else
+            s = s .. '"' .. k .. '":'
+        end
+
+        if type(v) == "table" then
+            s = s .. table_to_json(v)
+        elseif type(v) == "string" then
+            s = s .. '"' .. v .. '"'
+        else
+            s = s .. v
+        end
+    end
+
+    if is_kv then
+        return '{' .. s .. '}'
+    else
+        return '[' .. s .. ']'
+    end
+end
+
 local function set_logger(logger)
     err_print = logger
 end
@@ -86,6 +117,7 @@ end
 return {
     contain = contain,
     table_to_string = table_to_string,
+    table_to_json = table_to_json,
     set_logger = set_logger,
     err_print = err_print,
     get_point_by_grid = get_point_by_grid,
