@@ -1,5 +1,6 @@
 local Help = require "ball_logic.help"
 local Basic = require "ball_logic.basic"
+local Collide = require "ball_logic.collide"
 
 local Ball = {}
 Ball.__index = Ball
@@ -20,7 +21,7 @@ function Ball:new(b)
         ignores = {},
         hit = 0,
         interval = b.interval,
-        old_state = {ignores = {}, hit = 0, collide = nil}
+        old_state = {ignores = {}, hit = 0, collide = {}}
     }
     setmetatable(self, Ball)
     return self
@@ -36,6 +37,7 @@ function Ball:get_pos()
         pos.x = pos.x - self.interval * self.dir.x
         pos.y = pos.y - self.interval * self.dir.x
     end
+    return pos
 end
 
 function Ball:save_state()
@@ -71,17 +73,17 @@ function Ball:will_collide()
 end
 
 function Ball:check_ignores()
-    self.ignores = Help.reset_ignores(self:get_pos(), self.ignores, self.collide)
+    self.ignores = Collide.reset_ignores(self:get_pos(), self.ignores, self.collide)
 end
 
-function Ball:calc_collide()
+function Ball:calc_collide(lines)
     self:check_ignores()
     local start = self:get_pos()
-    local collide = Help.check_next_collide(start, self.dir, self.ignores, self.hit)
+    local collide = Collide.check_next_collide(start, self.dir, lines, self.ignores, self.hit)
     self.collide = collide
     -- 虚线物体或者当前为穿透球，需要记录正在那个敌方体内，再次碰撞其他物体前不会反复计算碰撞伤害
-    self.hit = Help.get_hit_id(self.collide)
-    if not self.collide.point then
+    self.hit = Collide.get_hit_id(self.collide)
+    if self.collide.point then
         self.dist = Basic.distance({x = collide.point.x - self.x, y = collide.point.y - self.y})
         if self.ctimes == 0 then
             -- 还未第一次触发弹射的球，因为目标消失而重新计算碰撞点，需要加上起点等待距离
@@ -117,7 +119,7 @@ function Ball:move(d)
     self.passed = self.passed - d
 end
 
-function Ball:update()
+function Ball:update(data)
     if self.hit == 0 then
         self.times = self.times + 1
     end
@@ -130,8 +132,8 @@ function Ball:update()
         self.passed = 0
         Basic.assign_point(self.collide.point, self)
         self:save_state()
-        self:calc_collide()
-        return true
+        self:calc_collide(data.lines)
+        return self:next_collide_point() ~= nil
     else
         return false
     end

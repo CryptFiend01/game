@@ -278,7 +278,7 @@ local function on_enemy_dead(id)
     -- 处理死亡事件
     if enemy.evt and enemy.evt.type == Const.StageEvent.DEAD_CALL then
         ret.deads = nil
-        local r = add_enemies(enemy.evt.cid, enemy.evt.cout, enemy.grid)
+        local r = add_enemies(enemy.evt.cid, enemy.evt.count, enemy.grid)
         ret.evts = r.evts
         ret.enemies = r.enemies
     else
@@ -292,7 +292,7 @@ local function check_collide(deads)
         data.balls:foreach(function (ball)
             if Help.contain(deads, ball:next_collide_id()) then
                 ball:recover_state()
-                ball:calc_collide()
+                ball:calc_collide(data.lines)
             end
             if ball:next_collide_point() then
                 table.insert(temp, ball)
@@ -303,7 +303,7 @@ local function check_collide(deads)
     else
         data.balls:foreach(function (ball)
             ball:recover_state()
-            ball:calc_collide()
+            ball:calc_collide(data.lines)
             if ball:next_collide_point() then
                 table.insert(temp, ball)
             else
@@ -479,7 +479,7 @@ local function start_round(dir)
                 dir = data.begin_dir,
                 interval = n * data.interval
             })
-            table.insert(data.balls, ball)
+            data.balls:add(ball)
             add_cmd({
                 type = Const.CmdType.CREATE_BALL,
                 bid = n + 1,
@@ -496,12 +496,16 @@ local function ball_round()
     while not data.balls:empty() do
         local ball = data.balls:pop()
         local line = ball:next_collide_line()
+        local target = ball:next_collide_point()
         -- 距离最短，移动后发生碰撞才会创建命令
         local cmd = {
             type = Const.CmdType.COLLIDE,
             bid = ball.id,
-            target = Basic.copy_point(ball:next_collide_line())
         }
+
+        if target then
+            cmd.target = Basic.copy_point(target)
+        end
 
         -- 先将剩余所有球的passed加上第一个球的dist
         local d = ball:rest_dist()
@@ -510,7 +514,7 @@ local function ball_round()
         end)
 
         -- 更新球的状态，最快的球移动到碰撞点，计算弹射后的方向和下次碰撞点
-        if ball:update() then
+        if ball:update(data) then
             cmd.reflect = Basic.copy_point(ball.dir)
             if (ball:next_collide_point()) then
                 data.balls:add(ball)
