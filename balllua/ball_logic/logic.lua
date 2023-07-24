@@ -390,7 +390,7 @@ local function use_skill(role, target)
             right = range.x + range.width,
             bottom = range.y + range.height
         }
-        local skill = {cid = role.id, cfg = cfg, rect = rect}
+        local skill = {cid = role.id, cfg = cfg, rect = rect, round = 0}
         table.insert(data.skills, skill)
         table.insert(cmd.range, range)
         cmd.effects = effect_skill(skill)

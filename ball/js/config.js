@@ -10,6 +10,13 @@ let GameRect = {
     bottom: Board.HEIGHT * Board.SIDE + Offset.y
 }
 
+let EnemyRect = {
+    left: GameRect.left,
+    top: GameRect.top + Board.SIDE,
+    right: GameRect.right,
+    bottom: GameRect.bottom
+}
+
 let config = {
     enemys: [],
 

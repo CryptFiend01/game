@@ -99,6 +99,57 @@ function resetTakeGrids() {
     }
 }
 
+function initEnemyLines() {
+    let ret = {
+        startLine: 0,
+        lines: [],
+        enemys: {},
+        enemyCount: 0
+    }
+    let max_line = config.stage.max_line;
+    if (max_line < Board.HEIGHT) {
+        max_line = Board.HEIGHT;
+    }
+
+    for (let line of frameLines) {
+        ret.lines.push(line);
+    }
+
+    ret.startLine = max_line - Board.HEIGHT;
+    let yoffset = ret.startLine * Board.SIDE;
+
+    ret.enemys = copyEnemies(config.enemys);
+    for (let eid in ret.enemys) {
+        let enemy = ret.enemys[eid];
+        if (enemy.solid) {
+            ret.enemyCount += 1;
+        }
+        for (let line of enemy.lines) {
+            line.y1 -= yoffset;
+            line.y2 -= yoffset;
+        }
+        enemy.rect.top -= yoffset;
+        enemy.rect.bottom -= yoffset;
+        enemy.grid -= ret.startLine * Board.WIDTH;
+
+        if (enemy.rect.top < EnemyRect.top || enemy.rect.bottom > EnemyRect.bottom) {
+            enemy.visible = false;
+        }
+    }
+
+    // 按照个体设置
+    for (let eid in ret.enemys) {
+        let enemy = ret.enemys[eid];
+        if (enemy.visible) {
+            for (let l of enemy.lines)
+            ret.lines.push(l);
+        }
+    }
+
+    hidenInline(ret.lines, frameLines.length);
+    return ret;
+}
+
 function initLogic(base, interLen, roles) {
     assignPoint(base, ldata.base);
     ldata.interLen = interLen;
@@ -109,51 +160,13 @@ function initLogic(base, interLen, roles) {
     ldata.roles = roles;
     ldata.rect = {left: GameRect.left, right: GameRect.right, top: GameRect.top + Board.SIDE, bottom: GameRect.bottom};
 
-    let max_line = config.stage.max_line;
-    if (max_line < Board.HEIGHT) {
-        max_line = Board.HEIGHT;
-    }
-
-    for (let line of frameLines) {
-        ldata.lines.push(line);
-    }
-
-    ldata.startLine = max_line - Board.HEIGHT;
-    let yoffset = ldata.startLine * Board.SIDE;
-
-    ldata.enemys = copyEnemies(config.enemys);
-    for (let eid in ldata.enemys) {
-        let enemy = ldata.enemys[eid];
-        if (enemy.solid) {
-            ldata.enemyCount += 1;
-        }
-        for (let line of enemy.lines) {
-            line.y1 -= yoffset;
-            line.y2 -= yoffset;
-        }
-        enemy.rect.top -= yoffset;
-        enemy.rect.bottom -= yoffset;
-        enemy.grid -= ldata.startLine * Board.WIDTH;
-
-        if (enemy.rect.top < ldata.rect.top || enemy.rect.bottom > ldata.rect.bottom) {
-            enemy.visible = false;
-        }
-    }
-
-    // 按照个体设置
-    for (let eid in ldata.enemys) {
-        let enemy = ldata.enemys[eid];
-        if (enemy.visible) {
-            for (let l of enemy.lines)
-                ldata.lines.push(l);
-        }
-    }
-
+    let ret = initEnemyLines();
+    ldata.startLine = ret.startLine;
+    ldata.lines = ret.lines;
+    ldata.enemys = ret.enemys;
+    ldata.enemyCount = ret.enemyCount;
     console.log("config enemy count:" + config.stage.monsters.length);
     console.log("enemyCount:" + ldata.enemyCount);
-
-    hidenInline(ldata.lines, frameLines.length);
-
     resetTakeGrids();
 }
 
@@ -382,45 +395,51 @@ function skillRound() {
     checkSkillValid();
 }
 
+function pushDataMap(data, pushLine) {
+    data.lines.length = 0;
+    for (let l of frameLines) {
+        data.lines.push(l);
+    }
+    data.startLine -= pushLine;
+    let yoffset = pushLine * Board.SIDE;
+    let subEnemyCount = 0;
+    for (let eid in data.enemys) {
+        let enemy = data.enemys[eid];
+        if (enemy.hp <= 0 ) {
+            continue;
+        }
+        let visible = true;
+        for (let line of enemy.lines) {
+            line.move(yoffset);
+        }
+
+        enemy.rect.top += yoffset;
+        enemy.rect.bottom += yoffset;
+        enemy.grid += pushLine * Board.WIDTH;
+        if (enemy.rect.top < EnemyRect.top || enemy.rect.bottom > EnemyRect.bottom) {
+            visible = false;
+        }
+
+        if (enemy.visible && enemy.solid && !visible) {
+            // 底线移除
+            subEnemyCount = subEnemyCount + 1;
+        }
+        enemy.visible = visible;
+
+        if (visible) {
+            for (let line of enemy.lines) {
+                data.lines.push(line);
+            }
+        }
+    }
+
+    hidenInline(data.lines, frameLines.length);
+    return subEnemyCount;
+}
+
 function pushMap(pushLine) {
     if (pushLine > 0) {
-        ldata.lines.length = 0;
-        for (let l of frameLines) {
-            ldata.lines.push(l);
-        }
-        ldata.startLine -= pushLine;
-        let yoffset = pushLine * Board.SIDE;
-        for (let eid in ldata.enemys) {
-            let enemy = ldata.enemys[eid];
-            if (enemy.hp <= 0 ) {
-                continue;
-            }
-            let visible = true;
-            for (let line of enemy.lines) {
-                line.move(yoffset);
-            }
-
-            enemy.rect.top += yoffset;
-            enemy.rect.bottom += yoffset;
-            enemy.grid += pushLine * Board.WIDTH;
-            if (enemy.rect.top < ldata.rect.top || enemy.rect.bottom > ldata.rect.bottom) {
-                visible = false;
-            }
-
-            if (enemy.visible && enemy.solid && !visible) {
-                // 底线移除
-                ldata.enemyCount -= 1;
-            }
-            enemy.visible = visible;
-
-            if (visible) {
-                for (let line of enemy.lines) {
-                    ldata.lines.push(line);
-                }
-            }
-        }
-
-        hidenInline(ldata.lines, frameLines.length);
+        ldata.enemyCount -= pushDataMap(ldata, pushLine);
 
         resetTakeGrids();
         
@@ -532,7 +551,7 @@ function startRound(aimDir) {
     ldata.cmds.length = 0;
     assignPoint(aimDir, ldata.begin);
 
-    let collide = checkNextCollide(ldata.base, ldata.begin, [], 0);
+    let collide = lcheckNextCollide(ldata.base, ldata.begin, [], 0);
     let dist = distance({x:collide.point.x - ldata.base.x, y:collide.point.y - ldata.base.y});
     let n = 0;
     for (let role of ldata.roles) {

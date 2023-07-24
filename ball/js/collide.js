@@ -14,8 +14,11 @@ function resetIgnore(start, ignores, collide) {
     return temp;
 }
 
-function checkNextCollide(start, dir, ignores, hitid) {
-    let lines = ldata.lines;
+function lcheckNextCollide(start, dir, ignores, hitid) {
+    return checkNextCollide(start, dir, ignores, hitid, ldata.lines, ldata.isThrough);
+}
+
+function checkNextCollide(start, dir, ignores, hitid, lines, through) {
     let nearest = 1e10;
     let collide = { point: null, line: null };
     for (let i = 0; i < lines.length; i++) {
@@ -25,7 +28,7 @@ function checkNextCollide(start, dir, ignores, hitid) {
             continue;
         }
         // 忽略列表中直接忽略，非穿透球隐藏线也忽略检测（穿透球需要检测，才能对中间方块计算伤害）
-        if (ignores.indexOf(l) != -1 || (l.hide != 0 && !ldata.isThrough)) {
+        if (ignores.indexOf(l) != -1 || (l.hide != 0 && !through)) {
             continue;
         }
         // 检查入射方向与线的夹角，背面入射不碰撞
@@ -62,14 +65,18 @@ function getHitId(collide) {
     }
 }
 
-function aim(base, dir, times) {
+function laim(base, dir, times) {
+    return aim(base, dir, times, ldata.lines, ldata.isThrough);
+}
+
+function aim(base, dir, times, lines, through) {
     let n = dir;
     let start = base;
     let hitid = 0;
     let ignores = [];
     let collisions = [];
     while (collisions.length < times) {
-        let collide = checkNextCollide(start, n, ignores, hitid);
+        let collide = checkNextCollide(start, n, ignores, hitid, lines, through);
         if (!collide.point || !collide.line) {
             break;
         }

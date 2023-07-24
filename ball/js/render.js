@@ -25,9 +25,9 @@ function setLines(lines) {
     for (let l of lines) {
         let line = copyLine(l);
         if (line.solid) {
-            line.color = ColorSet.LineSolid;
+            line.setColor(ColorSet.LineSolid);
         } else {
-            line.color = ColorSet.LineDash;
+            line.setColor(ColorSet.LineDash);
         }
         rdata.lines.push(line);
     }

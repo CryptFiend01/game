@@ -1,16 +1,15 @@
 const CmdType = {
     CREATE_BALL : 1,
     COLLIDE : 2,
-    HIT: 3,
-    ROLE_SKILL: 4,
-    ENEMY_SKILL: 5,
-    REMOVE_SKILL : 6,
-    SKILL_EFFECT : 7,
-    ENEMY_MOVE: 8,
-    PUSH: 10,
-    ROUND_END: 11,
-    WIN : 12,
-    LOSE : 13
+    ROLE_SKILL: 3,
+    ENEMY_SKILL: 4,
+    REMOVE_SKILL : 5,
+    SKILL_EFFECT : 6,
+    ENEMY_MOVE: 7,
+    PUSH: 11,
+    ROUND_END: 12,
+    WIN : 13,
+    LOSE : 14
 }
 
 const ColorSet = {

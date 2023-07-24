@@ -69,7 +69,7 @@ class Ball {
     calcCollide() {
         this.checkIgnore();
         let start = this.getPos();
-        let collide = checkNextCollide(start, this.dir, this.ignores, this.hit);
+        let collide = lcheckNextCollide(start, this.dir, this.ignores, this.hit);
         this.collide = collide;
         // 虚线物体或者当前为穿透球，需要记录正在那个敌方体内，再次碰撞其他物体前不会反复计算碰撞伤害
         this.hit = getHitId(this.collide);

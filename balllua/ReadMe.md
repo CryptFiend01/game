@@ -34,15 +34,21 @@
 
 ##### 敌方使用技能（暂缺）type = 4
 
-##### 技能效果（被动技能，或者持续性技能触发）type=5
+##### 移除持续技能 type=5
 
-    示例：{type:5, cid: 1, effects:[{dmg:{id:1, dmg:10, hp:100}, evts:{type:1, id:1001, cid:9, grid:3}},...]}
+    示例：{type:5, cid: 1}
+
+    cid: 技能id
+
+##### 技能效果（被动技能，或者持续性技能触发）type=6
+
+    示例：{type:6, cid: 1, effects:[{dmg:{id:1, dmg:10, hp:100}, evts:{type:1, id:1001, cid:9, grid:3}},...]}
 
     cid: 技能id
 
     effects：技能效果，同弹射伤害结构
 
-##### 敌方移动（暂缺）type = 6
+##### 敌方移动（暂缺）type = 7
 
 ##### 地图推进 type = 11
 

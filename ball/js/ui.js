@@ -9,7 +9,7 @@ function show(id, display) {
 }
 
 function pointInRange(point) {
-    return pointInRect(point, ldata.rect);
+    return pointInRect(point, EnemyRect);
 }
 
 function addUIEvents() {
@@ -23,7 +23,12 @@ function addUIEvents() {
             game.aimDir = normalize(v);
             //game.aimDir = {x:0.9868925619168516, y:-0.16137865792351033};
             coord.innerHTML += "  方向：" + game.aimDir.x + "," + game.aimDir.y;
-            let collisions = aim(game.base, game.aimDir, game.times);
+            var collisions;
+            if (game.isRemote) {
+                collisions = aim(game.base, game.aimDir, game.times, game.lines, game.through);
+            } else {
+                collisions = laim(game.base, game.aimDir, game.times);
+            }
             for (let c of collisions) {
                 c.radius = 2;
                 c.color = "#1234bc";
@@ -50,9 +55,10 @@ function addUIEvents() {
                 game.totalDist = 0;
                 game.speed = game.basSpeed;
                 rdata.status = game.status;
-                startRound(game.aimDir);
-                updateRound();
-                game.cmds = ldata.cmds;
+                if (!doShootBall()) {
+                    alert("shoot ball failed!");
+                    return;
+                }
                 loadBalls();
                 if (game.status == GameState.GS_PLAY) {
                     game.timer = setInterval(update, 10);
@@ -137,22 +143,27 @@ function onLoadReplay() {
 function checkTime() {
     hidden("skills");
     hidden("replay");
-    let startTime = Date.now();
-    console.time("check total");
-    initLogic(game.base, game.distInterval, game.roles);
-    while (game.replay.length > 0) {
-        let rep = game.replay.shift();
-        if (rep.op == OpType.SKILL) {
-            let role = game.roles[rep.rid - 1];
-            useSkill(role, rep.target);
-        } else if (rep.op == OpType.BALL) {
-            startRound(rep.dir);
-            updateRound();
+    if (game.isRemote) {
+
+    } else {
+        let startTime = Date.now();
+        console.time("check total");
+        initLogic(game.base, game.distInterval, game.roles);
+        while (game.replay.length > 0) {
+            let rep = game.replay.shift();
+            if (rep.op == OpType.SKILL) {
+                let role = game.roles[rep.rid - 1];
+                useSkill(role, rep.target);
+            } else if (rep.op == OpType.BALL) {
+                startRound(rep.dir);
+                updateRound();
+            }
         }
+        console.timeEnd("check total");
+        let endTime = Date.now();
+        alert("耗时:" + (endTime - startTime) + ", 请刷新页面继续！");
     }
-    console.timeEnd("check total");
-    let endTime = Date.now();
-    alert("耗时:" + (endTime - startTime) + ", 请刷新页面继续！");
+
 }
 
 function onPlay() {
@@ -184,4 +195,3 @@ function onSetReplay() {
     hidden("replay-panel");
     game.replayJson = data;
 }
-

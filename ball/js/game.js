@@ -15,6 +15,8 @@ const GameState = {
     GS_GROUP_DEBUG : 7,
 }
 
+const uri = "http://127.0.0.1:7777";
+
 let game = {
     status: GameState.GS_SKILL,
     aimDir: {x: 0, y: 0},
@@ -37,10 +39,18 @@ let game = {
     distInterval: 15,
     lastDist: 0,
     gameMode: GameState.GS_PLAY,
+    isRemote: true,
 
     pushed: 0,
     chooseRole: null,
     skillCD: [0, 0, 0, 0, 0],
+
+    //----逻辑不在本地运行时，需要处理本地对象的状态-----
+    startLine: 0,
+    enemys : {},
+    lines: [],
+    through: false,
+    //---------------------------------------------
 
     replayJson: "",
     replay: [],
@@ -51,8 +61,22 @@ let game = {
 
 function initialze() {
     loadData(function () {
-        initLogic(game.base, game.distInterval, game.roles);
-        initRender(ldata.lines, game.status, game.base, game.collisions, game.roles);
+        if (game.isRemote) {
+            let res = httpPost(uri + "/init_game", "");
+            if (!res || res.code != 0) {
+                alert("init game failed!");
+                return;
+            }
+            let ret = initEnemyLines();
+            game.startLine = ret.startLine;
+            game.enemys = ret.enemys;
+            game.lines = ret.lines;
+            initRender(game.lines, game.status, game.base, game.collisions, game.roles);
+        } else {
+            initLogic(game.base, game.distInterval, game.roles);
+            initRender(ldata.lines, game.status, game.base, game.collisions, game.roles);
+        }
+
         draw();
         addUIEvents();
     });   
@@ -104,8 +128,13 @@ function updatePush() {
 
     if (game.pushed >= totalPush) {
         console.log("push finish!");
+        if (game.isRemote) {
+            pushDataMap(game, game.running.line);
+            setLines(game.lines);
+        } else {
+            setLines(ldata.lines);
+        }
         game.running = game.cmds.shift();
-        setLines(ldata.lines);
         onfinish();
     }
 }
@@ -163,6 +192,8 @@ function onfinish() {
                 }
             }
             resetSkillRoles();
+            assignPoint(cmd.base, game.base);
+            game.through = false;
         } else if (cmd.type == CmdType.WIN) {
             break;
         }
@@ -172,7 +203,6 @@ function onfinish() {
         game.status = GameState.GS_SKILL;
         rdata.balls.length = 0;
         rdata.status = game.status;
-        assignPoint(ldata.base, game.base);
         openSkillPanel();
 
         if (game.timer > 0) {
@@ -186,8 +216,19 @@ function onfinish() {
             rdata.status = game.status;
             rdata.skillSelect = null;
             rdata.skillRange = {};
-            let replayJson = JSON.stringify(ldata.ops);
-            console.log(replayJson);
+            var replayJson;
+            if (game.isRemote) {
+                let res = httpPost(uri + "/get_replay", "");
+                if (!res || res.code != 0) {
+                    return;
+                }
+                replayJson = JSON.stringify(res.data);
+                console.log(replayJson);
+            } else {
+                replayJson = JSON.stringify(ldata.ops);
+                console.log(replayJson);
+            }
+
             if (!game.isPlayReplay) {
                 alert("录像数据，可复制保存进行回放：" + replayJson);
             }
@@ -217,9 +258,15 @@ function moveAll(dist) {
     }
 }
 
+function lineEvts(cmd, data) {
+    
+}
+
 function run(pass) {
+    console.log("run");
     let cmd = game.running;
-    if (cmd.type != CmdType.COLLIDE && cmd.type != CmdType.HIT) {
+    if (cmd.type != CmdType.COLLIDE) {
+        console.error("cmd.type="+cmd.type);
         return -1;
     }
 
@@ -270,10 +317,48 @@ function run(pass) {
                     let point = getPointByGrid(obj, evt.grid);
                     let lines = makeLines(evt.id, point, obj, mc.solid);
                     for (let l of lines) {
-                        l.color = ColorSet.LineSolid;
+                        l.setColor(ColorSet.LineSolid);
                         rdata.lines.push(l);
                     }
                     hidenPartLines(lines, rdata.lines, frameLines.length);
+                }
+            }
+        }
+
+        if (game.isRemote) {
+            game.enemys[cmd.dmg.id].hp = cmd.dmg.hp;
+            // 移除死亡的单位
+            if (cmd.dmg != null && cmd.dmg.hp <= 0) {
+                game.lines = removeDead(game.lines, cmd.dmg.id);
+            }
+
+            // 处理事件
+            if (cmd.evts) {
+                for (let evt of cmd.evts) {
+                    if (evt.type == EvtType.CALL_ENEMY) {
+                        let mc = getMonster(evt.cid);
+                        let obj = config.objects[mc.type];
+                        let point = getPointByGrid(obj, evt.grid);
+                        let lines = makeLines(evt.id, point, obj, mc.solid);
+                        let enemy = {
+                            id : evt.id,
+                            point : point,
+                            grid: grid,
+                            hp : mc.hp,
+                            visible: true,
+                            solid : mc.solid,
+                            evt: mc.evt,
+                            obj : obj,
+                            lines : lines,
+                            rect: makeRect(lines)
+                        };
+                        game.enemys[evt.id] = enemy;
+                        for (let l of lines) {
+                            l.setColor(ColorSet.LineSolid);
+                            game.lines.push(l);
+                        }
+                        hidenPartLines(lines, game.lines, frameLines.length);
+                    }
                 }
             }
         }
@@ -300,6 +385,7 @@ function update() {
     }
 
     if (d == -1) {
+        console.error("d == -1")
         onfinish();
     }
 
@@ -309,7 +395,7 @@ function update() {
 }
 
 function inRange(line) {
-    return lineInRect(line, ldata.rect);
+    return lineInRect(line, EnemyRect);
 }
 
 function getGridPoint(x, y) {
@@ -325,14 +411,51 @@ function getSkillSelectRange(role, x, y) {
     return getSkillRange(p, skill.width, skill.height);
 }
 
+function doShootBall() {
+    if (game.isRemote) {
+        let res = httpPost(uri + "/shoot_ball", "x=" + game.aimDir.x + "&y=" + game.aimDir.y);
+        if (!res || res.code != 0) {
+            return false;
+        }
+        game.cmds = res.data;
+    } else {
+        startRound(game.aimDir);
+        updateRound();
+        game.cmds = ldata.cmds;
+    }
+    console.log(objToString(game.cmds));
+    return true;
+}
+
 function doUseSkill(role, target) {
     hidden("replay");
-    useSkill(role, target);
-    game.cmds = ldata.cmds;
+    if (game.isRemote) {
+        let args = "rid=" + role.id;
+        if (target) {
+            args += "&x=" + target.x + "&y=" + target.y;
+        } else {
+            args += "&x=-1&y=-1";
+        }
+        let res = httpPost(uri + "/use_skill", args);
+        if (!res || res.code != 0) {
+            return false;
+        }
+        game.cmds = res.data;
+        if (role.skill.type == SkillType.BALL_THROUGH) {
+            game.through = true;
+        }
+    } else {
+        useSkill(role, target);
+        game.cmds = ldata.cmds;
+    }
+
+    console.log(objToString(game.cmds));
+
     game.running = game.cmds.shift();
     rdata.skillRoles[role.id-1] = 1;
     onfinish();
     draw();
+    return true;
 }
 
 function playNext() {
@@ -351,9 +474,10 @@ function playNext() {
         game.totalDist = 0;
         game.speed = game.basSpeed;
         rdata.status = game.status;
-        startRound(game.aimDir);
-        updateRound();
-        game.cmds = ldata.cmds;
+        if (!doShootBall()) {
+            console.error("shoot ball failed!");
+            return;
+        }
         loadBalls();
         //console.log("ball cmds:" + objToString(game.cmds));
         game.timer = setInterval(update, 10);
