@@ -65,14 +65,15 @@ local function get_replay()
 end
 
 local function set_take_grid(grid, eid)
+    --Help.err_print("grid "..grid.." set enemy "..eid)
     if grid < 0 or grid >= #data.take_grids then
         return
     end
 
-    if data.take_grids[grid + 1] == 0 then
+    if data.take_grids[grid + 1] == 0 or eid == 0 then
         data.take_grids[grid + 1] = eid
     else
-        Help.err_print("grid " .. grid .. " has taked")
+        Help.err_print("grid " .. grid .. " has taked by ".. data.take_grids[grid + 1])
     end
 end
 
@@ -190,7 +191,7 @@ local function get_enemies()
             lines = lines,
             rect = Help.make_rect(lines)
         }
-        table.insert(enemys, enemy)
+        enemys[m.id] = enemy
     end
     return enemys
 end
@@ -310,6 +311,11 @@ local function check_collide(deads)
                 get_next_base(ball)
             end
         end)
+    end
+    
+    data.balls:clear()
+    for _, ball in ipairs(temp) do
+        data.balls:add(ball)
     end
 end
 
@@ -476,7 +482,7 @@ local function start_round(dir)
                 y = data.base.y,
                 collide = collide,
                 dist = dist + n * data.interval,
-                dir = data.begin_dir,
+                dir = Basic.copy_point(data.begin_dir),
                 interval = n * data.interval
             })
             data.balls:add(ball)
@@ -493,19 +499,18 @@ local function start_round(dir)
 end
 
 local function ball_round()
+    local step = 1
     while not data.balls:empty() do
+        step = step + 1
         local ball = data.balls:pop()
         local line = ball:next_collide_line()
-        local target = ball:next_collide_point()
+        --print(ball.id .. " rest dist " .. ball:rest_dist())
         -- 距离最短，移动后发生碰撞才会创建命令
         local cmd = {
             type = Const.CmdType.COLLIDE,
             bid = ball.id,
+            target = Basic.copy_point(ball:next_collide_point())
         }
-
-        if target then
-            cmd.target = Basic.copy_point(target)
-        end
 
         -- 先将剩余所有球的passed加上第一个球的dist
         local d = ball:rest_dist()
@@ -515,8 +520,8 @@ local function ball_round()
 
         -- 更新球的状态，最快的球移动到碰撞点，计算弹射后的方向和下次碰撞点
         if ball:update(data) then
-            cmd.reflect = Basic.copy_point(ball.dir)
             if (ball:next_collide_point()) then
+                cmd.reflect = Basic.copy_point(ball.dir)
                 data.balls:add(ball)
             else
                 -- 没有继续弹射了，计算落点，设置下次发射点

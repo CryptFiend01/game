@@ -115,8 +115,8 @@ function Ball:rest_dist()
 end
 
 function Ball:move(d)
-    assert(self.dist >= 0, "dist can't be nagetive.")
-    self.passed = self.passed - d
+    assert(self.dist - self.passed >= 0, "dist can't be nagetive.")
+    self.passed = self.passed + d
 end
 
 function Ball:update(data)
@@ -133,15 +133,15 @@ function Ball:update(data)
         Basic.assign_point(self.collide.point, self)
         self:save_state()
         self:calc_collide(data.lines)
-        return self:next_collide_point() ~= nil
+        return true
     else
         return false
     end
 end
 
 function Ball.less(a, b)
-    local da = a.dist - a.passed
-    local db = b.dist - b.passed
+    local da = a:rest_dist()
+    local db = b:rest_dist()
     if da < db then
         return true
     elseif da > db then
