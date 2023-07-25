@@ -105,7 +105,7 @@ class Ball {
     }
 
     move(d) {
-        console.assert(this.dist >= 0, "dist can't be nagetive.");
+        console.assert(this.dist - this.passed >= 0, "dist can't be nagetive.");
         this.passed += d;
     }
 

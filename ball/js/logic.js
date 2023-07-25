@@ -467,8 +467,8 @@ function ballRound() {
 
         // 更新球的状态，最快的球移动到碰撞点，计算弹射后的方向和下次碰撞点
         if (ball.update()) {
-            cmd.reflect = copyPoint(ball.dir);
             if (ball.nextCollidePoint()) {
+                cmd.reflect = copyPoint(ball.dir);
                 ldata.balls.add(ball);
             } else {
                 getNextBase(ball);

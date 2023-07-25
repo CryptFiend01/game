@@ -35,7 +35,7 @@ function Ball:get_pos()
 
     if self.ctimes == 0 then
         pos.x = pos.x - self.interval * self.dir.x
-        pos.y = pos.y - self.interval * self.dir.x
+        pos.y = pos.y - self.interval * self.dir.y
     end
     return pos
 end
@@ -76,11 +76,15 @@ function Ball:check_ignores()
     self.ignores = Collide.reset_ignores(self:get_pos(), self.ignores, self.collide)
 end
 
-function Ball:calc_collide(lines)
+function Ball:calc_collide(lines, show)
     self:check_ignores()
     local start = self:get_pos()
     local collide = Collide.check_next_collide(start, self.dir, lines, self.ignores, self.hit)
     self.collide = collide
+    if show then
+        print("passed:".. self.passed.. ", interval:"..self.interval..",x:"..self.x..",y:"..self.y)
+        print(self.id .. " collide from "..Help.table_to_string(start).." use dir:"..Help.table_to_string(self.dir).." collide at:"..Help.table_to_string(collide))           
+    end
     -- 虚线物体或者当前为穿透球，需要记录正在那个敌方体内，再次碰撞其他物体前不会反复计算碰撞伤害
     self.hit = Collide.get_hit_id(self.collide)
     if self.collide.point then

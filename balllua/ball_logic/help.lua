@@ -43,7 +43,7 @@ local function table_to_json(t)
         elseif type(v) == "string" then
             s = s .. '"' .. v .. '"'
         else
-            s = s .. v
+            s = s .. tostring(v)
         end
     end
 

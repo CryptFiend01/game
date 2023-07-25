@@ -39,7 +39,7 @@ let game = {
     distInterval: 15,
     lastDist: 0,
     gameMode: GameState.GS_PLAY,
-    isRemote: true,
+    isRemote: false,
 
     pushed: 0,
     chooseRole: null,
@@ -263,10 +263,8 @@ function lineEvts(cmd, data) {
 }
 
 function run(pass) {
-    console.log("run");
     let cmd = game.running;
     if (cmd.type != CmdType.COLLIDE) {
-        console.error("cmd.type="+cmd.type);
         return -1;
     }
 
@@ -326,10 +324,11 @@ function run(pass) {
         }
 
         if (game.isRemote) {
-            game.enemys[cmd.dmg.id].hp = cmd.dmg.hp;
             // 移除死亡的单位
-            if (cmd.dmg != null && cmd.dmg.hp <= 0) {
-                game.lines = removeDead(game.lines, cmd.dmg.id);
+            if (cmd.dmg != null) {
+                game.enemys[cmd.dmg.id].hp = cmd.dmg.hp;
+                if (cmd.dmg.hp <= 0) 
+                    game.lines = removeDead(game.lines, cmd.dmg.id);
             }
 
             // 处理事件
@@ -343,7 +342,7 @@ function run(pass) {
                         let enemy = {
                             id : evt.id,
                             point : point,
-                            grid: grid,
+                            grid: evt.grid,
                             hp : mc.hp,
                             visible: true,
                             solid : mc.solid,
@@ -385,7 +384,6 @@ function update() {
     }
 
     if (d == -1) {
-        console.error("d == -1")
         onfinish();
     }
 
@@ -423,7 +421,7 @@ function doShootBall() {
         updateRound();
         game.cmds = ldata.cmds;
     }
-    console.log(objToString(game.cmds));
+    //console.log(objToString(game.cmds));
     return true;
 }
 

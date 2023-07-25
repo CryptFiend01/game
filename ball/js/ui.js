@@ -21,7 +21,7 @@ function addUIEvents() {
             let v = {x: evt.offsetX - game.base.x, y: evt.offsetY - game.base.y};
             // let v = {x: 400 - game.base.x, y: 626 - game.base.y};
             game.aimDir = normalize(v);
-            //game.aimDir = {x:0.9868925619168516, y:-0.16137865792351033};
+            //game.aimDir = {x:0.4767630403778865, y:-0.8790318556967283};
             coord.innerHTML += "  方向：" + game.aimDir.x + "," + game.aimDir.y;
             var collisions;
             if (game.isRemote) {
@@ -133,7 +133,7 @@ function onLoadReplay() {
     show("replay-panel", 'flex');
 
     if (game.replayJson == "") {
-        game.replayJson = `[{"op":2,"rid":2,"target":null},{"op":1,"dir":{"x":0.9899494936611665,"y":-0.1414213562373095}},{"op":2,"rid":1,"target":null},{"op":1,"dir":{"x":0.7794454151597706,"y":-0.6264701467639241}},{"op":2,"rid":2,"target":null},{"op":1,"dir":{"x":0.980953712496688,"y":-0.19424163801555325}},{"op":1,"dir":{"x":0.01648597757117986,"y":-0.9998640970369537}}]`;
+        game.replayJson = `[{"op":1,"dir":{"x":0.4767630403778865,"y":-0.8790318556967283}},{"op":1,"dir":{"x":0.9672254249554538,"y":-0.2539192338515178}},{"op":2,"rid":2,"target":null},{"op":1,"dir":{"x":0.9903273833618871,"y":-0.1387504009493231}},{"op":1,"dir":{"x":-0.06345822039332256,"y":-0.9979844960040776}},{"op":2,"rid":2,"target":null},{"op":1,"dir":{"x":0.9853997712347365,"y":-0.17025654422232636}},{"op":1,"dir":{"x":-0.18465830716658618,"y":-0.9828027826549794}},{"op":1,"dir":{"x":0.39316250957186666,"y":-0.9194689995139324}}]`;
     }
 
     const txt = document.getElementById("replay-json");

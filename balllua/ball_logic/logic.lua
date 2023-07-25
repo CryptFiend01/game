@@ -20,7 +20,7 @@ local frames = {
 local data = {
     lines = {},
     balls = nil,
-    base = {x = 250, y = 552},
+    base = {x = 200, y = 552},
     base_line = nil,
     next_base = nil,
     begin_dir = {x = 0, y = 0},
@@ -409,6 +409,7 @@ end
 
 local function init(roles)
     init_data()
+    Basic.assign_point(Const.Base, data.base)
     data.balls = Heap:new(Ball.less)
     data.interval = Const.INTERVAL
     data.enemy_count = 0
@@ -504,7 +505,6 @@ local function ball_round()
         step = step + 1
         local ball = data.balls:pop()
         local line = ball:next_collide_line()
-        --print(ball.id .. " rest dist " .. ball:rest_dist())
         -- 距离最短，移动后发生碰撞才会创建命令
         local cmd = {
             type = Const.CmdType.COLLIDE,
@@ -520,8 +520,8 @@ local function ball_round()
 
         -- 更新球的状态，最快的球移动到碰撞点，计算弹射后的方向和下次碰撞点
         if ball:update(data) then
-            if (ball:next_collide_point()) then
-                cmd.reflect = Basic.copy_point(ball.dir)
+            cmd.reflect = Basic.copy_point(ball.dir)
+            if ball:next_collide_point() then
                 data.balls:add(ball)
             else
                 -- 没有继续弹射了，计算落点，设置下次发射点
