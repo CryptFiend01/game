@@ -14,6 +14,7 @@ function Ball:new(b)
         role = b.role,
 
         collide = b.collide,
+        finish = false, -- 本次碰撞完成，设置为true，计算完新的碰撞点设置为false
         dist = b.dist,
         passed = 0,
         times = 0,
@@ -43,10 +44,8 @@ end
 function Ball:save_state()
     self.old_state.hit = self.hit
     if self.collide.point then
-        self.old_state.collide = {
-            point = Basic.copy_point(self.collide.point),
-            line = self.collide.line
-        }
+        self.old_state.collide.point = Basic.copy_point(self.collide.point)
+        self.old_state.collide.line = self.collide.line
     end
 
     self.old_state.ignores = {}
@@ -68,12 +67,16 @@ function Ball:recover_state()
     end
 end
 
+function Ball:set_collide_finish()
+    self.finish = true
+end
+
 function Ball:will_collide()
     return self.collide.point ~= nil
 end
 
 function Ball:check_ignores()
-    self.ignores = Collide.reset_ignores(self:get_pos(), self.ignores, self.collide)
+    self.ignores = Collide.reset_ignores(self:get_pos(), self.ignores, self.collide, self.finish)
 end
 
 function Ball:calc_collide(lines, show)
@@ -81,8 +84,10 @@ function Ball:calc_collide(lines, show)
     local start = self:get_pos()
     local collide = Collide.check_next_collide(start, self.dir, lines, self.ignores, self.hit)
     self.collide = collide
+    self.finish = false
     if show then
         print("passed:".. self.passed.. ", interval:"..self.interval..",x:"..self.x..",y:"..self.y)
+        print("ignores:"..Help.table_to_string(self.ignores).." hit:"..self.hit)
         print(self.id .. " collide from "..Help.table_to_string(start).." use dir:"..Help.table_to_string(self.dir).." collide at:"..Help.table_to_string(collide))           
     end
     -- 虚线物体或者当前为穿透球，需要记录正在那个敌方体内，再次碰撞其他物体前不会反复计算碰撞伤害

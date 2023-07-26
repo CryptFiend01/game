@@ -1,3 +1,11 @@
+let debugs = {
+    dirs : [
+        {x:0.9898253866177398,y:-0.1422873993263001}
+    ],
+    round: 0,
+    speeds: [8, 8, 1],
+}
+
 function hidden(id) {
     let e = document.getElementById(id);
     e.style.display = 'none';
@@ -21,7 +29,10 @@ function addUIEvents() {
             let v = {x: evt.offsetX - game.base.x, y: evt.offsetY - game.base.y};
             // let v = {x: 400 - game.base.x, y: 626 - game.base.y};
             game.aimDir = normalize(v);
-            //game.aimDir = {x:0.4767630403778865, y:-0.8790318556967283};
+            if (debugs.round < debugs.dirs.length) {
+                game.aimDir = debugs.dirs[debugs.round];
+                console.log("game.aimDir:" + vec2String(game.aimDir))
+            }
             coord.innerHTML += "  方向：" + game.aimDir.x + "," + game.aimDir.y;
             var collisions;
             if (game.isRemote) {
@@ -47,13 +58,18 @@ function addUIEvents() {
 
     canvas.addEventListener("mousedown", (evt) => {
         if (game.status == GameState.GS_AIM) {
+            if (debugs.round < debugs.speeds.length)
+                game.speed = debugs.speeds[debugs.round];
+            else
+                game.speed = game.basSpeed;
+            debugs.round += 1;
             if (game.aimDir.y < 0) {
                 console.log("dir:" + vec2String(game.aimDir));
                 hidden("replay");
                 game.collisions.length = 0;
                 game.status = game.gameMode;
                 game.totalDist = 0;
-                game.speed = game.basSpeed;
+                //game.speed = game.basSpeed;
                 rdata.status = game.status;
                 if (!doShootBall()) {
                     alert("shoot ball failed!");
@@ -133,7 +149,7 @@ function onLoadReplay() {
     show("replay-panel", 'flex');
 
     if (game.replayJson == "") {
-        game.replayJson = `[{"op":1,"dir":{"x":0.4767630403778865,"y":-0.8790318556967283}},{"op":1,"dir":{"x":0.9672254249554538,"y":-0.2539192338515178}},{"op":2,"rid":2,"target":null},{"op":1,"dir":{"x":0.9903273833618871,"y":-0.1387504009493231}},{"op":1,"dir":{"x":-0.06345822039332256,"y":-0.9979844960040776}},{"op":2,"rid":2,"target":null},{"op":1,"dir":{"x":0.9853997712347365,"y":-0.17025654422232636}},{"op":1,"dir":{"x":-0.18465830716658618,"y":-0.9828027826549794}},{"op":1,"dir":{"x":0.39316250957186666,"y":-0.9194689995139324}}]`;
+        game.replayJson = `[{"op":1,"dir":{"x":0.5325610156747096,"y":-0.8463916141973062}},{"op":2,"rid":2,"target":null},{"op":1,"dir":{"x":0.9934426493385763,"y":-0.11433154628163784}},{"op":1,"dir":{"x":-0.3814768190268935,"y":-0.9243784054948074}},{"op":1,"dir":{"x":0.8042220213578353,"y":-0.5943289832770379}},{"op":1,"dir":{"x":0.024139638005420124,"y":-0.999708596480478}},{"op":1,"dir":{"x":0.68998715731442,"y":-0.7238216097500583}},{"op":1,"dir":{"x":0.990920028025033,"y":-0.13445258665740792}},{"op":2,"rid":2,"target":null},{"op":1,"dir":{"x":-0.971882644821338,"y":-0.23546576119487345}}]`;
     }
 
     const txt = document.getElementById("replay-json");

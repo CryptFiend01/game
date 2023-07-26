@@ -37,7 +37,7 @@ function test() {
         return;
     }
     console.log("collide:" + objToString(collide));
-    let n = getReflectNorm(dir, collide.line);
+    let n = collide.line.getReflectNorm(dir, ldata.isThrough);
     showVec("reflect", n);
     let dl = {x1: collide.point.x, y1: collide.point.y, x2: collide.point.x + n.x * 100, y2: collide.point.y + n.y * 100, color:"#00aa11"};
     drawLine(dl);
@@ -158,7 +158,7 @@ function testVectorAngle() {
             }
             let p = getRaySegmentIntersection(base, dir, l);
             if (p != null) {
-                let rdir = getReflectNorm(dir, l);
+                let rdir = l.getReflectNorm(dir, false);
                 reflects.push({x1: p.x, y1: p.y, x2: p.x + rdir.x * 100, y2: p.y + rdir.y * 100});
             }
         }

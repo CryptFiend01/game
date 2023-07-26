@@ -7,6 +7,7 @@ class Ball {
         this.role = role;
 
         this.collide = collide;
+        this.finish = false;
         this.dist = dist;
         this.passed = 0;
         this.times = 0;
@@ -58,12 +59,16 @@ class Ball {
         }
     }
 
+    setCollideFinish() {
+        this.finish = true;
+    }
+
     willCollide() {
         return this.collide.point != null;
     }
 
     checkIgnore() {
-        this.ignores = resetIgnore(this.getPos(), this.ignores, this.collide);
+        this.ignores = resetIgnore(this.getPos(), this.ignores, this.collide, this.finish);
     }
 
     calcCollide() {
@@ -71,8 +76,9 @@ class Ball {
         let start = this.getPos();
         let collide = lcheckNextCollide(start, this.dir, this.ignores, this.hit);
         this.collide = collide;
+        this.finish = false;
         // 虚线物体或者当前为穿透球，需要记录正在那个敌方体内，再次碰撞其他物体前不会反复计算碰撞伤害
-        this.hit = getHitId(this.collide);
+        this.hit = lgetHitId(this.collide);
         if (this.collide.point != null) {
             this.dist = distance({x:collide.point.x - this.x, y:collide.point.y - this.y});
             if (this.ctimes == 0) {
@@ -117,7 +123,7 @@ class Ball {
         // 达到撞击次数上限，就不再计算该球
         if (this.times < this.role.times) {
             let l = this.nextCollideLine();
-            this.dir = l.getReflectNorm(this.dir);
+            this.dir = l.getReflectNorm(this.dir, ldata.isThrough);
             this.passed = 0; // 只有反弹时才需要将pass设置为0
             assignPoint(this.collide.point, this);
             this.saveState();

@@ -16,11 +16,11 @@ function objToString(o) {
 }
 
 function showVec(name, v) {
-    console.log(name + ": [" + v.x + "," + v.y + "]");
+    console.log(name + ": {x:" + v.x + ",y:" + v.y + "}");
 }
 
 function vec2String(v) {
-    return "[" + v.x + "," + v.y + "]";
+    return "{x:" + v.x + ",y:" + v.y + "}";
 }
 
 function copyLine(line) {

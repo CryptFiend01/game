@@ -2,10 +2,10 @@ local Basic = require "ball_logic.basic"
 local Line = require "ball_logic.line"
 local Help = require "ball_logic.help"
 
-local function reset_ignores(start, ignores, collide)
+local function reset_ignores(start, ignores, collide, finish)
     local temp = {}
-    -- 任何情况，本次碰撞线加入下次碰撞检测的忽略组中
-    if collide.line then
+    -- 任何情况，只要完成了本次碰撞移动，本次碰撞线加入下次碰撞检测的忽略组中
+    if collide.line and finish then
         table.insert(temp, collide.line)
     end
     for _, l in ipairs(ignores) do

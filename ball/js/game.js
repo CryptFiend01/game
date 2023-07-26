@@ -39,7 +39,7 @@ let game = {
     distInterval: 15,
     lastDist: 0,
     gameMode: GameState.GS_PLAY,
-    isRemote: false,
+    isRemote: true,
 
     pushed: 0,
     chooseRole: null,
@@ -129,7 +129,17 @@ function updatePush() {
     if (game.pushed >= totalPush) {
         console.log("push finish!");
         if (game.isRemote) {
-            pushDataMap(game, game.running.line);
+            //pushDataMap(game, game.running.line);
+            let res = httpPost(uri + "/get_board", "");
+            if (!res || res.code != 0) {
+                return;
+            }
+            console.log(objToString(res.data));
+            game.lines = [];
+            for (let l of res.data) {
+                let l1 = new Line(l);
+                game.lines.push(l1);
+            }
             setLines(game.lines);
         } else {
             setLines(ldata.lines);
@@ -157,7 +167,9 @@ function updateSkillEffect(effects) {
 function onfinish() {
     while (game.running != null) {
         let cmd = game.running;
+        console.log(objToString(cmd));
         if (cmd.type == CmdType.PUSH) {
+            console.log("start push!");
             startPush();
             return;
         } else if (cmd.type == CmdType.ROLE_SKILL) {

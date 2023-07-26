@@ -464,6 +464,7 @@ function ballRound() {
         ldata.balls.foreach((b) => {
             b.move(d);
         });
+        ball.setCollideFinish();
 
         // 更新球的状态，最快的球移动到碰撞点，计算弹射后的方向和下次碰撞点
         if (ball.update()) {

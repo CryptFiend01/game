@@ -1,8 +1,8 @@
 
-function resetIgnore(start, ignores, collide) {
+function resetIgnore(start, ignores, collide, finish) {
     let temp = [];
     // 任何情况，本次碰撞线加入下次碰撞检测的忽略组中
-    if (collide.line) {
+    if (collide.line && pointInLine(start, collide.line)) {
         temp.push(collide.line);
     }
     for (let l of ignores) {
@@ -55,10 +55,14 @@ function checkNextCollide(start, dir, ignores, hitid, lines, through) {
     return collide;
 }
 
-function getHitId(collide) {
+function lgetHitId(collide) {
+    return getHitId(collide, ldata.through);
+}
+
+function getHitId(collide, through) {
     // 虚线物体或者当前为穿透球，第一次碰撞时需要记录id，再次碰撞其他物体前不会反复计算碰撞伤害
     // (再次碰到其他物体表示已经从记录物体中出去了)
-    if (collide.line && (!collide.line.solid || ldata.isThrough)) {
+    if (collide.line && (!collide.line.solid || through)) {
         return collide.line.mid;
     } else {
         return 0;
@@ -82,12 +86,12 @@ function aim(base, dir, times, lines, through) {
         }
             
         collisions.push({x: collide.point.x, y: collide.point.y});
-        let reflect = collide.line.getReflectNorm(n);
+        let reflect = collide.line.getReflectNorm(n, through);
 
         start = collide.point;
         n = reflect;
         ignores = resetIgnore(start, ignores, collide); 
-        hitid = getHitId(collide);
+        hitid = getHitId(collide, through);
     }
     return collisions;
 }

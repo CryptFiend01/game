@@ -17,32 +17,38 @@ local frames = {
     Line:new({x1 = GameRect.left, y1 = GameRect.bottom, x2 = GameRect.left, y2 = GameRect.top, solid = true})
 }
 
-local data = {
-    lines = {},
-    balls = nil,
-    base = {x = 200, y = 552},
-    base_line = nil,
-    next_base = nil,
-    begin_dir = {x = 0, y = 0},
-    enemys = {},
-    enemy_count = 0,
-    start_line = 0,
-    pushed = 0,
-    interval = 0,
-    
-    round = 0,
-    win = false,
-
-    cmds = {},
-    ops = {},
-
-    take_grids = {},
-    skills = {},
-    ball_dmg = Const.BALL_DMG,
-    callid = 1001,
-}
+local data = {}
 
 local function init_data()
+    data.lines = {}
+    data.balls = Heap:new(Ball.less)
+    data.rect = {
+        left = GameRect.left,
+        top = GameRect.top + Const.Board.SIDE,
+        right = GameRect.right,
+        bottom = GameRect.bottom
+    }
+    data.base = Basic.copy_point(Const.Base)
+    data.base_line = Line:new({x1 = 0, y1 = Const.Base.y, x2 = Const.Board.WIDTH * Const.Board.SIDE, y2 = Const.Base.y})
+    data.next_base = nil
+    data.begin_dir = {x = 0, y = 0}
+    data.enemys = {}
+    data.enemy_count = 0
+    data.start_line = 0
+    data.pushed = 0
+    data.interval = Const.INTERVAL
+
+    data.round = 0
+    data.win = false
+
+    data.cmds = {}
+    data.ops = {}
+
+    data.take_grids = {}
+    data.skills = {}
+    data.ball_dmg = Const.BALL_DMG
+    data.callid = 1001
+
     if not ObjectCfg._inited then
         for _, obj in pairs(ObjectCfg) do
             obj.size = obj.anchor.x * 2 / Const.Board.SIDE;
@@ -114,11 +120,7 @@ local function aim(base, dir, times)
     return Collide.aim(base, dir, data.lines, times)
 end
 
-local function push_map(push_line)
-    if push_line <= 0 then
-        return
-    end
-
+local function push_data_map(push_line)
     data.lines = {}
     for _, l in ipairs(frames) do
         table.insert(data.lines, l)
@@ -153,9 +155,23 @@ local function push_map(push_line)
             end
         end
     end
-    for eid, enemy in ipairs(data.enemys) do
+    for eid, enemy in pairs(data.enemys) do
         move_enemy(enemy)
     end
+
+    Help.hiden_in_line(data.lines, #frames+1)
+end
+
+local function push_map(push_line)
+    if push_line <= 0 then
+        return
+    end
+
+    push_data_map(push_line)
+
+    reset_take_grids()
+
+    add_cmd({type = Const.CmdType.PUSH, line =  push_line})
 end
 
 local function remove_dead(lines, id)
@@ -409,18 +425,7 @@ end
 
 local function init(roles)
     init_data()
-    Basic.assign_point(Const.Base, data.base)
-    data.balls = Heap:new(Ball.less)
-    data.interval = Const.INTERVAL
-    data.enemy_count = 0
-    data.base_line = Line:new({x1 = 0, y1 = Const.Base.y, x2 = Const.Board.WIDTH * Const.Board.SIDE, y2 = Const.Base.y})
     data.roles = roles
-    data.rect = {
-        left = GameRect.left,
-        top = GameRect.top + Const.Board.SIDE,
-        right = GameRect.right,
-        bottom = GameRect.bottom
-    }
 
     local max_line = StageCfg.max_line
     if max_line < Const.Board.HEIGHT then
@@ -517,6 +522,7 @@ local function ball_round()
         data.balls:foreach(function (b)
             b:move(d)
         end)
+        ball:set_collide_finish()
 
         -- 更新球的状态，最快的球移动到碰撞点，计算弹射后的方向和下次碰撞点
         if ball:update(data) then
@@ -543,9 +549,15 @@ local function ball_round()
                 end
 
                 if enemy.hp <= 0 then
+                    --print('enemy '..enemy.id..' dead.')
                     local ret = on_enemy_dead(enemy.id)
                     cmd.evts = ret.evts
+                    --local count1 = data.balls:count()
                     check_collide(ret.deads)
+                    -- local count2 = data.balls:count()
+                    -- if count2 < count1 then
+                    --     print("enemy "..enemy.id.." reduce "..(count2-count1))
+                    -- end
                     if enemy.solid then
                         data.enemy_count = data.enemy_count - 1
                     end

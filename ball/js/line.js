@@ -86,8 +86,7 @@ class Line {
         this.hideLines.length = 0;
     }
 
-    getReflectNorm(dir) {
-        let through = ldata.isThrough;
+    getReflectNorm(dir, through) {
         // 虚线或者穿透球不是打在边框上
         if (!this.solid || (through && this.mid > 0)) {
             return dir;

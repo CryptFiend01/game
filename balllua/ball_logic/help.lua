@@ -24,7 +24,7 @@ local function table_to_string(t)
 end
 
 local function table_to_json(t)
-    local is_kv = true
+    local is_kv = false
     local s = ''
     local sep = ''
     for k, v in pairs(t) do
@@ -32,10 +32,9 @@ local function table_to_json(t)
         if sep == '' then
             sep = ','
         end
-        if type(k) ~= "string" then
-            is_kv = false
-        else
+        if type(k) == "string" then
             s = s .. '"' .. k .. '":'
+            is_kv = true
         end
 
         if type(v) == "table" then
