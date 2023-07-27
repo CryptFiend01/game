@@ -134,7 +134,7 @@ function updatePush() {
             if (!res || res.code != 0) {
                 return;
             }
-            console.log(objToString(res.data));
+            //console.log(objToString(res.data));
             game.lines = [];
             for (let l of res.data) {
                 let l1 = new Line(l);
