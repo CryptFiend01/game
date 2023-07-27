@@ -18,7 +18,7 @@ def jsonToLua(tagPath, fname):
     f.write("return " + context)
     f.close()
 
-tagPath = 'D:/Work/Src/mygit/game/balllua/ball_logic/data/'
+tagPath = '../../balllua/ball_logic/data/'
 
 files = os.listdir("./")
 for f in files:
