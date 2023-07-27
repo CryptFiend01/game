@@ -1,4 +1,4 @@
-local Stage = {
+return {
     battle_type = 1, 
     max_line = 21,
     push = {
@@ -56,8 +56,7 @@ local Stage = {
         {id = 69, cid = 1, grid = 39},
         {id = 70, cid = 1, grid = 46},
         {id = 71, cid = 1, grid = 47},
-        {id = 72, cid = 101, grid = 19}    
+        {id = 72, cid = 101, grid = 19}
+        
     }
 }
-
-return Stage
