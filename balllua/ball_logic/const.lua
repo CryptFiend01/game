@@ -6,6 +6,7 @@ local CmdType = {
     REMOVE_SKILL = 5,   -- 移除持续技能效果 {type:5, cid: 1} cid: 技能id
     SKILL_EFFECT = 6,   -- 技能效果（被动技能，或者持续性技能触发），{type:5, cid: 1, effects:[{dmg:{id:1, dmg:10, hp:100}, evts:{type:1, id:1001, cid:9, grid:3}},...]} cid: 技能id，effects技能效果，同弹射伤害结构
     ENEMY_MOVE = 7,     -- 敌方移动（暂缺）
+    SKILL_READY = 8,    -- 技能准备 {type:8, cid:1}
     PUSH = 11,          -- 地图推进，{type: 11, line: 5, moved:[{id:1, x:30, y:50},...]} line：推进行数，moved：推进的同时有些怪物会同时移动
     ROUND_END = 12,     -- 回合结束，{type: 12, base:{x:1, y:2}} base: 发射点位置
     WIN = 13,           -- 胜利
@@ -13,25 +14,33 @@ local CmdType = {
 }
 
 local SkillType = {
-    BALL_ADD = 1,
-    RANGE_TRIGGER = 2,
-    ROUND_DAMAGE = 3,
-    SOLID_BLOCK = 4,
-    DASH_BLOCK = 5,
-    BALL_THROUGH = 6,
-    DEAD_TRIGGER = 7
+    BALL_ADD = 1,     -- 强化球伤
+    RANGE_TRIGGER = 2,-- 范围触发
+    ROUND_DAMAGE = 3, -- 回合伤害
+    SOLID_BLOCK = 4,  -- 召唤实体
+    DASH_BLOCK = 5,   -- 虚化物召唤
+    BALL_THROUGH = 6, -- 穿透球
+    DEAD_TRIGGER = 7, -- 死亡触发
+    RANGE_DAMAGE = 8, -- 一次性范围伤害
 }
 
+-- 配置表事件（内部）
 local StageEvent = {
     DEAD_CALL = 1, -- cid, count
     HIT_MOVE = 2, -- times, grid
     ROUND_MOVE = 3
 }
 
+-- 返回命令事件类型（外部）
 local EvtType = {
     CALL_ENEMY = 1, -- 召唤敌方 {type:1, id:1, cid:1001, grid:20} id: 唯一id，cid：配置id，grid左上角所在格子的位置
     ENEMY_MOVE = 2, -- 敌方移动（暂缺）
     SKILL_TRIGGER = 3, -- 技能触发（暂缺）
+}
+
+-- 运行事件（内部）
+local BallEvent = {
+    EVT_SKILL = 1, -- 释放技能事件
 }
 
 local OpType = {

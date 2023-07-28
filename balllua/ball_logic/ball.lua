@@ -22,10 +22,16 @@ function Ball:new(b)
         ignores = {},
         hit = 0,
         interval = b.interval,
-        old_state = {ignores = {}, hit = 0, collide = {}}
+        old_state = {ignores = {}, hit = 0, collide = {}},
+
+        evt = b.evt
     }
     setmetatable(self, Ball)
     return self
+end
+
+function Ball:is_event()
+    return self.evt ~= nil or self.id < 0
 end
 
 function Ball:get_pos()
@@ -79,6 +85,18 @@ function Ball:check_ignores()
     self.ignores = Collide.reset_ignores(self:get_pos(), self.ignores, self.collide, self.finish)
 end
 
+function Ball:role_id()
+    return self.role.id
+end
+
+function Ball:anger()
+    return self.role:anger()
+end
+
+function Ball:attack()
+    return self.role:attack()
+end
+
 function Ball:calc_collide(lines, show)
     self:check_ignores()
     local start = self:get_pos()
@@ -129,13 +147,25 @@ function Ball:move(d)
 end
 
 function Ball:update(data)
+    local l = self:next_collide_line()
     if self.hit == 0 then
+        -- 碰撞边缘驱力消耗1，其他情况消耗2
+        if l.mid == 0 then
+            if l.bottom then
+                self.times = self.times + 2
+            else
+                self.times = self.times + 1
+                self.role:add_anger(20)
+            end
+        else
+            self.role:add_anger(50)
+            self.times = self.times + 2
+        end
         self.times = self.times + 1
     end
     self.ctimes = self.ctimes + 1
     -- 达到撞击次数上限，就不再计算该球
-    if self.times < self.role.times then
-        local l = self:next_collide_line()
+    if self.times < self.role:max_ball_times() then
         self.dir = l:get_reflect(self.dir)
         -- 只有反弹时才需要将pass设置为0
         self.passed = 0

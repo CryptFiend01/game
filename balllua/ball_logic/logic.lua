@@ -5,9 +5,11 @@ local Const = require "ball_logic.const"
 local StageCfg = require "ball_logic.data.stage"
 local MonsterCfg = require "ball_logic.data.monster"
 local ObjectCfg = require "ball_logic.data.object"
+local RoleCfg = require "ball_logic.data.role"
 local Help = require "ball_logic.help"
 local Basic = require "ball_logic.basic"
 local Collide = require "ball_logic.collide"
+local Role = require "ball_logic.role"
 
 local GameRect = Const.GameRect
 
@@ -46,8 +48,9 @@ local function init_data()
 
     data.take_grids = {}
     data.skills = {}
-    data.ball_dmg = Const.BALL_DMG
     data.callid = 1001
+
+    data.roles = {}
 
     if not ObjectCfg._inited then
         for _, obj in pairs(ObjectCfg) do
@@ -189,7 +192,9 @@ local function get_enemies()
     local enemys = {}
     for _, m in ipairs(StageCfg.monsters) do
         local mc = MonsterCfg[m.cid]
+        assert(mc ~= nil, "cid=="..m.cid)
         local obj = ObjectCfg[mc.type]
+        assert(obj ~= nil, "mc.type=="..mc.type)
         if not m.point then
             m.point = Help.get_point_by_grid(obj, m.grid)
         end
@@ -241,7 +246,9 @@ end
 local function add_enemies(cid, count, grid)
     local evts = {}
     local mc = MonsterCfg[cid]
+    assert(mc ~= nil, "cid=="..cid)
     local obj = ObjectCfg[mc.type]
+    assert(obj ~= nil, "mc.type=="..mc.type)
     local free_grids = {}
     local g = grid
     for i = 1, count do
@@ -284,6 +291,10 @@ local function on_enemy_dead(id)
     data.lines = remove_dead(data.lines, id)
     
     local enemy = data.enemys[id]
+    if not enemy then
+        print("enemy "..id.." not exist.")
+        return
+    end
     -- 清空格子占据
     for i = 0, enemy.obj.size - 1 do
         for j = 0, enemy.obj.size - 1 do
@@ -307,6 +318,10 @@ local function check_collide(deads)
     local temp = {}
     if deads then
         data.balls:foreach(function (ball)
+            if ball:is_event() then
+                table.insert(temp, ball)
+                return
+            end
             if Help.contain(deads, ball:next_collide_id()) then
                 ball:recover_state()
                 ball:calc_collide(data.lines)
@@ -319,6 +334,10 @@ local function check_collide(deads)
         end)
     else
         data.balls:foreach(function (ball)
+            if ball:is_event() then
+                table.insert(temp, ball)
+                return
+            end
             ball:recover_state()
             ball:calc_collide(data.lines)
             if ball:next_collide_point() then
@@ -344,19 +363,75 @@ local function get_skill_range(point, width, height)
     }
 end
 
+local function get_cross_enemies(point, horizon, vertical)
+    local enemies = {}
+    local get_enemy = function(p)
+        local grid = p.x + p.y * Const.Board.WIDTH
+        local eid = data.take_grids[grid+1]
+        if eid ~= 0 then
+            local enemy = data.enemys[eid]
+            if Help.contain(enemies, enemy) then
+                table.insert(enemies, enemy)
+            end
+        end
+    end
+    for i = -horizon, horizon do
+        local p = {x = point.x + i, y = point.y}
+        if p.x >= 0 and p.x < Const.Board.WIDTH then
+            get_enemy(p)
+        end
+    end
+
+    for i = -vertical, vertical do
+        local p = {x = point.x, y = point.y + i}
+        if p.y >= 0 and p.y < Const.Board.HEIGHT then
+            get_enemy(p)
+        end
+    end
+    return enemies
+end
+
+local function select_cross_grid(horizon, vertical)
+    local grid = 0
+    local count = 0
+    local max_count = 0
+    for i, eid in ipairs(data.take_grids) do
+        if eid ~= 0 then
+            grid = i
+            count = count + 1
+        else
+            if count > max_count then
+                grid = i - math.floor(count / 2)
+                max_count = count
+            end
+            count = 0
+        end
+    end
+    return grid
+end
+
 local function effect_skill(skill)
     local effects = {}
-    skill.round = skill.round + 1
-    for eid, enemy in ipairs(data.enemys) do
-        if enemy.visible and enemy.solid and enemy.hp > 0 and Basic.rect_inserect(enemy.rect, skill.rect) then
-            sub_enemy_hp(enemy, skill.cfg.dmg)
-            local cmd = {dmg={id = eid, dmg = skill.cfg.dmg, hp = enemy.hp}}
-            table.insert(effects, cmd)
-            if enemy.hp <= 0 then
-                local ret = on_enemy_dead(eid)
-                cmd.evts = ret.evts
-                data.enemy_count = data.enemy_count - 1
+    local effect_enemy = function(enemy)
+        sub_enemy_hp(enemy, skill.cfg.dmg)
+        local cmd = {dmg={id = enemy.id, dmg = skill.cfg.dmg, hp = enemy.hp}}
+        table.insert(effects, cmd)
+        if enemy.hp <= 0 then
+            local ret = on_enemy_dead(enemy.id)
+            cmd.evts = ret.evts
+            data.enemy_count = data.enemy_count - 1
+        end
+    end
+    if skill.cfg.type == Const.SkillType.ROUND_DAMAGE then
+        skill.round = skill.round + 1
+        for eid, enemy in ipairs(data.enemys) do
+            if enemy.visible and enemy.solid and enemy.hp > 0 and Basic.rect_inserect(enemy.rect, skill.rect) then
+                effect_enemy(enemy)
             end
+        end
+    elseif skill.cfg.type == Const.SkillType.RANGE_DAMAGE then
+        for _, enemy in ipairs(skill.enemies) do
+            effect_enemy(enemy)
         end
     end
 
@@ -378,7 +453,7 @@ local function check_skill_valid()
     local temp = {}
     for _, skill in ipairs(data.skills) do
         if skill.round >= skill.cfg.round then
-            add_cmd()
+            add_cmd({type = Const.CmdType.REMOVE_SKILL, cid = skill.cid})
         else
             table.insert(temp, skill)
         end
@@ -386,14 +461,18 @@ local function check_skill_valid()
     data.skills = temp
 end
 
-local function use_skill(role, target)
+local function start_skill_round()
     data.cmds = {}
+end
+
+local function use_skill(rid, target)
+    local role = data.roles[rid]
     local op = {op = Const.OpType.SKILL, rid = role.id}
     if target then
         op.target = Basic.copy_point(target)
     end
     table.insert(data.ops, op)
-    local cfg = role.skill
+    local cfg = role.cfg.skill
     local cmd = {
         type = Const.CmdType.ROLE_SKILL,
         cid = role.id,
@@ -403,7 +482,8 @@ local function use_skill(role, target)
     }
     add_cmd(cmd)
     if cfg.type == Const.SkillType.BALL_ADD then
-        data.ball_dmg = cfg.dmg
+        --data.ball_dmg = cfg.dmg
+        role:change_attack(cfg.dmg, cfg.times)
     elseif cfg.type == Const.SkillType.ROUND_DAMAGE then
         local range = get_skill_range(target, cfg.width, cfg.height)
         local rect = {
@@ -418,14 +498,29 @@ local function use_skill(role, target)
         cmd.effects = effect_skill(skill)
     elseif cfg.type == Const.SkillType.BALL_THROUGH then
         Line.through = true
-        data.ball_dmg = data.ball_dmg * 3
+        --data.ball_dmg = data.ball_dmg * 3
+        for _, role in pairs(data.roles) do
+            role:change_attack(role:get_attack() * 3, -1)
+        end
+    elseif cfg.type == Const.SkillType.RANGE_DAMAGE then
+        local enemies = {}
+        -- 根据不同形状筛选敌人
+        if cfg.shape == "cross" then
+            enemies = get_cross_enemies(target, cfg.horizon, cfg.vertical)
+        end
+
+        local skill = {cid = role.id, cfg = cfg, enemies = enemies}
+        cmd.effects = effect_skill(skill)
     end
     check_skill_valid()
 end
 
 local function init(roles)
     init_data()
-    data.roles = roles
+    for i = 1, #roles do
+        local role = Role:new(RoleCfg[roles[i]])
+        data.roles[role.id] = role
+    end
 
     local max_line = StageCfg.max_line
     if max_line < Const.Board.HEIGHT then
@@ -475,12 +570,15 @@ local function start_round(dir)
     table.insert(data.ops, {op = Const.OpType.BALL, dir = Basic.copy_point(dir)})
     data.cmds = {}
     Basic.assign_point(dir, data.begin_dir)
+    for _, role in pairs(data.roles) do
+        role:reset()
+    end
 
     local collide = check_next_collide(data.base, data.begin_dir, {}, 0)
     local dist = Basic.distance({x = collide.point.x - data.base.x, y = collide.point.y - data.base.y})
     local n = 0
-    for _, role in ipairs(data.roles) do
-        for i = 1, role.count do
+    for _, role in pairs(data.roles) do
+        for i = 1, role:ball_count() do
             local ball = Ball:new({
                 id = n + 1,
                 role = role,
@@ -504,77 +602,113 @@ local function start_round(dir)
     data.next_base = nil
 end
 
+local function ball_event(evt)
+    use_skill(evt.rid, Help.grid_to_xy(evt.grid))
+end
+
+local function ball_step(step)
+    local ball = data.balls:pop()
+    if ball:is_event() then
+        -- 虚拟事件球
+        ball_event(ball.evt)
+        return
+    end
+    local line = ball:next_collide_line()
+    -- 距离最短，移动后发生碰撞才会创建命令
+    local cmd = {
+        type = Const.CmdType.COLLIDE,
+        bid = ball.id,
+        target = Basic.copy_point(ball:next_collide_point())
+    }
+
+    -- 先将剩余所有球的passed加上第一个球的dist
+    local d = ball:rest_dist()
+    data.balls:foreach(function (b)
+        b:move(d)
+    end)
+    ball:set_collide_finish()
+
+    -- 更新球的状态，最快的球移动到碰撞点，计算弹射后的方向和下次碰撞点
+    if ball:update(data) then
+        cmd.reflect = Basic.copy_point(ball.dir)
+        if ball:next_collide_point() then
+            data.balls:add(ball)
+        else
+            -- 没有继续弹射了，计算落点，设置下次发射点
+            get_next_base(ball)
+        end
+    end
+
+    local role = ball.role
+    cmd.anger = role:get_anger()
+
+    -- 球打在敌方单位上
+    if line.mid > 0 then
+        local enemy = data.enemys[line.mid]
+        if enemy.hp > 0 then
+            if enemy.solid then
+                sub_enemy_hp(enemy, role:get_attack())
+                cmd.dmg = {id = enemy.id, sub = role:get_attack(), hp = enemy.hp}
+            else
+                -- 非实物一般只计算打击次数，hp表示最大次数
+                sub_enemy_hp(enemy, 1)
+                cmd.dmg = {id = enemy.id, sub = 1, hp = enemy.hp}
+            end
+
+            if enemy.hp <= 0 then
+                --print('enemy '..enemy.id..' dead.')
+                local ret = on_enemy_dead(enemy.id)
+                cmd.evts = ret.evts
+                --local count1 = data.balls:count()
+                check_collide(ret.deads)
+                -- local count2 = data.balls:count()
+                -- if count2 < count1 then
+                --     print("enemy "..enemy.id.." reduce "..(count2-count1))
+                -- end
+                if enemy.solid then
+                    data.enemy_count = data.enemy_count - 1
+                end
+
+                if data.enemy_count <= 0 then
+                    add_cmd(cmd)
+                    data.win = true
+                    add_cmd({type = Const.CmdType.WIN})
+                    return
+                end
+            end
+
+            role:recover_attack()
+        else
+            Help.err_print("collide dead enemy! id=" .. cmd.bid .. " mid=" .. line.mid)
+        end
+    end
+
+    add_cmd(cmd)
+
+    -- 准备释放技能
+    if role:is_anger_full() then
+        local skill_cfg = role:get_skill()
+        local grid = select_cross_grid(skill_cfg.horizon, skill_cfg.vertical)
+        local vball = Ball:new({
+            id = -1,
+            dist = skill_cfg.before,
+            evt = {
+                type = 1, 
+                rid = ball:role_id(), 
+                grid = grid
+            }
+        })
+        data.balls:add(vball)
+        role:clear_anger()
+        add_cmd({type = Const.CmdType.SKILL_READY, cid = ball:role_id()})
+    end
+end
+
 local function ball_round()
     local step = 1
     while not data.balls:empty() do
         step = step + 1
-        local ball = data.balls:pop()
-        local line = ball:next_collide_line()
-        -- 距离最短，移动后发生碰撞才会创建命令
-        local cmd = {
-            type = Const.CmdType.COLLIDE,
-            bid = ball.id,
-            target = Basic.copy_point(ball:next_collide_point())
-        }
-
-        -- 先将剩余所有球的passed加上第一个球的dist
-        local d = ball:rest_dist()
-        data.balls:foreach(function (b)
-            b:move(d)
-        end)
-        ball:set_collide_finish()
-
-        -- 更新球的状态，最快的球移动到碰撞点，计算弹射后的方向和下次碰撞点
-        if ball:update(data) then
-            cmd.reflect = Basic.copy_point(ball.dir)
-            if ball:next_collide_point() then
-                data.balls:add(ball)
-            else
-                -- 没有继续弹射了，计算落点，设置下次发射点
-                get_next_base(ball)
-            end
-        end
-
-        -- 球打在敌方单位上
-        if line.mid > 0 then
-            local enemy = data.enemys[line.mid]
-            if enemy.hp > 0 then
-                if enemy.solid then
-                    sub_enemy_hp(enemy, data.ball_dmg)
-                    cmd.dmg = {id = enemy.id, sub = data.ball_dmg, hp = enemy.hp}
-                else
-                    -- 非实物一般只计算打击次数，hp表示最大次数
-                    sub_enemy_hp(enemy, 1)
-                    cmd.dmg = {id = enemy.id, sub = 1, hp = enemy.hp}
-                end
-
-                if enemy.hp <= 0 then
-                    --print('enemy '..enemy.id..' dead.')
-                    local ret = on_enemy_dead(enemy.id)
-                    cmd.evts = ret.evts
-                    --local count1 = data.balls:count()
-                    check_collide(ret.deads)
-                    -- local count2 = data.balls:count()
-                    -- if count2 < count1 then
-                    --     print("enemy "..enemy.id.." reduce "..(count2-count1))
-                    -- end
-                    if enemy.solid then
-                        data.enemy_count = data.enemy_count - 1
-                    end
-
-                    if data.enemy_count <= 0 then
-                        add_cmd(cmd)
-                        data.win = true
-                        add_cmd({type = Const.CmdType.WIN})
-                        return
-                    end
-                end
-            else
-                Help.err_print("collide dead enemy! id=" .. cmd.bid .. " mid=" .. line.mid)
-            end
-        end
-
-        add_cmd(cmd)
+        ball_step(step)
     end
 end
 
@@ -622,7 +756,6 @@ local function end_round()
     if data.win then
         return
     end
-    data.ball_dmg = Const.BALL_DMG
     Line.through = false
     if data.next_base then
         Basic.assign_point(data.next_base, data.base)
@@ -649,5 +782,6 @@ return {
     start_round = start_round,
     update_round = update_round,
     check_next_collide = check_next_collide,
-    aim = aim
+    aim = aim,
+    start_skill_round = start_skill_round
 }

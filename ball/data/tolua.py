@@ -10,9 +10,16 @@ def jsonToLua(tagPath, fname):
     context = context.replace("]", "}")
     all = set(re.findall('"\w+" =', context))
     for k in all:
-        #print(k)
         rep = k.replace('"', '')
         context = context.replace(k, rep)
+
+    if fname == 'monster' or fname == 'role':
+        all = set(re.findall('{id = \d+,', context))
+        for k in all:
+            digit = k[k.find('=') + 1:-1]
+            val = int(digit)
+            rep = f'[{val}] = ' + k
+            context = context.replace(k, rep)
 
     f = open(tagPath + fname + '.lua', 'w')
     f.write("return " + context)

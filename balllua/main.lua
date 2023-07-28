@@ -4,13 +4,7 @@ local Help = require "ball_logic.help"
 local json = require "json"
 
 local function main()
-    local roles = {
-        {id = 1, count = 10, times = 50, skill = {type = Const.SkillType.BALL_ADD, dmg = 1000, cd = 4}},
-        {id = 2, count = 10, times = 50, skill = {type = Const.SkillType.BALL_THROUGH, round = 2, cd = 2}},
-        {id = 3, count = 10, times = 50, skill = {}},
-        {id = 4, count = 10, times = 50, skill = {type = Const.SkillType.ROUND_DAMAGE, width = 3, height = 3, dmg = 5000, round = 4, cd = 4, push = true}},
-        {id = 5, count = 10, times = 50, skill = {}},
-    }
+    local roles = {1,2,3,4,5}
     local rs = '[{"op":1,"dir":{"x":0.4767630403778865,"y":-0.8790318556967283}},{"op":1,"dir":{"x":0.9672254249554538,"y":-0.2539192338515178}},{"op":2,"rid":2,"target":null},{"op":1,"dir":{"x":0.9903273833618871,"y":-0.1387504009493231}},{"op":1,"dir":{"x":-0.06345822039332256,"y":-0.9979844960040776}},{"op":2,"rid":2,"target":null},{"op":1,"dir":{"x":0.9853997712347365,"y":-0.17025654422232636}},{"op":1,"dir":{"x":-0.18465830716658618,"y":-0.9828027826549794}},{"op":1,"dir":{"x":0.39316250957186666,"y":-0.9194689995139324}}]'
     local replay = json.decode(rs)
     local t1 = os.clock()
@@ -20,7 +14,7 @@ local function main()
             if type(op.target) ~= "table" then
                 op.target = nil
             end
-            Logic.use_skill(roles[op.rid], op.target)
+            Logic.use_skill(op.rid, op.target)
         else
             Logic.start_round(op.dir)
             Logic.update_round()

@@ -6,6 +6,7 @@ const CmdType = {
     REMOVE_SKILL : 5,
     SKILL_EFFECT : 6,
     ENEMY_MOVE: 7,
+    SKILL_READY: 8,
     PUSH: 11,
     ROUND_END: 12,
     WIN : 13,

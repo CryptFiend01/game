@@ -29,13 +29,7 @@ let game = {
     running: null,
     totalDist: 0,
     times: 50,
-    roles: [
-        { id: 1, count: 10, times: 50, color: "red", skill: {type: SkillType.BALL_ADD, dmg: 1000, cd: 4} },
-        { id: 2, count: 10, times: 50, color: "orange", skill: {type: SkillType.BALL_THROUGH, round: 2, cd: 2} },
-        { id: 3, count: 10, times: 50, color: "purple", skill: {type: SkillType.RANGE_TRIGGER, width: 4, height: 2, dmg1: 1000, dmg2: 500, round: 3, cd:3, push: true} },
-        { id: 4, count: 10, times: 50, color: "skyblue", skill: {type: SkillType.ROUND_DAMAGE, width: 3, height: 3, dmg: 5000, round: 4, cd:4, push: true} },
-        { id: 5, count: 10, times: 50, color: "cyan", skill: {type: SkillType.SOLID_BLOCK, round: 3, cd: 3} }
-    ],
+    roles: [],
     distInterval: 15,
     lastDist: 0,
     gameMode: GameState.GS_PLAY,
@@ -61,6 +55,7 @@ let game = {
 
 function initialze() {
     loadData(function () {
+        game.roles = config.roles;
         if (game.isRemote) {
             let res = httpPost(uri + "/init_game", "");
             if (!res || res.code != 0) {
@@ -164,6 +159,31 @@ function updateSkillEffect(effects) {
     }
 }
 
+function onSkillCmd(cmd) {
+    if (cmd.type == CmdType.ROLE_SKILL) {
+        if (cmd.range) {
+            console.log("add range:" + cmd.type)
+            addSkillRange(cmd.cid, cmd.range);
+        }
+        if (cmd.effects) {
+            updateSkillEffect(cmd.effects);
+        }
+        
+        if (cmd.cd > 0) {
+            const btn = document.getElementById("skill"+cmd.cid);
+            btn.disabled = true;
+            btn.innerHTML = cmd.cd;
+            game.skillCD[cmd.cid - 1] = cmd.cd;
+        }
+    } else if (cmd.type == CmdType.REMOVE_SKILL) {
+        removeSkillRange(cmd.cid);
+    } else if (cmd.type == CmdType.SKILL_EFFECT) {
+        updateSkillEffect(cmd.effects);
+    } else if (cmd.type == CmdType.SKILL_READY) {
+        rdata.skillRoles[cmd.cid-1] = 1;
+    }
+}
+
 function onfinish() {
     while (game.running != null) {
         let cmd = game.running;
@@ -172,24 +192,6 @@ function onfinish() {
             console.log("start push!");
             startPush();
             return;
-        } else if (cmd.type == CmdType.ROLE_SKILL) {
-            if (cmd.range) {
-                addSkillRange(cmd.cid, cmd.range);
-            }
-            if (cmd.effects) {
-                updateSkillEffect(cmd.effects);
-            }
-            
-            if (cmd.cd > 0) {
-                const btn = document.getElementById("skill"+cmd.cid);
-                btn.disabled = true;
-                btn.innerHTML = cmd.cd;
-                game.skillCD[cmd.cid - 1] = cmd.cd;
-            }
-        } else if (cmd.type == CmdType.REMOVE_SKILL) {
-            removeSkillRange(cmd.cid);
-        } else if (cmd.type == CmdType.SKILL_EFFECT) {
-            updateSkillEffect(cmd.effects);
         } else if (cmd.type == CmdType.ROUND_END) {
             for (let i = 0; i < game.skillCD.length; i++) {
                 if (game.skillCD[i] > 0) {
@@ -208,6 +210,8 @@ function onfinish() {
             game.through = false;
         } else if (cmd.type == CmdType.WIN) {
             break;
+        } else {
+            onSkillCmd(cmd);
         }
         game.running = game.cmds.shift();
     }
@@ -277,7 +281,14 @@ function lineEvts(cmd, data) {
 function run(pass) {
     let cmd = game.running;
     if (cmd.type != CmdType.COLLIDE) {
-        return -1;
+        console.log("other cmd:" + objToString(cmd));
+        if (cmd.type == CmdType.ROLE_SKILL || cmd.type == CmdType.SKILL_READY || cmd.type == CmdType.SKILL_EFFECT || cmd.type == CmdType.REMOVE_SKILL) {
+            onSkillCmd(cmd);
+            game.running = game.cmds.shift();
+            return 0;
+        } else {
+            return -1;
+        }
     }
 
     for (let ball of rdata.balls) {
@@ -294,6 +305,7 @@ function run(pass) {
         }
     }
 
+    //console.log("ball " + cmd.bid + " move. total ball count:" + rdata.balls.length);
     let ball = rdata.balls[cmd.bid-1];
     if (ball.status != BallStatus.MOVING) {
         console.error("Ball " + ball.id + " is not moving.");
@@ -385,7 +397,7 @@ function run(pass) {
 function update() {
     let d = run(0);
     game.totalDist += d;
-    while (d > 0 && d < game.speed) {
+    while (d >= 0 && d < game.speed) {
         let x = run(d);
         if (x == -1) {
             d = -1;

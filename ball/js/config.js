@@ -45,37 +45,41 @@ function loadData(onfinish) {
         $.getJSON("data/monster.json", function(mst_data) {
             var monsters = mst_data;
             config.monsters = monsters;
-            
-            $.getJSON("data/stage.json", function(stage_data) {
-                var stage = stage_data;
-                config.stage = stage;
-                config.stage_monsters = {}
-                for (let m of stage.monsters) {
-                    config.stage_monsters[m.id] = m;
-                    let mc = getMonster(m.cid);
-                    if (mc == null) {
-                        console.log("not find monster " + m.cid);
-                        continue;
-                    }
-                    let obj = objects[mc.type];
-                    if (!m.point) {
-                        m.point = getPointByGrid(obj, m.grid);
-                    }
 
-                    let lines = makeLines(m.id, m.point, obj, mc.solid);
-                    config.enemys.push({
-                        id : m.id,
-                        point : m.point,
-                        grid: m.grid,
-                        hp : mc.hp,
-                        solid : mc.solid,
-                        evt: mc.evt,
-                        obj : obj,
-                        lines : lines,
-                        rect: makeRect(lines)
-                    });
-                }
-                onfinish();
+            $.getJSON("data/role.json", function(role_data) {
+                config.roles = role_data;
+                
+                $.getJSON("data/stage.json", function(stage_data) {
+                    var stage = stage_data;
+                    config.stage = stage;
+                    config.stage_monsters = {}
+                    for (let m of stage.monsters) {
+                        config.stage_monsters[m.id] = m;
+                        let mc = getMonster(m.cid);
+                        if (mc == null) {
+                            console.log("not find monster " + m.cid);
+                            continue;
+                        }
+                        let obj = objects[mc.type];
+                        if (!m.point) {
+                            m.point = getPointByGrid(obj, m.grid);
+                        }
+    
+                        let lines = makeLines(m.id, m.point, obj, mc.solid);
+                        config.enemys.push({
+                            id : m.id,
+                            point : m.point,
+                            grid: m.grid,
+                            hp : mc.hp,
+                            solid : mc.solid,
+                            evt: mc.evt,
+                            obj : obj,
+                            lines : lines,
+                            rect: makeRect(lines)
+                        });
+                    }
+                    onfinish();
+                });
             });
         });
     });

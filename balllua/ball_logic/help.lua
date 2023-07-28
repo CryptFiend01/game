@@ -70,6 +70,20 @@ local function get_point_by_grid(obj, grid)
     }
 end
 
+local function grid_to_point(grid)
+    return {
+        x = math.floor(grid % Const.Board.WIDTH) * Const.Board.SIDE + Const.Offset.x,
+        y = math.floor(grid / Const.Board.WIDTH) * Const.Board.SIDE + Const.Offset.y
+    }
+end
+
+local function grid_to_xy(grid)
+    return {
+        x = math.floor(grid % Const.Board.WIDTH),
+        y = math.floor(grid / Const.Board.WIDTH)
+    }
+end
+
 local function make_rect(lines)
     local rect = {left = Const.MAX_NUM, right = Const.MIN_NUM, top = Const.MAX_NUM, bottom = Const.MIN_NUM}
     for _, l in ipairs(lines) do
@@ -123,4 +137,6 @@ return {
     make_rect = make_rect,
     hiden_in_line = hiden_in_line,
     hiden_part_lines = hiden_part_lines,
+    grid_to_point = grid_to_point,
+    grid_to_xy = grid_to_xy,
 }
