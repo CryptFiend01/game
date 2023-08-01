@@ -84,6 +84,10 @@ local function grid_to_xy(grid)
     }
 end
 
+local function xy_to_grid(point)
+    return point.x + point.y * Const.Board.WIDTH
+end
+
 local function make_rect(lines)
     local rect = {left = Const.MAX_NUM, right = Const.MIN_NUM, top = Const.MAX_NUM, bottom = Const.MIN_NUM}
     for _, l in ipairs(lines) do
@@ -139,4 +143,5 @@ return {
     hiden_part_lines = hiden_part_lines,
     grid_to_point = grid_to_point,
     grid_to_xy = grid_to_xy,
+    xy_to_grid = xy_to_grid
 }

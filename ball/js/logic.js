@@ -307,13 +307,43 @@ function checkCollide(deads) {
     }
 }
 
-function getSkillRange(point, width, height) {
+function getRectRange(point, width, height) {
     return {
         x: (point.x - Math.floor(width / 2)) * Board.SIDE + Offset.x,
         y: (point.y - Math.floor(height / 2)) * Board.SIDE + Offset.y,
         width: width * Board.SIDE,
         height: height * Board.SIDE
     }
+}
+
+function getCrossRange(point, horizon, vertical) {
+    let ranges = [];
+    ranges.push({
+        x: point.x * Board.SIDE + Offset.x,
+        y: point.y + Board.SIDE + Offset.y
+    });
+    for (let i = -horizon; i < horizon; i++) {
+        let x = point.x + i;
+        if (x < 0 || x >= Board.WIDTH || i == 0) {
+            continue;
+        }
+        ranges.push({
+            x: x * Board.SIDE + Offset.x,
+            y: point.y * Board.SIDE + Offset.y
+        });
+    }
+
+    for (let i = -vertical; i < vertical; i++) {
+        let y = point.y + i;
+        if (y < 0 || y >= Board.WIDTH || i == 0) {
+            continue;
+        }
+        ranges.push({
+            x: point.x * Board.SIDE + Offset.x,
+            y: y * Board.SIDE + Offset.y
+        });
+    }
+    return ranges;
 }
 
 function effectSkill(skill) {
@@ -366,7 +396,7 @@ function useSkill(role, target) {
     if (cfg.type == SkillType.BALL_ADD) {
         ldata.ballDmg = cfg.dmg;
     } else if (cfg.type == SkillType.ROUND_DAMAGE) {
-        let range = getSkillRange(target, cfg.width, cfg.height);
+        let range = getRectRange(target, cfg.width, cfg.height);
         let skill = {cid: role.id, cfg: cfg, rect:{left: range.x, top: range.y, right: range.x + range.width, bottom: range.y + range.height}, round: 0};
         ldata.skills.push(skill);
         cmd.range.push(range);

@@ -126,19 +126,20 @@ function openSkillPanel() {
 }
 
 function clickSkill(n) {
-    let role = game.roles[n-1];
-    game.chooseRole = null;
-    rdata.skillSelect = null;
-    if (role.skill.type == SkillType.BALL_ADD) {
-        doUseSkill(role, null);
-    } else if (role.skill.type == SkillType.BALL_THROUGH) {
-        doUseSkill(role, null);
-    } else if (role.skill.type == SkillType.ROUND_DAMAGE) {
-        game.chooseRole = role;
-        game.skillRect = getSkillRange({x:0, y:0}, role.skill.width, role.skill.height);
-    } else {
-        alert("开发中...");
-    }
+    // let role = game.roles[n-1];
+    // game.chooseRole = null;
+    // rdata.skillSelect = null;
+    // if (role.skill.type == SkillType.BALL_ADD) {
+    //     doUseSkill(role, null);
+    // } else if (role.skill.type == SkillType.BALL_THROUGH) {
+    //     doUseSkill(role, null);
+    // } else if (role.skill.type == SkillType.ROUND_DAMAGE) {
+    //     game.chooseRole = role;
+    //     game.skillRect = getRectRange({x:0, y:0}, role.skill.width, role.skill.height);
+    // } else {
+    //     alert("开发中...");
+    // }
+    alert("技能改为弹球中自动释放，无法手动释放！");
 }
 
 function onLoadReplay() {

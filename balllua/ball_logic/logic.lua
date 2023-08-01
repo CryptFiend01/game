@@ -10,6 +10,7 @@ local Help = require "ball_logic.help"
 local Basic = require "ball_logic.basic"
 local Collide = require "ball_logic.collide"
 local Role = require "ball_logic.role"
+local Skill = require "ball_logic.skill"
 
 local GameRect = Const.GameRect
 
@@ -354,62 +355,6 @@ local function check_collide(deads)
     end
 end
 
-local function get_skill_range(point, width, height)
-    return {
-        x = (point.x - math.floor(width / 2)) * Const.Board.SIDE + Const.Offset.x,
-        y = (point.y - math.floor(height / 2)) * Const.Board.SIDE + Const.Offset.y,
-        width = width * Const.Board.SIDE,
-        height = height * Const.Board.SIDE
-    }
-end
-
-local function get_cross_enemies(point, horizon, vertical)
-    local enemies = {}
-    local get_enemy = function(p)
-        local grid = p.x + p.y * Const.Board.WIDTH
-        local eid = data.take_grids[grid+1]
-        if eid ~= 0 then
-            local enemy = data.enemys[eid]
-            if Help.contain(enemies, enemy) then
-                table.insert(enemies, enemy)
-            end
-        end
-    end
-    for i = -horizon, horizon do
-        local p = {x = point.x + i, y = point.y}
-        if p.x >= 0 and p.x < Const.Board.WIDTH then
-            get_enemy(p)
-        end
-    end
-
-    for i = -vertical, vertical do
-        local p = {x = point.x, y = point.y + i}
-        if p.y >= 0 and p.y < Const.Board.HEIGHT then
-            get_enemy(p)
-        end
-    end
-    return enemies
-end
-
-local function select_cross_grid(horizon, vertical)
-    local grid = 0
-    local count = 0
-    local max_count = 0
-    for i, eid in ipairs(data.take_grids) do
-        if eid ~= 0 then
-            grid = i
-            count = count + 1
-        else
-            if count > max_count then
-                grid = i - math.floor(count / 2)
-                max_count = count
-            end
-            count = 0
-        end
-    end
-    return grid
-end
-
 local function effect_skill(skill)
     local effects = {}
     local effect_enemy = function(enemy)
@@ -424,10 +369,9 @@ local function effect_skill(skill)
     end
     if skill.cfg.type == Const.SkillType.ROUND_DAMAGE then
         skill.round = skill.round + 1
-        for eid, enemy in ipairs(data.enemys) do
-            if enemy.visible and enemy.solid and enemy.hp > 0 and Basic.rect_inserect(enemy.rect, skill.rect) then
-                effect_enemy(enemy)
-            end
+        local enemies = Skill.get_skill_enemies(data, skill.target, skill.cfg)
+        for _, enemy in ipairs(enemies) do
+            effect_enemy(enemy)
         end
     elseif skill.cfg.type == Const.SkillType.RANGE_DAMAGE then
         for _, enemy in ipairs(skill.enemies) do
@@ -485,14 +429,15 @@ local function use_skill(rid, target)
         --data.ball_dmg = cfg.dmg
         role:change_attack(cfg.dmg, cfg.times)
     elseif cfg.type == Const.SkillType.ROUND_DAMAGE then
-        local range = get_skill_range(target, cfg.width, cfg.height)
+        -- 回合技能每次生效都根据范围及时处理，不能预先获得受击敌人
+        local range = Skill.get_skill_range(target, cfg.width, cfg.height)
         local rect = {
             left = range.x,
             top = range.y,
             right = range.x + range.width,
             bottom = range.y + range.height
         }
-        local skill = {cid = role.id, cfg = cfg, rect = rect, round = 0}
+        local skill = {cid = role.id, cfg = cfg, target = target, round = 0}
         table.insert(data.skills, skill)
         table.insert(cmd.range, range)
         cmd.effects = effect_skill(skill)
@@ -503,12 +448,7 @@ local function use_skill(rid, target)
             role:change_attack(role:get_attack() * 3, -1)
         end
     elseif cfg.type == Const.SkillType.RANGE_DAMAGE then
-        local enemies = {}
-        -- 根据不同形状筛选敌人
-        if cfg.shape == "cross" then
-            enemies = get_cross_enemies(target, cfg.horizon, cfg.vertical)
-        end
-
+        local enemies = Skill.get_skill_enemies(data, target, cfg)
         local skill = {cid = role.id, cfg = cfg, enemies = enemies}
         cmd.effects = effect_skill(skill)
     end
@@ -688,7 +628,7 @@ local function ball_step(step)
     -- 准备释放技能
     if role:is_anger_full() then
         local skill_cfg = role:get_skill()
-        local grid = select_cross_grid(skill_cfg.horizon, skill_cfg.vertical)
+        local grid = Skill.select_skill_grid(data, skill_cfg)
         local vball = Ball:new({
             id = -1,
             dist = skill_cfg.before,
@@ -700,7 +640,7 @@ local function ball_step(step)
         })
         data.balls:add(vball)
         role:clear_anger()
-        add_cmd({type = Const.CmdType.SKILL_READY, cid = ball:role_id()})
+        add_cmd({type = Const.CmdType.SKILL_READY, cid = ball:role_id(), grid = grid})
     end
 end
 

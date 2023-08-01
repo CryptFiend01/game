@@ -168,6 +168,8 @@ function onSkillCmd(cmd) {
         if (cmd.effects) {
             updateSkillEffect(cmd.effects);
         }
+
+        removeSkillReady(cmd.cid);
         
         if (cmd.cd > 0) {
             const btn = document.getElementById("skill"+cmd.cid);
@@ -181,6 +183,9 @@ function onSkillCmd(cmd) {
         updateSkillEffect(cmd.effects);
     } else if (cmd.type == CmdType.SKILL_READY) {
         rdata.skillRoles[cmd.cid-1] = 1;
+        if (cmd.grid >= 0) {
+            addSkillReady(cmd.cid, getSkillRanges(game.roles[cmd.cid-1], cmd.grid));
+        }
     }
 }
 
@@ -209,6 +214,7 @@ function onfinish() {
             assignPoint(cmd.base, game.base);
             game.through = false;
         } else if (cmd.type == CmdType.WIN) {
+            console.assert(game.cmds.length == 0, "other cmd after win." + objToString(game.cmds));
             break;
         } else {
             onSkillCmd(cmd);
@@ -287,6 +293,7 @@ function run(pass) {
             game.running = game.cmds.shift();
             return 0;
         } else {
+            console.log("exit run.");
             return -1;
         }
     }
@@ -396,15 +403,18 @@ function run(pass) {
 
 function update() {
     let d = run(0);
-    game.totalDist += d;
-    while (d >= 0 && d < game.speed) {
-        let x = run(d);
-        if (x == -1) {
-            d = -1;
-            break;
+
+    if (d >= 0) {
+        game.totalDist += d;
+        while (d >= 0 && d < game.speed) {
+            let x = run(d);
+            if (x == -1) {
+                d = -1;
+                break;
+            }
+            game.totalDist += x;
+            d += x;
         }
-        game.totalDist += x;
-        d += x;
     }
 
     if (d == -1) {
@@ -427,10 +437,29 @@ function getGridPoint(x, y) {
     };
 }
 
+function gridToPoint(grid) {
+    return {
+        x: Math.floor(grid % Board.WIDTH),
+        y: Math.floor(grid / Board.WIDTH)
+    }
+}
+
 function getSkillSelectRange(role, x, y) {
     let skill = role.skill;
     let p = getGridPoint(x, y);
-    return getSkillRange(p, skill.width, skill.height);
+    return getRectRange(p, skill.width, skill.height);
+}
+
+function getSkillRanges(role, grid) {
+    let skill = role.skill;
+    let p = gridToPoint(grid);
+    let ranges = [];
+    if (skill.shape == "rect") {
+        ranges.push(getRectRange(p, skill.width, skill.height));
+    } else if (skill.shape == "cross") {
+        ranges = getCrossRange(p, skill.horizon, skill.vertical);
+    }
+    return ranges;
 }
 
 function doShootBall() {

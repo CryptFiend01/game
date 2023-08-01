@@ -7,6 +7,7 @@ let rdata = {
     skillSelect: null,
     skillRange : {},
     skillRoles : [0,0,0,0,0],
+    skillReadys : {},
     status : 1,
     baseLine: null,
 }
@@ -57,6 +58,24 @@ function resetSkillRoles() {
     }
 }
 
+function addSkillReady(cid, ranges) {
+    let readys = [];
+    for (let r of ranges) {
+        readys.push({
+            x: r.x,
+            y: r.y,
+            width: r.width,
+            height: r.height,
+            color: "rgba(97, 97, 255, 0.5)"
+        });
+    }
+    rdata.skillReadys[cid] = readys;
+}
+
+function removeSkillReady(cid) {
+    delete rdata.skillReadys[cid];
+}
+
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -76,6 +95,12 @@ function draw() {
 
     for (let cid in rdata.skillRange) {
         let ranges = rdata.skillRange[cid];
+        for (let r of ranges)
+            drawRange(r);
+    }
+
+    for (let cid in rdata.skillReadys) {
+        let ranges = rdata.skillReadys[cid];
         for (let r of ranges)
             drawRange(r);
     }
