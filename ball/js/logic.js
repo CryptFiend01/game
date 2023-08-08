@@ -20,6 +20,7 @@ let frameLines = [
     new Line({x1: GameRect.left, y1: GameRect.top, x2: GameRect.right, y2: GameRect.top, solid: true, hide:0, mid:0}),
     new Line({x1: GameRect.right, y1: GameRect.top, x2: GameRect.right, y2: GameRect.bottom, solid: true, hide:0, mid:0}),
     new Line({x1: GameRect.left, y1: GameRect.bottom, x2: GameRect.left, y2: GameRect.top, solid: true, hide:0, mid:0}),
+    new Line({x1: GameRect.right, y1: GameRect.bottom, x2: GameRect.left, y2: GameRect.bottom, solid: true, hide:0, mid:0}),
 ];
 
 let ldata = {

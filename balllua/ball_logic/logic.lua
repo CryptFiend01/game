@@ -17,7 +17,8 @@ local GameRect = Const.GameRect
 local frames = {
     Line:new({x1 = GameRect.left, y1 = GameRect.top, x2 = GameRect.right, y2 = GameRect.top, solid = true}),
     Line:new({x1 = GameRect.right, y1 = GameRect.top, x2 = GameRect.right, y2 = GameRect.bottom, solid = true}),
-    Line:new({x1 = GameRect.left, y1 = GameRect.bottom, x2 = GameRect.left, y2 = GameRect.top, solid = true})
+    Line:new({x1 = GameRect.left, y1 = GameRect.bottom, x2 = GameRect.left, y2 = GameRect.top, solid = true}),
+    Line:new({x1 = GameRect.right, y1 = GameRect.bottom, x2 = GameRect.left, y2 = GameRect.bottom, solid = true})
 }
 
 local data = {}
