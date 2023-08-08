@@ -395,11 +395,12 @@ function run(pass) {
                 if (cmd.dmg.hp <= 0) 
                     game.lines = removeDead(game.lines, cmd.dmg.id);
             }
-
-            // 处理事件
-            if (cmd.evts)
-                doCmdEvts(cmd.evts);
         }
+
+        // 处理事件
+        if (cmd.evts) {
+            doCmdEvts(cmd.evts);
+        }            
 
         game.running = game.cmds.shift();
         return dist;
