@@ -320,27 +320,33 @@ function getCrossRange(point, horizon, vertical) {
     let ranges = [];
     ranges.push({
         x: point.x * Board.SIDE + Offset.x,
-        y: point.y + Board.SIDE + Offset.y
+        y: point.y * Board.SIDE + Offset.y,
+        width: Board.SIDE,
+        height: Board.SIDE
     });
-    for (let i = -horizon; i < horizon; i++) {
+    for (let i = -horizon; i <= horizon; i++) {
         let x = point.x + i;
         if (x < 0 || x >= Board.WIDTH || i == 0) {
             continue;
         }
         ranges.push({
             x: x * Board.SIDE + Offset.x,
-            y: point.y * Board.SIDE + Offset.y
+            y: point.y * Board.SIDE + Offset.y,
+            width: Board.SIDE,
+            height: Board.SIDE
         });
     }
 
-    for (let i = -vertical; i < vertical; i++) {
+    for (let i = -vertical; i <= vertical; i++) {
         let y = point.y + i;
         if (y < 0 || y >= Board.WIDTH || i == 0) {
             continue;
         }
         ranges.push({
             x: point.x * Board.SIDE + Offset.x,
-            y: y * Board.SIDE + Offset.y
+            y: y * Board.SIDE + Offset.y,
+            width: Board.SIDE,
+            height: Board.SIDE
         });
     }
     return ranges;

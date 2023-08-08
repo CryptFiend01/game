@@ -52,6 +52,7 @@ local function init_data()
     data.callid = 1001
 
     data.roles = {}
+    data.skill_deads = {deads = {}, all = false}
 
     if not ObjectCfg._inited then
         for _, obj in pairs(ObjectCfg) do
@@ -358,23 +359,35 @@ end
 local function effect_skill(skill)
     local effects = {}
     local effect_enemy = function(enemy)
+        if enemy.hp <= 0 then
+            return
+        end
         sub_enemy_hp(enemy, skill.cfg.dmg)
         local cmd = {dmg={id = enemy.id, dmg = skill.cfg.dmg, hp = enemy.hp}}
         table.insert(effects, cmd)
         if enemy.hp <= 0 then
             local ret = on_enemy_dead(enemy.id)
             cmd.evts = ret.evts
+            if not data.skill_deads.all then
+                if ret.deads then
+                    for _, eid in ipairs(ret.deads) do
+                        table.insert(data.skill_deads.deads, eid)
+                    end
+                else
+                    data.skill_deads.all = true
+                end
+            end
             data.enemy_count = data.enemy_count - 1
         end
     end
     if skill.cfg.type == Const.SkillType.ROUND_DAMAGE then
         skill.round = skill.round + 1
         local enemies = Skill.get_skill_enemies(data, skill.target, skill.cfg)
-        for _, enemy in ipairs(enemies) do
+        for _, enemy in pairs(enemies) do
             effect_enemy(enemy)
         end
     elseif skill.cfg.type == Const.SkillType.RANGE_DAMAGE then
-        for _, enemy in ipairs(skill.enemies) do
+        for _, enemy in pairs(skill.enemies) do
             effect_enemy(enemy)
         end
     end
@@ -390,7 +403,7 @@ local function effect_skill(skill)
 end
 
 local function check_skill_valid()
-    if #data.skills == 0 then
+    if #data.skills == 0 or data.win then
         return
     end
 
@@ -431,12 +444,6 @@ local function use_skill(rid, target)
     elseif cfg.type == Const.SkillType.ROUND_DAMAGE then
         -- 回合技能每次生效都根据范围及时处理，不能预先获得受击敌人
         local range = Skill.get_skill_range(target, cfg.width, cfg.height)
-        local rect = {
-            left = range.x,
-            top = range.y,
-            right = range.x + range.width,
-            bottom = range.y + range.height
-        }
         local skill = {cid = role.id, cfg = cfg, target = target, round = 0}
         table.insert(data.skills, skill)
         table.insert(cmd.range, range)
@@ -543,7 +550,17 @@ local function start_round(dir)
 end
 
 local function ball_event(evt)
-    use_skill(evt.rid, Help.grid_to_xy(evt.grid))
+    data.skill_deads.deads = {}
+    data.skill_deads.all = false
+    if evt.type == Const.BallEvent.EVT_SKILL then
+        use_skill(evt.rid, Help.grid_to_xy(evt.grid))
+    end
+
+    if data.skill_deads.all then
+        check_collide(nil)
+    elseif #data.skill_deads.deads > 0 then
+        check_collide(data.skill_deads.deads)
+    end
 end
 
 local function ball_step(step)
@@ -633,7 +650,7 @@ local function ball_step(step)
             id = -1,
             dist = skill_cfg.before,
             evt = {
-                type = 1, 
+                type = Const.BallEvent.EVT_SKILL, 
                 rid = ball:role_id(), 
                 grid = grid
             }
@@ -646,7 +663,7 @@ end
 
 local function ball_round()
     local step = 1
-    while not data.balls:empty() do
+    while not data.balls:empty() and not data.win do
         step = step + 1
         ball_step(step)
     end

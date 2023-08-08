@@ -25,8 +25,8 @@ end
 
 local function add_enemy(enemies, data, p)
     local enemy = get_enemy(data, p)
-    if enemy and not Help.contain(enemy) then
-        table.insert(enemies, enemy)
+    if enemy then
+        enemies[enemy.id] = enemy
     end
 end
 

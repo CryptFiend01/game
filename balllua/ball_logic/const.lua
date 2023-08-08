@@ -81,6 +81,7 @@ local Const = {
     SkillType = SkillType,
     StageEvent = StageEvent,
     EvtType = EvtType,
+    BallEvent = BallEvent,
     OpType = OpType,
     Board = Board,
     Canvas = Canvas,

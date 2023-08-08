@@ -66,6 +66,7 @@ function initialze() {
             game.startLine = ret.startLine;
             game.enemys = ret.enemys;
             game.lines = ret.lines;
+            game.user = res.data;
             initRender(game.lines, game.status, game.base, game.collisions, game.roles);
         } else {
             initLogic(game.base, game.distInterval, game.roles);
@@ -125,7 +126,7 @@ function updatePush() {
         console.log("push finish!");
         if (game.isRemote) {
             //pushDataMap(game, game.running.line);
-            let res = httpPost(uri + "/get_board", "");
+            let res = httpPost(uri + "/get_board", "user=" + game.user);
             if (!res || res.code != 0) {
                 return;
             }
@@ -154,15 +155,23 @@ function startPush() {
 function updateSkillEffect(effects) {
     for (let e of effects) {
         if (e.dmg.hp <= 0) {
-            rdata.lines = removeDead(rdata.lines, e.id);
-        }
+            rdata.lines = removeDead(rdata.lines, e.dmg.id);
+            if (game.isRemote) {
+                game.lines = removeDead(game.lines, e.dmg.id);
+            }
+
+            if (e.evts) {
+                console.log("evts:" + objToString(e.evts));
+                doCmdEvts(e.evts);
+            }
+        }        
     }
 }
 
 function onSkillCmd(cmd) {
     if (cmd.type == CmdType.ROLE_SKILL) {
         if (cmd.range) {
-            console.log("add range:" + cmd.type)
+            //console.log("add range:" + cmd.type)
             addSkillRange(cmd.cid, cmd.range);
         }
         if (cmd.effects) {
@@ -184,7 +193,9 @@ function onSkillCmd(cmd) {
     } else if (cmd.type == CmdType.SKILL_READY) {
         rdata.skillRoles[cmd.cid-1] = 1;
         if (cmd.grid >= 0) {
-            addSkillReady(cmd.cid, getSkillRanges(game.roles[cmd.cid-1], cmd.grid));
+            let ranges = getSkillRanges(game.roles[cmd.cid-1], cmd.grid);
+            //console.log("ready skill " + cmd.cid + " range:" + objToString(ranges));
+            addSkillReady(cmd.cid, ranges);
         }
     }
 }
@@ -192,7 +203,7 @@ function onSkillCmd(cmd) {
 function onfinish() {
     while (game.running != null) {
         let cmd = game.running;
-        console.log(objToString(cmd));
+        //console.log(objToString(cmd));
         if (cmd.type == CmdType.PUSH) {
             console.log("start push!");
             startPush();
@@ -222,7 +233,7 @@ function onfinish() {
         game.running = game.cmds.shift();
     }
     if (game.cmds.length == 0) {
-        game.status = GameState.GS_SKILL;
+        game.status = GameState.GS_AIM;
         rdata.balls.length = 0;
         rdata.status = game.status;
         openSkillPanel();
@@ -238,9 +249,10 @@ function onfinish() {
             rdata.status = game.status;
             rdata.skillSelect = null;
             rdata.skillRange = {};
+            rdata.skillReadys = {};
             var replayJson;
             if (game.isRemote) {
-                let res = httpPost(uri + "/get_replay", "");
+                let res = httpPost(uri + "/get_replay", "user=" + game.user);
                 if (!res || res.code != 0) {
                     return;
                 }
@@ -284,10 +296,46 @@ function lineEvts(cmd, data) {
     
 }
 
+function doCmdEvts(evts) {
+    for (let evt of evts) {
+        if (evt.type == EvtType.CALL_ENEMY) {
+            let mc = getMonster(evt.cid);
+            let obj = config.objects[mc.type];
+            let point = getPointByGrid(obj, evt.grid);
+            let lines = makeLines(evt.id, point, obj, mc.solid);
+            let enemy = {
+                id : evt.id,
+                point : point,
+                grid: evt.grid,
+                hp : mc.hp,
+                visible: true,
+                solid : mc.solid,
+                evt: mc.evt,
+                obj : obj,
+                lines : lines,
+                rect: makeRect(lines)
+            };
+            game.enemys[evt.id] = enemy;
+            for (let l of lines) {
+                l.setColor(ColorSet.LineSolid);
+                game.lines.push(l);
+            }
+            hidenPartLines(lines, game.lines, frameLines.length);
+
+            let rlines = makeLines(evt.id, point, obj, mc.solid);
+            for (let l of rlines) {
+                l.setColor(ColorSet.LineSolid);
+                rdata.lines.push(l);
+            }
+            hidenPartLines(rlines, rdata.lines, frameLines.length);
+        }
+    }
+}
+
 function run(pass) {
     let cmd = game.running;
     if (cmd.type != CmdType.COLLIDE) {
-        console.log("other cmd:" + objToString(cmd));
+        //console.log("other cmd:" + objToString(cmd));
         if (cmd.type == CmdType.ROLE_SKILL || cmd.type == CmdType.SKILL_READY || cmd.type == CmdType.SKILL_EFFECT || cmd.type == CmdType.REMOVE_SKILL) {
             onSkillCmd(cmd);
             game.running = game.cmds.shift();
@@ -337,60 +385,20 @@ function run(pass) {
             rdata.lines = removeDead(rdata.lines, cmd.dmg.id);
         }
 
-        // 处理事件
-        if (cmd.evts) {
-            for (let evt of cmd.evts) {
-                if (evt.type == EvtType.CALL_ENEMY) {
-                    let mc = getMonster(evt.cid);
-                    let obj = config.objects[mc.type];
-                    let point = getPointByGrid(obj, evt.grid);
-                    let lines = makeLines(evt.id, point, obj, mc.solid);
-                    for (let l of lines) {
-                        l.setColor(ColorSet.LineSolid);
-                        rdata.lines.push(l);
-                    }
-                    hidenPartLines(lines, rdata.lines, frameLines.length);
-                }
-            }
-        }
-
         if (game.isRemote) {
             // 移除死亡的单位
             if (cmd.dmg != null) {
-                game.enemys[cmd.dmg.id].hp = cmd.dmg.hp;
+                let enemy = game.enemys[cmd.dmg.id];
+                if (enemy) {
+                    enemy.hp = cmd.dmg.hp;
+                }
                 if (cmd.dmg.hp <= 0) 
                     game.lines = removeDead(game.lines, cmd.dmg.id);
             }
 
             // 处理事件
-            if (cmd.evts) {
-                for (let evt of cmd.evts) {
-                    if (evt.type == EvtType.CALL_ENEMY) {
-                        let mc = getMonster(evt.cid);
-                        let obj = config.objects[mc.type];
-                        let point = getPointByGrid(obj, evt.grid);
-                        let lines = makeLines(evt.id, point, obj, mc.solid);
-                        let enemy = {
-                            id : evt.id,
-                            point : point,
-                            grid: evt.grid,
-                            hp : mc.hp,
-                            visible: true,
-                            solid : mc.solid,
-                            evt: mc.evt,
-                            obj : obj,
-                            lines : lines,
-                            rect: makeRect(lines)
-                        };
-                        game.enemys[evt.id] = enemy;
-                        for (let l of lines) {
-                            l.setColor(ColorSet.LineSolid);
-                            game.lines.push(l);
-                        }
-                        hidenPartLines(lines, game.lines, frameLines.length);
-                    }
-                }
-            }
+            if (cmd.evts)
+                doCmdEvts(cmd.evts);
         }
 
         game.running = game.cmds.shift();
@@ -464,7 +472,7 @@ function getSkillRanges(role, grid) {
 
 function doShootBall() {
     if (game.isRemote) {
-        let res = httpPost(uri + "/shoot_ball", "x=" + game.aimDir.x + "&y=" + game.aimDir.y);
+        let res = httpPost(uri + "/shoot_ball", "x=" + game.aimDir.x + "&y=" + game.aimDir.y + "&user=" + game.user);
         if (!res || res.code != 0) {
             return false;
         }
@@ -481,7 +489,7 @@ function doShootBall() {
 function doUseSkill(role, target) {
     hidden("replay");
     if (game.isRemote) {
-        let args = "rid=" + role.id;
+        let args = "user=" + game.user + "&rid=" + role.id;
         if (target) {
             args += "&x=" + target.x + "&y=" + target.y;
         } else {
