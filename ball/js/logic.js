@@ -339,7 +339,7 @@ function getCrossRange(point, horizon, vertical) {
 
     for (let i = -vertical; i <= vertical; i++) {
         let y = point.y + i;
-        if (y < 0 || y >= Board.WIDTH || i == 0) {
+        if (y < 0 || y >= Board.HEIGHT || i == 0) {
             continue;
         }
         ranges.push({

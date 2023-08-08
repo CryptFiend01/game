@@ -15,7 +15,7 @@ const GameState = {
     GS_GROUP_DEBUG : 7,
 }
 
-const uri = "http://127.0.0.1:7777";
+const uri = "http://192.168.1.10:7777";
 
 let game = {
     status: GameState.GS_SKILL,

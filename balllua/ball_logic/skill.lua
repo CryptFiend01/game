@@ -64,7 +64,7 @@ local function get_skill_enemies(data, point, skill)
 end
 
 local function select_grid(data, is_tag, f)
-    local grid = 0
+    local grid = -1
     local max_count = 0
 
     for i, eid in ipairs(data.take_grids) do

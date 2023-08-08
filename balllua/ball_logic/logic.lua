@@ -646,18 +646,20 @@ local function ball_step(step)
     if role:is_anger_full() then
         local skill_cfg = role:get_skill()
         local grid = Skill.select_skill_grid(data, skill_cfg)
-        local vball = Ball:new({
-            id = -1,
-            dist = skill_cfg.before,
-            evt = {
-                type = Const.BallEvent.EVT_SKILL, 
-                rid = ball:role_id(), 
-                grid = grid
-            }
-        })
-        data.balls:add(vball)
-        role:clear_anger()
-        add_cmd({type = Const.CmdType.SKILL_READY, cid = ball:role_id(), grid = grid})
+        if grid >= 0 or not skill_cfg.shape then
+            local vball = Ball:new({
+                id = -1,
+                dist = skill_cfg.before,
+                evt = {
+                    type = Const.BallEvent.EVT_SKILL, 
+                    rid = ball:role_id(), 
+                    grid = grid
+                }
+            })
+            data.balls:add(vball)
+            role:clear_anger()
+            add_cmd({type = Const.CmdType.SKILL_READY, cid = ball:role_id(), grid = grid})
+        end
     end
 end
 
