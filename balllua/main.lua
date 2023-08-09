@@ -14,7 +14,7 @@ local function main()
             if type(op.target) ~= "table" then
                 op.target = nil
             end
-            Logic.use_skill(op.rid, op.target)
+            Logic.use_skill(op.rid, op.target, true)
         else
             Logic.start_round(op.dir)
             Logic.update_round()

@@ -207,6 +207,7 @@ local function get_enemies()
             id = m.id,
             point = m.point,
             grid = m.grid,
+            cid = m.cid,
             hp = mc.hp,
             visible = true,
             solid = mc.solid,
@@ -227,6 +228,7 @@ local function add_enemy(id, mc, obj, grid)
         id = id,
         point = point,
         grid = grid,
+        cid = mc.id,
         hp = mc.hp,
         visible = true,
         solid = mc.solid,
@@ -244,6 +246,15 @@ local function add_enemy(id, mc, obj, grid)
     data.enemy_count = data.enemy_count + 1
     Help.hiden_part_lines(lines, data.lines, #frames + 1)
     return enemy
+end
+
+local function get_enemy_info(enemy)
+    return {
+        id = enemy.id,
+        grid = enemy.grid,
+        hp = enemy.hp,
+        cid = enemy.cid
+    }
 end
 
 local function add_enemies(cid, count, grid)
@@ -326,7 +337,7 @@ local function check_collide(deads)
                 return
             end
             if Help.contain(deads, ball:next_collide_id()) then
-                ball:recover_state()
+                --ball:recover_state()
                 ball:calc_collide(data.lines)
             end
             if ball:next_collide_point() then
@@ -341,7 +352,7 @@ local function check_collide(deads)
                 table.insert(temp, ball)
                 return
             end
-            ball:recover_state()
+            --ball:recover_state()
             ball:calc_collide(data.lines)
             if ball:next_collide_point() then
                 table.insert(temp, ball)
@@ -423,13 +434,15 @@ local function start_skill_round()
     data.cmds = {}
 end
 
-local function use_skill(rid, target)
+local function use_skill(rid, target, is_op)
     local role = data.roles[rid]
-    local op = {op = Const.OpType.SKILL, rid = role.id}
-    if target then
-        op.target = Basic.copy_point(target)
+    if is_op then
+        local op = {op = Const.OpType.SKILL, rid = role.id}
+        if target then
+            op.target = Basic.copy_point(target)
+        end
+        table.insert(data.ops, op)
     end
-    table.insert(data.ops, op)
     local cfg = role.cfg.skill
     local cmd = {
         type = Const.CmdType.ROLE_SKILL,
@@ -554,7 +567,7 @@ local function ball_event(evt)
     data.skill_deads.deads = {}
     data.skill_deads.all = false
     if evt.type == Const.BallEvent.EVT_SKILL then
-        use_skill(evt.rid, Help.grid_to_xy(evt.grid))
+        use_skill(evt.rid, Help.grid_to_xy(evt.grid), false)
     end
 
     if data.skill_deads.all then
@@ -664,9 +677,13 @@ local function ball_step(step)
     end
 end
 
+local function is_ball_round_finish()
+    return data.balls:empty() or data.win
+end
+
 local function ball_round()
     local step = 1
-    while not data.balls:empty() and not data.win do
+    while not is_ball_round_finish() do
         step = step + 1
         ball_step(step)
     end
@@ -724,13 +741,37 @@ local function end_round()
     add_cmd({type = Const.CmdType.ROUND_END, base = Basic.copy_point(data.base)})
 end
 
-local function update_round()
-    ball_round()
+local function rest_round()
     enemy_round()
     data.round = data.round + 1
     push_round()
     skill_round()
     end_round()
+end
+
+local function update_round()
+    ball_round()
+    rest_round()
+end
+
+local function get_board()
+    local board = {
+        balls = {},
+        lines = data.lines,
+        enemies = {},
+        enemy_count = data.enemy_count
+    }
+
+    data.balls:foreach(function (b)
+        table.insert(board.balls, b:info())
+    end)
+
+    for _, enemy in pairs(data.enemys) do
+        if enemy.visible and enemy.hp > 0 then
+            table.insert(board.enemies, get_enemy_info(enemy))
+        end
+    end
+    return board
 end
 
 return {
@@ -741,6 +782,11 @@ return {
     use_skill = use_skill,
     start_round = start_round,
     update_round = update_round,
+    ball_round = ball_round,
+    rest_round = rest_round,
+    ball_step = ball_step,
+    is_ball_round_finish = is_ball_round_finish,
+    get_board = get_board,
     check_next_collide = check_next_collide,
     aim = aim,
     start_skill_round = start_skill_round

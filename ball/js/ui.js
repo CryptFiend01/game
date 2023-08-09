@@ -150,7 +150,7 @@ function onLoadReplay() {
     show("replay-panel", 'flex');
 
     if (game.replayJson == "") {
-        game.replayJson = `[{"op":1,"dir":{"x":-0.4987567899973728,"y":-0.8667419826173857}},{"op":2,"rid":1,"target":{"x":7,"y":-1}},{"op":2,"rid":2,"target":{"x":3,"y":2}},{"op":1,"dir":{"x":-0.7306568260253944,"y":-0.6827449030073358}},{"op":2,"rid":1,"target":{"x":7,"y":-1}},{"op":2,"rid":2,"target":{"x":0,"y":3}},{"op":2,"rid":4,"target":{"x":6,"y":5}},{"op":1,"dir":{"x":0.21871145691738111,"y":-0.9757895770160063}},{"op":1,"dir":{"x":0.2260991078165696,"y":-0.9741043031649904}},{"op":1,"dir":{"x":-0.9720013462098999,"y":-0.2349752816066879}},{"op":2,"rid":1,"target":{"x":7,"y":-1}},{"op":2,"rid":2,"target":{"x":3,"y":2}},{"op":1,"dir":{"x":0.9661861905632501,"y":-0.25784539003999074}},{"op":2,"rid":4,"target":{"x":0,"y":0}},{"op":2,"rid":1,"target":{"x":7,"y":-1}},{"op":1,"dir":{"x":0.4631264978260959,"y":-0.8862921905395168}},{"op":1,"dir":{"x":-0.05090675156718797,"y":-0.9987034107505975}},{"op":2,"rid":2,"target":{"x":2,"y":3}},{"op":1,"dir":{"x":0.8964480900067646,"y":-0.4431487582327447}},{"op":2,"rid":1,"target":{"x":7,"y":-1}},{"op":2,"rid":4,"target":{"x":6,"y":4}},{"op":2,"rid":2,"target":{"x":4,"y":2}},{"op":1,"dir":{"x":0.9798752697414226,"y":-0.19961076060466798}}]`;
+        game.replayJson = `[{"op":1,"dir":{"x":-0.44859335021347907,"y":-0.8937359823483929}},{"op":1,"dir":{"x":-0.46675861955812287,"y":-0.8843847528469696}},{"op":1,"dir":{"x":-0.5484600326708852,"y":-0.8361767711211855}},{"op":1,"dir":{"x":-0.3240570572744072,"y":-0.9460375381720598}}]`;
     }
 
     const txt = document.getElementById("replay-json");
@@ -161,7 +161,7 @@ function checkTime() {
     hidden("skills");
     hidden("replay");
     if (game.isRemote) {
-        let res = httpPost(uri + "/check_time", "replay=" + game.replayJson);
+        let res = httpPost(uri + "/check_time", "replay=" + jsonToLua(game.replayJson));
         if (!res || res.code != 0) {
             return;
         }

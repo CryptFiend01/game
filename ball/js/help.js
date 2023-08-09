@@ -84,3 +84,51 @@ function hidenInline(lines, start) {
         _hidenLine(l1, lines, start);
     }
 }
+
+function jsonToLua(jsonStr) {
+    // 解析JSON字符串为JavaScript对象
+    var jsonObj = JSON.parse(jsonStr);
+  
+    // 递归转换函数
+    function convert(obj) {
+        var luaStr = '';
+        // 处理数组类型
+        if (Array.isArray(obj)) {
+            luaStr += '{';
+            for (var i = 0; i < obj.length; i++) {
+                luaStr += convert(obj[i]);
+                if (i < obj.length - 1) {
+                    luaStr += ', ';
+                }
+            }
+            luaStr += '}';
+        } else if (typeof obj === 'object' && obj !== null) {
+            // 处理对象类型
+            luaStr += '{';
+            var keys = Object.keys(obj);
+            for (var j = 0; j < keys.length; j++) {
+                var key = keys[j];
+                if (typeof key === "string") {
+                    luaStr += key + ' = ' + convert(obj[key]);
+                } else {
+                    luaStr += '[' + key + '] = ' + convert(obj[key]);
+                }
+                if (j < keys.length - 1) {
+                    luaStr += ',';
+                }
+            }
+            luaStr += '}';
+        } else if (typeof obj === 'string') {
+            // 处理字符串类型
+            luaStr += '"' + obj.replace(/"/g, '\\"') + '"';
+        } else {
+            // 处理数字、布尔和null类型
+            luaStr += String(obj);
+        }
+        return luaStr;
+    }
+  
+    // 转换JSON对象为Lua字符串
+    var luaCode = 'return ' + convert(jsonObj);
+    return luaCode;
+}

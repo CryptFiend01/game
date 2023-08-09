@@ -47,6 +47,20 @@ function Ball:get_pos()
     return pos
 end
 
+function Ball:info()
+    local pos = self:get_pos()
+    local data = {
+        id = self.id,
+        x = pos.x,
+        y = pos.y,
+        dir = self.dir,
+        rid = self.role.id,
+        times = self.times,
+        collide = self.collide
+    }
+    return data
+end
+
 function Ball:save_state()
     self.old_state.hit = self.hit
     if self.collide.point then
@@ -82,7 +96,7 @@ function Ball:will_collide()
 end
 
 function Ball:check_ignores()
-    self.ignores = Collide.reset_ignores(self:get_pos(), self.ignores, self.collide, self.finish)
+    --self.ignores = Collide.reset_ignores(self:get_pos(), self.ignores, self.collide, self.finish)
 end
 
 function Ball:role_id()
@@ -170,7 +184,7 @@ function Ball:update(data)
         -- 只有反弹时才需要将pass设置为0
         self.passed = 0
         Basic.assign_point(self.collide.point, self)
-        self:save_state()
+        --self:save_state()
         self:calc_collide(data.lines)
         return true
     else

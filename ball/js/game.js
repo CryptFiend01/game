@@ -126,7 +126,7 @@ function updatePush() {
         console.log("push finish!");
         if (game.isRemote) {
             //pushDataMap(game, game.running.line);
-            let res = httpPost(uri + "/get_board", "user=" + game.user);
+            let res = httpPost(uri + "/get_lines", "user=" + game.user);
             if (!res || res.code != 0) {
                 return;
             }
