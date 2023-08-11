@@ -124,19 +124,19 @@ function testVectorAngle() {
         l.normal = normalize(normalVector(vector(l)));
     }
     let drawLines = () => {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        drawDashLine(ray);
+        gameCtx.clearRect(0, 0, Canvas.width, Canvas.height);
+        drawDashLine(gameCtx, ray);
 
         for (let l of lines) {
-            drawLine(l);
-            drawNormal(l);
+            drawLine(gameCtx, l);
+            drawNormal(gameCtx, l);
         }
 
         for (let r of reflects) {
-            drawDashLine(r);
+            drawDashLine(gameCtx, r);
         }
     }
-    canvas.addEventListener("click", function(evt) {
+    gameCanvas.addEventListener("click", function(evt) {
         base.x = evt.offsetX;
         base.y = evt.offsetY;
         ray.x1 = base.x;
@@ -144,7 +144,7 @@ function testVectorAngle() {
         drawLines();
     });
 
-    canvas.addEventListener("mousemove", function( evt) {
+    gameCanvas.addEventListener("mousemove", function( evt) {
         ray.x2 = evt.offsetX;
         ray.y2 = evt.offsetY;
 

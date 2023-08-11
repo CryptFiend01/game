@@ -1,5 +1,5 @@
-const canvas = document.getElementById("scene");
-const ctx = canvas.getContext("2d");
+const gameCanvas = document.getElementById("scene");
+const gameCtx = gameCanvas.getContext("2d");
 
 let rdata = {
     lines : [],
@@ -17,7 +17,7 @@ function initRender(lines, status, base, collisions, roles) {
     rdata.status = status;
     rdata.base = base;
     rdata.collisions = collisions;
-    rdata.baseLine = {x1: 0, y1: base.y, x2: canvas.width, y2: base.y, color: "#aaaaaa", width:1}
+    rdata.baseLine = {x1: 0, y1: base.y, x2: Canvas.width, y2: base.y, color: "#aaaaaa", width:1}
     rdata.roles = roles;
 }
 
@@ -77,49 +77,49 @@ function removeSkillReady(cid) {
 }
 
 function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    gameCtx.clearRect(0, 0, Canvas.width, Canvas.height);
 
-    drawDashLine(rdata.baseLine);
+    drawDashLine(gameCtx, rdata.baseLine);
 
     for (let i = 0; i < rdata.roles.length; i++) {
-        drawRole({x: i * 80 + 10, y: rdata.base.y + 60, width: 60, height: 80, color: rdata.roles[i].color, border:rdata.skillRoles[i] != 0});
+        drawRole(gameCtx, {x: i * 80 + 10, y: rdata.base.y + 60, width: 60, height: 80, color: rdata.roles[i].color, border:rdata.skillRoles[i] != 0});
     }
 
     for (let l of rdata.lines) {
-        drawLine(l);
+        drawLine(gameCtx, l);
         for (let sl of l.hideLines) {
-            drawLine(sl);
+            drawLine(gameCtx, sl);
         }
-        drawNormal(l);
+        drawNormal(gameCtx, l);
     }
 
     for (let cid in rdata.skillRange) {
         let ranges = rdata.skillRange[cid];
         for (let r of ranges)
-            drawRange(r);
+            drawRange(gameCtx, r);
     }
 
     for (let cid in rdata.skillReadys) {
         let ranges = rdata.skillReadys[cid];
         for (let r of ranges)
-            drawRange(r);
+            drawRange(gameCtx, r);
     }
 
     for (let ball of rdata.balls) {
         // 起点或者消失的球不画
         if (ball.status != BallStatus.CREATING && ball.status != BallStatus.DESTROY && ball.y < Board.HEIGHT * Board.SIDE + 24) {
-            drawBall(ball);
+            drawBall(gameCtx, ball);
         }
     }
 
     if (rdata.status == GameState.GS_AIM) {
-        drawBall({x: rdata.base.x, y: rdata.base.y, radius: 5, color: "#ac2234"});
+        drawBall(gameCtx, {x: rdata.base.x, y: rdata.base.y, radius: 5, color: "#ac2234"});
         if (rdata.collisions.length > 0) {
             let start = rdata.base;
             for (let i = 0; i < rdata.collisions.length; i++) {
-                drawBall(rdata.collisions[i]);
+                drawBall(gameCtx, rdata.collisions[i]);
                 let end = rdata.collisions[i];
-                drawDashLine({
+                drawDashLine(gameCtx, {
                     x1: start.x,
                     y1: start.y,
                     x2: end.x,
@@ -134,7 +134,7 @@ function draw() {
                 x: rdata.base.x + rdata.begin.x * 1400,
                 y: rdata.base.y + rdata.begin.y * 1400
             }
-            drawDashLine({
+            drawDashLine(gameCtx, {
                 x1: rdata.base.x,
                 y1: rdata.base.y,
                 x2: target.x,
@@ -144,34 +144,34 @@ function draw() {
             });
         }
     } else if (rdata.status == GameState.GS_FINISH) {
-        ctx.font = 'bold 60px 微软雅黑';
-        var grandient = ctx.createLinearGradient(0, 0, canvas.width, 0);
+        gameCtx.font = 'bold 60px 微软雅黑';
+        var grandient = gameCtx.createLinearGradient(0, 0, Canvas.width, 0);
         grandient.addColorStop('0', "magenta");
         grandient.addColorStop('0.3', 'blue');
         grandient.addColorStop('1.0', 'red');
         //用渐变填色
-        ctx.fillStyle = grandient;
-        ctx.fillText('赢   了', canvas.width / 2 - 100, canvas.height / 2 - 10);
+        gameCtx.fillStyle = grandient;
+        gameCtx.fillText('赢   了', Canvas.width / 2 - 100, Canvas.height / 2 - 10);
     } else if (rdata.status == GameState.GS_SKILL) {
         if (rdata.skillSelect) {
             rdata.skillSelect.color = "rgba(49, 194, 238, 0.5)";
-            drawRange(rdata.skillSelect);
+            drawRange(gameCtx, rdata.skillSelect);
         }
     }
 }
 
-function drawBall({x, y, radius, color, dir}) {
+function drawBall(ctx, {x, y, radius, color, dir}) {
     ctx.beginPath();
     ctx.fillStyle = color;
     ctx.arc(x, y, radius, 0, 2*Math.PI);
     ctx.fill();
 
     if (dir) {
-        drawLine({x1:x, y1:y, x2:x+dir.x*20, y2:y+dir.y*20, color:"#233488", width:1});
+        drawLine(ctx, {x1:x, y1:y, x2:x+dir.x*20, y2:y+dir.y*20, color:"#233488", width:1});
     }   
 }
 
-function drawNormal(l) {
+function drawNormal(ctx, l) {
     if (l.hide == 0) {
         let mid = {
             x: l.x1 + (l.x2 - l.x1) / 2,
@@ -185,11 +185,11 @@ function drawNormal(l) {
             color: "#338899",
             hide: 0
         }
-        drawLine(normal);
+        drawLine(ctx, normal);
     }
 }
 
-function drawLine({x1, y1, x2, y2, color, width=2, hide}) {
+function drawLine(ctx, {x1, y1, x2, y2, color, width=2, hide}) {
     ctx.beginPath();
     ctx.lineWidth = width;
     if (hide > 0) {
@@ -203,7 +203,7 @@ function drawLine({x1, y1, x2, y2, color, width=2, hide}) {
     ctx.stroke();
 }
 
-function drawDashLine({x1, y1, x2, y2, color, width=2}) {
+function drawDashLine(ctx, {x1, y1, x2, y2, color, width=2}) {
     ctx.beginPath();
     ctx.lineWidth = width;
     ctx.strokeStyle = color;
@@ -216,7 +216,7 @@ function drawDashLine({x1, y1, x2, y2, color, width=2}) {
     ctx.setLineDash(old);
 }
 
-function drawRole({x, y, width, height, color, border}) {
+function drawRole(ctx, {x, y, width, height, color, border}) {
     ctx.beginPath();
     ctx.fillStyle = color;
     if (border) {
@@ -229,7 +229,7 @@ function drawRole({x, y, width, height, color, border}) {
     ctx.fill();
 }
 
-function drawRange({x, y, width, height, color}) {
+function drawRange(ctx, {x, y, width, height, color}) {
     ctx.beginPath();
     ctx.fillStyle = color;
     ctx.rect(x, y, width, height);

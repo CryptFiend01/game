@@ -1,5 +1,5 @@
 let Offset = {
-    x : (canvas.width - Board.WIDTH * Board.SIDE) / 2,
+    x : (Canvas.width - Board.WIDTH * Board.SIDE) / 2,
     y : 5
 }
 

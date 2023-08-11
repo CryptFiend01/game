@@ -15,7 +15,7 @@ const GameState = {
     GS_GROUP_DEBUG : 7,
 }
 
-const uri = "http://192.168.1.10:7777";
+const uri = "http://127.0.0.1:7777";
 
 let game = {
     status: GameState.GS_SKILL,
@@ -34,6 +34,7 @@ let game = {
     lastDist: 0,
     gameMode: GameState.GS_PLAY,
     isRemote: true,
+    isDebug: false,
 
     pushed: 0,
     chooseRole: null,
@@ -54,6 +55,7 @@ let game = {
 }
 
 function initialze() {
+    hidden("debug-panel");
     loadData(function () {
         game.roles = config.roles;
         if (game.isRemote) {
@@ -544,21 +546,4 @@ function playNext() {
     }
 }
 
-function finishSkill() {
-    if (game.status != GameState.GS_FINISH) {
-        game.status = GameState.GS_AIM;
-        rdata.status = game.status;
-        hidden("skills");
-    } else {
-        alert("游戏结束，刷新重开！");
-    }
-}
-
 initialze();
-//testVectorAngle();
-//test1();
-//test();
-//testHeap();
-//testRect();
-//test2();
-//test3();

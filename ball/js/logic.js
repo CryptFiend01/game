@@ -157,7 +157,7 @@ function initLogic(base, interLen, roles) {
     ldata.lines.length = 0;
     ldata.balls.clear();
     ldata.enemyCount = 0;
-    ldata.baseLine = new Line({x1: 0, y1: base.y, x2: canvas.width, y2: base.y});
+    ldata.baseLine = new Line({x1: 0, y1: base.y, x2: Canvas.width, y2: base.y});
     ldata.roles = roles;
     ldata.rect = {left: GameRect.left, right: GameRect.right, top: GameRect.top + Board.SIDE, bottom: GameRect.bottom};
 

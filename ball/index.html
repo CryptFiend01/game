@@ -9,20 +9,42 @@
 </head>
 <body>
     <div class="main">
-        <canvas id="scene" width="400px" height="700px"></canvas>
-        <div id="coord"></div>
-        <div id="skills">
-            <button class="skill1" id="skill1" onclick="clickSkill(1);"></button>
-            <button class="skill2" id="skill2" onclick="clickSkill(2);"></button>
-            <button class="skill3" id="skill3" onclick="clickSkill(3);"></button>
-            <button class="skill4" id="skill4" onclick="clickSkill(4);"></button>
-            <button class="skill5" id="skill5" onclick="clickSkill(5);"></button>
-            <button class="finish" id="finish-skill" onclick="finishSkill()">开始发球</button>
+        <div class="game">
+            <canvas id="scene" width="400px" height="700px"></canvas>
+            <div id="coord"></div>
+            <div id="skills" style="margin-top: 10px;">
+                <button class="skill1" id="skill1" onclick="clickSkill(1);"></button>
+                <button class="skill2" id="skill2" onclick="clickSkill(2);"></button>
+                <button class="skill3" id="skill3" onclick="clickSkill(3);"></button>
+                <button class="skill4" id="skill4" onclick="clickSkill(4);"></button>
+                <button class="skill5" id="skill5" onclick="clickSkill(5);"></button>
+                <button class="finish" id="finish-skill" onclick="finishSkill()">开始发球</button>
+            </div>
+            <div id="replay" style="margin-top: 10px;">
+                <button class="btn-replay" onclick="onLoadReplay()">加载录像</button>
+                <button class="btn-replay" onclick="onPlay()">播放录像</button>
+                <button class="btn-replay" onclick="checkTime()">逻辑耗时</button>
+            </div>
+            <div id="check-debug" style="margin-top: 10px;">
+                <input type="checkbox" id="open-debug" onchange="onDebugChange();">
+                <label>开启调试模式</label>
+            </div>
+
         </div>
-        <div id="replay">
-            <button class="btn-replay" onclick="onLoadReplay()">加载录像</button>
-            <button class="btn-replay" onclick="onPlay()">播放录像</button>
-            <button class="btn-replay" onclick="checkTime()">逻辑耗时</button>
+        <div class="game" id="debug-panel">
+            <canvas id="debug-canvas" width="400px" height="700px"></canvas>
+            <div id="debug-sub-panel">
+                <label>发射方向：</label>
+                <input type="number" id="dir-x">
+                <input type="number" id="dir-y">
+                <br>
+                <label>球速：</label>
+                <input type="number" id="ball-speed">
+                <br>
+                <button class="btn-debug" >快速运行</button>
+                <input type="number" id="step">
+                <button class="btn-debug" >单步运行</button>
+            </div>
         </div>
     </div>
     <div id="replay-panel" class="replay-panel">
@@ -40,6 +62,7 @@
     <script src="js/line.js"></script>
     <script src="js/ball.js"></script>
     <script src="js/render.js"></script>
+    <script src="js/dbg_render.js"></script>
     <script src="js/config.js"></script>
     <script src="js/heap.js"></script>
     <script src="js/collide.js"></script>

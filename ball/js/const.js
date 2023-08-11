@@ -52,3 +52,8 @@ const Board = {
     HEIGHT : 11,
     SIDE : 48
 }
+
+const Canvas = {
+    width : 400,
+    height : 700
+}

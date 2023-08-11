@@ -1,5 +1,13 @@
 .main {
     margin: 0 auto;
+    width: 1000px;
+    display: flex;
+    flex-direction: row;
+    align-content: center;
+}
+
+.game {
+    margin: 0 auto;
     width: 500px;
 }
 
@@ -11,14 +19,18 @@ canvas {
     display: block;
 }
 
-.skill1 {
+.skill1, .skill2, .skill3, .skill4, .skill5 {
+    display: none;
     margin: 15px;
     border: 0;
     border-radius: 50%;
-    background-color: red;
-    color: yellow;
     width: 50px;
     height: 50px;
+}
+
+.skill1 {
+    background-color: red;
+    color: yellow;
 }
 
 .skill1:hover {
@@ -31,13 +43,8 @@ canvas {
 }
 
 .skill2 {
-    margin: 15px;
-    border: 0;
-    border-radius: 50%;
     background-color: orange;
     color: yellow;
-    width: 50px;
-    height: 50px;
 }
 
 .skill2:hover {
@@ -50,13 +57,8 @@ canvas {
 }
 
 .skill3 {
-    margin: 15px;
-    border: 0;
-    border-radius: 50%;
     background-color: purple;
     color: yellow;
-    width: 50px;
-    height: 50px;
 }
 
 .skill3:hover {
@@ -69,13 +71,8 @@ canvas {
 }
 
 .skill4 {
-    margin: 15px;
-    border: 0;
-    border-radius: 50%;
     background-color: skyblue;
     color: rgb(170, 132, 63);
-    width: 50px;
-    height: 50px;
 }
 
 .skill4:hover {
@@ -88,13 +85,8 @@ canvas {
 }
 
 .skill5 {
-    margin: 15px;
-    border: 0;
-    border-radius: 50%;
     background-color: cyan;
     color: rgb(180, 111, 47);
-    width: 50px;
-    height: 50px;
 }
 
 .skill5:hover {
@@ -154,15 +146,29 @@ canvas {
     line-height: 30px;
 }
 
-/* input[type="text"] {
+input[type="number"] {
     margin: 10px 3px 10px 3px;
-    height: 300px;
+    width: 50px;
     border: 1px solid gray;
 }
 
-input[type="text"]:focus {
+input[type="number"]:focus {
     border: 1px solid rgb(37, 223, 121);
-} */
+    outline: none;
+}
+
+#dir-x {
+    width: 120px;
+}
+
+#dir-y {
+    margin-left: 30px;
+    width: 120px;
+}
+
+#ball-speed {
+    width: 300px;
+}
 
 textarea {
     margin: 10px 3px 10px 3px;
@@ -187,4 +193,18 @@ textarea {
 
 .btn-panel:hover {
     background-color: rgb(152, 230, 187);
+}
+
+.btn-debug {
+    margin: 5px;
+    border: 0;
+    background-color: rgb(37, 139, 223);
+    border-radius: 5px;
+    color: rgb(241, 241, 241);
+    width: 120px;
+    height: 45px;
+}
+
+.btn-debug:hover {
+    background-color: rgb(152, 177, 230);
 }

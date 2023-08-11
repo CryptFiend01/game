@@ -21,7 +21,7 @@ function pointInRange(point) {
 }
 
 function addUIEvents() {
-    canvas.addEventListener("mousemove", (evt) => {
+    gameCanvas.addEventListener("mousemove", (evt) => {
         let coord = document.getElementById("coord");
         coord.innerHTML = "坐标：" + evt.offsetX + "," + evt.offsetY;
         if (game.status == GameState.GS_AIM) {
@@ -56,7 +56,7 @@ function addUIEvents() {
         draw();
     });
 
-    canvas.addEventListener("mousedown", (evt) => {
+    gameCanvas.addEventListener("mousedown", (evt) => {
         if (game.status == GameState.GS_AIM) {
             if (debugs.round < debugs.speeds.length)
                 game.speed = debugs.speeds[debugs.round];
@@ -142,6 +142,20 @@ function clickSkill(n) {
     alert("技能改为弹球中自动释放，无法手动释放！");
 }
 
+function finishSkill() {
+    hidden("check-debug");
+    if (game.status != GameState.GS_FINISH) {
+        game.status = GameState.GS_AIM;
+        rdata.status = game.status;
+        hidden("skills");
+        if (game.isDebug) {
+            queryForDebug();
+        }
+    } else {
+        alert("游戏结束，刷新重开！");
+    }
+}
+
 function onLoadReplay() {
     if (game.isPlayReplay) {
         return;
@@ -160,6 +174,7 @@ function onLoadReplay() {
 function checkTime() {
     hidden("skills");
     hidden("replay");
+    hidden("check-debug");
     if (game.isRemote) {
         let res = httpPost(uri + "/check_time", "replay=" + jsonToLua(game.replayJson));
         if (!res || res.code != 0) {
@@ -195,6 +210,7 @@ function onPlay() {
     game.isPlayReplay = true;
     hidden("replay");
     hidden("skills");
+    hidden("check-debug");
     playNext();
 }
 
@@ -215,4 +231,14 @@ function onSetReplay() {
     
     hidden("replay-panel");
     game.replayJson = data;
+}
+
+function onDebugChange() {
+    const chk = document.getElementById("open-debug");
+    if (chk.checked) {
+        show("debug-panel", "block");
+    } else {
+        hidden("debug-panel");
+    }
+    game.isDebug = chk.checked;
 }
