@@ -340,7 +340,11 @@ function run(pass) {
         //console.log("other cmd:" + objToString(cmd));
         if (cmd.type == CmdType.ROLE_SKILL || cmd.type == CmdType.SKILL_READY || cmd.type == CmdType.SKILL_EFFECT || cmd.type == CmdType.REMOVE_SKILL) {
             onSkillCmd(cmd);
-            game.running = game.cmds.shift();
+            // 运行中的状态，需要判断一下有没有下一条命令（debug模式一次可能不会跑完整个回合）
+            if (game.cmds.length > 0)
+                game.running = game.cmds.shift();
+            else
+                game.running = null;
             return 0;
         } else {
             console.log("exit run.");
@@ -404,7 +408,11 @@ function run(pass) {
             doCmdEvts(cmd.evts);
         }            
 
-        game.running = game.cmds.shift();
+        // 运行中的状态，需要判断一下有没有下一条命令（debug模式一次可能不会跑完整个回合）
+        if (game.cmds.length > 0)
+            game.running = game.cmds.shift();
+        else
+            game.running = null;
         return dist;
     } else {
         moveAll(rest);
@@ -417,7 +425,7 @@ function update() {
 
     if (d >= 0) {
         game.totalDist += d;
-        while (d >= 0 && d < game.speed) {
+        while (d >= 0 && d < game.speed && game.running) {
             let x = run(d);
             if (x == -1) {
                 d = -1;
@@ -430,6 +438,9 @@ function update() {
 
     if (d == -1) {
         onfinish();
+    } else if (!game.running) {
+        clearInterval(game.timer);
+        game.timer = -1;
     }
 
     game.speed += game.speedAdd;

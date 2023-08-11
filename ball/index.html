@@ -39,11 +39,11 @@
                 <input type="number" id="dir-y">
                 <br>
                 <label>球速：</label>
-                <input type="number" id="ball-speed">
+                <input type="number" id="ball-speed" onchange="onSpeedChange()">
                 <br>
-                <button class="btn-debug" >快速运行</button>
+                <button class="btn-debug" onclick="onDebugRunSteps()">快速运行</button>
                 <input type="number" id="step">
-                <button class="btn-debug" >单步运行</button>
+                <button class="btn-debug" onclick="onDebugOneStep()">单步运行</button>
             </div>
         </div>
     </div>

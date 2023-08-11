@@ -1,11 +1,3 @@
-let debugs = {
-    dirs : [
-        {x:0.9898253866177398,y:-0.1422873993263001}
-    ],
-    round: 10,
-    speeds: [8, 8, 1],
-}
-
 function hidden(id) {
     let e = document.getElementById(id);
     e.style.display = 'none';
@@ -29,10 +21,6 @@ function addUIEvents() {
             let v = {x: evt.offsetX - game.base.x, y: evt.offsetY - game.base.y};
             // let v = {x: 400 - game.base.x, y: 626 - game.base.y};
             game.aimDir = normalize(v);
-            if (debugs.round < debugs.dirs.length) {
-                game.aimDir = debugs.dirs[debugs.round];
-                console.log("game.aimDir:" + vec2String(game.aimDir))
-            }
             coord.innerHTML += "  方向：" + game.aimDir.x + "," + game.aimDir.y;
             var collisions;
             if (game.isRemote) {
@@ -58,19 +46,21 @@ function addUIEvents() {
 
     gameCanvas.addEventListener("mousedown", (evt) => {
         if (game.status == GameState.GS_AIM) {
-            if (debugs.round < debugs.speeds.length)
-                game.speed = debugs.speeds[debugs.round];
-            else
-                game.speed = game.basSpeed;
-            debugs.round += 1;
             if (game.aimDir.y < 0) {
                 console.log("dir:" + vec2String(game.aimDir));
                 hidden("replay");
                 game.collisions.length = 0;
                 game.status = game.gameMode;
                 game.totalDist = 0;
-                //game.speed = game.basSpeed;
                 rdata.status = game.status;
+                if (game.isDebug) {
+                    document.getElementById("dir-x").value = game.aimDir.x;
+                    document.getElementById("dir-y").value = game.aimDir.y;
+                    document.getElementById("ball-speed").value = game.speed;
+                    return;
+                }
+
+                game.speed = game.basSpeed;
                 if (!doShootBall()) {
                     alert("shoot ball failed!");
                     return;
@@ -96,6 +86,9 @@ function addUIEvents() {
     });
 
     addEventListener("keydown", (evt) => {
+        if (game.isDebug) {
+            return;
+        }
         if (game.status == GameState.GS_PLAY) {
             if (game.timer == -1) {
                 game.timer = setInterval(update, 10);
@@ -241,4 +234,58 @@ function onDebugChange() {
         hidden("debug-panel");
     }
     game.isDebug = chk.checked;
+}
+
+function onSpeedChange() {
+    let inputSpeed = document.getElementById("ball-speed");
+    let speed = parseFloat(inputSpeed.value);
+    if (speed < 0) {
+        speed = 0;
+    }
+    game.speed = speed;
+}
+
+function onDebugRunSteps() {
+    if (rdata.balls.length > 0) {
+        alert("只有每回合第一步可以快速多步跳过！");
+        return;
+    }
+    let stepStr = document.getElementById("step").value;
+    if (stepStr == "") {
+        stepStr = "1";
+        document.getElementById("step").value = stepStr;
+    }
+    let step = parseInt(stepStr);
+    let x = parseFloat(document.getElementById("dir-x").value);
+    let y = parseFloat(document.getElementById("dir-y").value);
+    let res = httpPost(uri + "/debug_to_step", "user=" + game.user + "&x=" + x + "&y=" + y + "&step=" + step);
+    if (!res || res.code != 0) {
+        console.error("request debug_to_step failed!");
+        return;
+    }
+
+    game.cmds = res.data;
+    loadBalls();
+    game.timer = setInterval(update, 10);
+
+    queryForDebug();
+}
+
+function onDebugOneStep() {
+    let res = httpPost(uri + "/debug_one_step", "user=" + game.user);
+    if (!res || res.code != 0) {
+        console.error("request debug_one_step failed!");
+        return;
+    }
+    game.cmds = res.data;
+    if (game.cmds.length == 0) {
+        return;
+    }
+    game.running = game.cmds.shift();
+    if (!game.running) {
+        return;
+    }
+    game.timer = setInterval(update, 10);
+
+    queryForDebug();
 }

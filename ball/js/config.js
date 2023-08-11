@@ -22,6 +22,7 @@ let config = {
 
     objects: null,
     monsters: null,
+    roles: null,
     stage: null
 }
 

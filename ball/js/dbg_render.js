@@ -30,4 +30,16 @@ function drawDebug(data) {
         }
         drawNormal(dbgCtx, l);
     }
+
+    for (let ball of data.balls) {
+        if (ball.id <= 0) {
+            continue;
+        }
+        // 起点或者消失的球不画
+        if (ball.y < Board.HEIGHT * Board.SIDE + 24) {
+            ball.color = config.roles[ball.rid-1].color;
+            ball.radius = 5;
+            drawBall(dbgCtx, ball);
+        }
+    }
 }
