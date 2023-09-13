@@ -1,6 +1,7 @@
 local Help = require "ball_logic.help"
 local Basic = require "ball_logic.basic"
 local Collide = require "ball_logic.collide"
+local Fix = require "ball_logic.fixed"
 
 local Ball = {}
 Ball.__index = Ball
@@ -16,7 +17,7 @@ function Ball:new(b)
         collide = b.collide,
         finish = false, -- 本次碰撞完成，设置为true，计算完新的碰撞点设置为false
         dist = b.dist,
-        passed = 0,
+        passed = Fix.zero,
         times = 0,
         ctimes = 0,
         ignores = {},
@@ -125,7 +126,7 @@ function Ball:calc_collide(lines, show)
     -- 虚线物体或者当前为穿透球，需要记录正在那个敌方体内，再次碰撞其他物体前不会反复计算碰撞伤害
     self.hit = Collide.get_hit_id(self.collide)
     if self.collide.point then
-        self.dist = Basic.distance({x = collide.point.x - self.x, y = collide.point.y - self.y})
+        self.dist = Basic.distance(collide.point, self)
         if self.ctimes == 0 then
             -- 还未第一次触发弹射的球，因为目标消失而重新计算碰撞点，需要加上起点等待距离
             self.dist = self.dist + self.interval
@@ -156,7 +157,7 @@ function Ball:rest_dist()
 end
 
 function Ball:move(d)
-    assert(self.dist - self.passed >= 0, "dist can't be nagetive.")
+    assert(self.dist - self.passed >= Fix.zero, "dist can't be nagetive.")
     self.passed = self.passed + d
 end
 

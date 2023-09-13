@@ -1,5 +1,6 @@
 local Const = require "ball_logic.const"
 local err_print = print
+local Fix = require "ball_logic.fixed"
 
 local function contain(t, v)
     for _, v1 in ipairs(t) do
@@ -62,46 +63,49 @@ local function logerr(s)
 end
 
 local function get_point_by_grid(obj, grid)
-    local x = math.floor(grid % Const.Board.WIDTH)
-    local y = math.floor(grid / Const.Board.WIDTH)
+    local g = Fix.tofix(grid)
+    local x = Fix.floor(g % Const.Board.WIDTH)
+    local y = Fix.floor(g / Const.Board.WIDTH)
     return {
-        x = x * Const.Board.SIDE + obj.anchor.x + Const.Offset.x,
-        y = y * Const.Board.SIDE + obj.anchor.y + Const.Offset.y
+        x = x * Const.Board.SIDE + Fix.tofix(obj.anchor.x) + Const.Offset.x,
+        y = y * Const.Board.SIDE + Fix.tofix(obj.anchor.y) + Const.Offset.y
     }
 end
 
 local function grid_to_point(grid)
+    local g = Fix.tofix(grid)
     return {
-        x = math.floor(grid % Const.Board.WIDTH) * Const.Board.SIDE + Const.Offset.x,
-        y = math.floor(grid / Const.Board.WIDTH) * Const.Board.SIDE + Const.Offset.y
+        x = Fix.floor(g % Const.Board.WIDTH) * Const.Board.SIDE + Const.Offset.x,
+        y = Fix.floor(g / Const.Board.WIDTH) * Const.Board.SIDE + Const.Offset.y
     }
 end
 
 local function grid_to_xy(grid)
+    -- 返回非fix
     return {
-        x = math.floor(grid % Const.Board.WIDTH),
-        y = math.floor(grid / Const.Board.WIDTH)
+        x = math.floor(grid % Const.Board.NWIDTH),
+        y = math.floor(grid / Const.Board.NWIDTH)
     }
 end
 
 local function xy_to_grid(point)
-    return point.x + point.y * Const.Board.WIDTH
+    return math.floor(Fix.tonumber(point.x + point.y * Const.Board.WIDTH))
 end
 
 local function make_rect(lines)
     local rect = {left = Const.MAX_NUM, right = Const.MIN_NUM, top = Const.MAX_NUM, bottom = Const.MIN_NUM}
     for _, l in ipairs(lines) do
         local rl = {
-            left = math.min(l.x1, l.x2),
-            top = math.min(l.y1, l.y2),
-            right = math.max(l.x1, l.x2),
-            bottom = math.max(l.y1, l.y2)
+            left = Fix.min(l.x1, l.x2),
+            top = Fix.min(l.y1, l.y2),
+            right = Fix.max(l.x1, l.x2),
+            bottom = Fix.max(l.y1, l.y2)
         }
         
-        rect.left = math.min(rect.left, rl.left)
-        rect.right = math.max(rect.right, rl.right)
-        rect.top = math.min(rect.top, rl.top)
-        rect.bottom = math.max(rect.bottom, rl.bottom)
+        rect.left = Fix.min(rect.left, rl.left)
+        rect.right = Fix.max(rect.right, rl.right)
+        rect.top = Fix.min(rect.top, rl.top)
+        rect.bottom = Fix.max(rect.bottom, rl.bottom)
     end
     return rect
 end

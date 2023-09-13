@@ -1,20 +1,23 @@
 local Const = require "ball_logic.const"
 local Help = require "ball_logic.help"
 
+-- 本脚本计算主要以格子为单位，所以不用fixednumber
+
 local function get_skill_range(point, width, height)
+    -- 此处point不是fixed
     return {
-        x = (point.x - math.floor(width / 2)) * Const.Board.SIDE + Const.Offset.x,
-        y = (point.y - math.floor(height / 2)) * Const.Board.SIDE + Const.Offset.y,
-        width = width * Const.Board.SIDE,
-        height = height * Const.Board.SIDE
+        x = (point.x - math.floor(width / 2)) * Const.Board.NSIDE + Const.Offset.nx,
+        y = (point.y - math.floor(height / 2)) * Const.Board.NSIDE + Const.Offset.ny,
+        width = width * Const.Board.NSIDE,
+        height = height * Const.Board.NSIDE
     }
 end
 
 local function get_enemy(data, p)
-    if p.x < 0 or p.x >= Const.Board.WIDTH or p.y < 0 or p.y >= Const.Board.HEIGHT then
+    if p.x < 0 or p.x >= Const.Board.NWIDTH or p.y < 0 or p.y >= Const.Board.NHEIGHT then
         return nil
     end
-    local grid = p.x + p.y * Const.Board.WIDTH
+    local grid = p.x + p.y * Const.Board.NWIDTH
     local eid = data.take_grids[grid+1]
     if eid ~= 0 then
         return data.enemys[eid]

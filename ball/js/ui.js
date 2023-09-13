@@ -169,7 +169,9 @@ function checkTime() {
     hidden("replay");
     hidden("check-debug");
     if (game.isRemote) {
-        let res = httpPost(uri + "/check_time", "replay=" + jsonToLua(game.replayJson));
+        let repJson = jsonToLua(game.replayJson);
+        console.log("replay json:" + repJson);
+        let res = httpPost(uri + "/check_time", "replay=" + repJson);
         if (!res || res.code != 0) {
             return;
         }

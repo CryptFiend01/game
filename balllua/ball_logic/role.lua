@@ -1,3 +1,5 @@
+local Fix = require "ball_logic.fixed"
+
 local Role = {}
 Role.__index = Role
 
@@ -6,7 +8,7 @@ function Role:new(cfg)
         id = cfg.id,
         cfg = cfg,
         anger = 0,
-        attack = cfg.attack,
+        attack = Fix.tofix(cfg.attack),
         add_times = 0,
     }
     setmetatable(self, Role)
@@ -52,7 +54,7 @@ function Role:base_attack()
 end
 
 function Role:change_attack(attack, times)
-    self.attack = attack
+    self.attack = Fix.tofix(attack)
     self.add_times = times
 end
 
@@ -62,7 +64,7 @@ function Role:recover_attack()
     end
     self.add_times = self.add_times - 1
     if self.add_times <= 0 then
-        self.attack = self.cfg.attack
+        self.attack = Fix.tofix(self.cfg.attack)
     end
 end
 
@@ -71,7 +73,7 @@ function Role:max_ball_times()
 end
 
 function Role:reset()
-    self.attack = self.cfg.attack
+    self.attack = Fix.tofix(self.cfg.attack)
     self.add_times = 0
 end
 

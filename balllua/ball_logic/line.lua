@@ -1,8 +1,11 @@
 local Basic = require "ball_logic.basic"
+local Fix = require "ball_logic.fixed"
 
 local Line = {}
 Line.__index = Line
 Line.through = false
+
+local rotate_radian = Fix.pi / Fix.tofix(36)
 
 local function mix_id(id1, id2)
     return id1 * 1000 + id2
@@ -101,11 +104,11 @@ function Line:get_reflect(dir)
 
     local rft = Basic.reflect_vector(dir, self.normal)
     local rft_normal = Basic.normalize(rft)
-    if rft_normal.x == 0 or rft_normal.y == 0 then
-        local angle = math.pi / 36
+    if rft_normal.x == Fix.zero or rft_normal.y == Fix.zero then
+        local angle = rotate_radian
         local rotate = {
-            x = rft_normal.x * math.cos(angle) - rft_normal.y * math.sin(angle),
-            y = rft_normal.x * math.sin(angle) + rft_normal.y * math.cos(angle)
+            x = rft_normal.x * Fix.cos(angle) - rft_normal.y * Fix.sin(angle),
+            y = rft_normal.x * Fix.sin(angle) + rft_normal.y * Fix.cos(angle)
         }
         rft_normal = rotate
     end
@@ -133,8 +136,8 @@ end
 
 function Line.make_lines(cid, point, obj, solid)
     local lt = {
-        x = point.x - obj.anchor.x,
-        y = point.y - obj.anchor.y
+        x = point.x - Fix.tofix(obj.anchor.x),
+        y = point.y - Fix.tofix(obj.anchor.y)
     }
     local lines = {}
     for i = #obj.points, 1, -1 do
@@ -145,10 +148,10 @@ function Line.make_lines(cid, point, obj, solid)
         local start = obj.points[i]
         local ed = obj.points[j]
         local line = Line:new({
-            x1 = start.x + lt.x,
-            y1 = start.y + lt.y,
-            x2 = ed.x + lt.x,
-            y2 = ed.y + lt.y,
+            x1 = Fix.tofix(start.x) + lt.x,
+            y1 = Fix.tofix(start.y) + lt.y,
+            x2 = Fix.tofix(ed.x) + lt.x,
+            y2 = Fix.tofix(ed.y) + lt.y,
             mid = cid,
             solid = solid
         });

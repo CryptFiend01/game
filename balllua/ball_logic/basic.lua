@@ -1,4 +1,5 @@
 local Const = require "ball_logic.const"
+local Fix = require "ball_logic.fixed"
 
 local Basic = {}
 
@@ -13,12 +14,17 @@ function Basic.normal_vector(v)
     return {x = -v.y, y = v.x}
 end
 
-function Basic.distance(v)
-    return math.sqrt(v.x * v.x + v.y * v.y)
+function Basic.magnitude(v)
+    return Fix.sqrt(v.x * v.x + v.y * v.y)
+end
+
+function Basic.distance(p1, p2)
+    local v = {x = p1.x - p2.x, y = p1.y - p2.y}
+    return Basic.magnitude(v)
 end
 
 function Basic.normalize(v)
-    local d = Basic.distance(v)
+    local d = Basic.magnitude(v)
     return {x = v.x / d, y = v.y / d}
 end
 
@@ -27,7 +33,7 @@ function Basic.dot(v1, v2)
 end
 
 function Basic.vequal(v1, v2)
-    return math.abs(v1.x - v2.x) < Const.MIN_NUM and math.abs(v1.y - v2.y) < Const.MIN_NUM
+    return Fix.abs(v1.x - v2.x) < Const.MIN_NUM and Fix.abs(v1.y - v2.y) < Const.MIN_NUM
 end
 
 function Basic.assign_point(src, dst)
@@ -36,6 +42,10 @@ end
 
 function Basic.copy_point(point)
     return {x = point.x, y = point.y}
+end
+
+function Basic.point_to_number(point)
+    return {x = Fix.tonumber(point.x), y = Fix.tonumber(point.y)}
 end
 
 function Basic.copy_rect(rect)
@@ -70,17 +80,17 @@ end
 
 function Basic.point_in_line(point, line)
     if line.x1 == line.x2 then
-        local top = math.max(line.y1, line.y2)
-        local bottom = math.min(line.y1, line.y2)
+        local top = Fix.max(line.y1, line.y2)
+        local bottom = Fix.min(line.y1, line.y2)
         return point.x == line.x1 and point.y >= bottom and point.y <= top
     elseif line.y1 == line.y2 then
-        local left = math.min(line.x1, line.x2)
-        local right = math.max(line.x1, line.x2)
+        local left = Fix.min(line.x1, line.x2)
+        local right = Fix.max(line.x1, line.x2)
         return point.y == line.y1 and point.x >= left and point.x <= right
     else
-        local d = Basic.distance(Basic.vector(line))
-        local d2 = Basic.distance({x = line.x1 - point.x, y = line.y1 - point.y})
-        local d3 = Basic.distance({x = line.x2 - point.x, y = line.y2 - point.y})
+        local d = Basic.magnitude(Basic.vector(line))
+        local d2 = Basic.magnitude({x = line.x1 - point.x, y = line.y1 - point.y})
+        local d3 = Basic.magnitude({x = line.x2 - point.x, y = line.y2 - point.y})
         return d == d2 + d3
     end
 end
@@ -118,7 +128,7 @@ function Basic.point_to_line_distance(point, line)
     local dx = px - xx
     local dy = py - yy
   
-    return math.sqrt(dx * dx + dy * dy)
+    return Fix.sqrt(dx * dx + dy * dy)
 end
 
 function Basic.reflect_vector(incident, normal)
@@ -165,11 +175,11 @@ end
 
 function Basic.get_angle(v1, v2)
     local dotv = v1.x * v2.x + v1.y * v2.y
-    local len1 = Basic.distance(v1)
-    local len2 = Basic.distance(v2)
+    local len1 = Basic.magnitude(v1)
+    local len2 = Basic.magnitude(v2)
     local cos = dotv / (len1 * len2)
-    local theta = math.acos(cos)
-    return math.pi - theta;
+    local theta = Fix.acos(cos)
+    return Fix.pi - theta;
 end
 
 return Basic

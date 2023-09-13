@@ -1,3 +1,5 @@
+local Fix = require "ball_logic.fixed"
+
 local CmdType = {
     CREATE_BALL = 1,    -- 创建球，{type: 1, dir: {x:1, y:2}, id: 1, cid: 2} id:球的id，cid：玩家id
     COLLIDE = 2,        -- 弹射，{type: 2, reflect: {x: 3, y:4}, target:{x: 1, y: 1}, dmg: {id:1, dmg:10, hp:180}, evts: [{type:1, id:1001, cid:9, grid:3}]}，reflect:弹射后的方向向量，target：撞击点，dmg伤害，evts撞击产生的事件
@@ -49,19 +51,26 @@ local OpType = {
 }
 
 local Board = {
-    WIDTH = 8,
-    HEIGHT = 11,
-    SIDE = 48
+    WIDTH = Fix.tofix(8),
+    HEIGHT = Fix.tofix(11),
+    SIDE = Fix.tofix(48),
+    NWIDTH = 8,
+    NHEIGHT = 11,
+    NSIDE = 48
 }
 
 local Canvas = {
-    WIDTH = 400,
-    HEIGHT = 700
+    WIDTH = Fix.tofix(400),
+    HEIGHT = Fix.tofix(700),
+    NWIDTH = 400,
+    NHEIGHT = 700
 }
 
 local Offset = {
     x = (Canvas.WIDTH - Board.WIDTH * Board.SIDE) / 2, 
-    y = 5
+    y = Fix.tofix(5),
+    nx = (Canvas.NWIDTH - Board.NWIDTH * Board.NSIDE) / 2,
+    ny = 5
 }
 
 local GameRect = {
@@ -72,8 +81,8 @@ local GameRect = {
 }
 
 local Base = {
-    x = 200,
-    y = 552
+    x = Fix.tofix(200),
+    y = Fix.tofix(552)
 }
 
 local Const = {
@@ -89,11 +98,11 @@ local Const = {
     GameRect = GameRect,
     Base = Base,
 
-    MAX_NUM = 1e9,
-    MIN_NUM = 1e-9,
+    MAX_NUM = Fix.tofix(1e7),
+    MIN_NUM = Fix.tofix(1e-7),
 
-    BALL_DMG = 500,
-    INTERVAL = 15
+    BALL_DMG = Fix.tofix(500),
+    INTERVAL = Fix.tofix(15)
 }
 
 return Const

@@ -11,6 +11,7 @@ local Basic = require "ball_logic.basic"
 local Collide = require "ball_logic.collide"
 local Role = require "ball_logic.role"
 local Skill = require "ball_logic.skill"
+local Fix = require "ball_logic.fixed"
 
 local GameRect = Const.GameRect
 
@@ -33,9 +34,9 @@ local function init_data()
         bottom = GameRect.bottom
     }
     data.base = Basic.copy_point(Const.Base)
-    data.base_line = Line:new({x1 = 0, y1 = Const.Base.y, x2 = Const.Board.WIDTH * Const.Board.SIDE, y2 = Const.Base.y})
+    data.base_line = Line:new({x1 = Fix.zero, y1 = Const.Base.y, x2 = Const.Board.WIDTH * Const.Board.SIDE, y2 = Const.Base.y})
     data.next_base = nil
-    data.begin_dir = {x = 0, y = 0}
+    data.begin_dir = {x = Fix.zero, y = Fix.zero}
     data.enemys = {}
     data.enemy_count = 0
     data.start_line = 0
@@ -57,7 +58,7 @@ local function init_data()
 
     if not ObjectCfg._inited then
         for _, obj in pairs(ObjectCfg) do
-            obj.size = obj.anchor.x * 2 / Const.Board.SIDE;
+            obj.size = obj.anchor.x * 2 / Const.Board.NSIDE;
         end
         ObjectCfg._inited = true
     end
@@ -92,18 +93,18 @@ end
 local function reset_take_grids()
     data.take_grids = {}
 
-    for i = 1, Const.Board.WIDTH * Const.Board.HEIGHT do
+    for i = 1, Const.Board.NWIDTH * Const.Board.NHEIGHT do
         table.insert(data.take_grids, 0)
     end
     
     for eid, enemy in pairs(data.enemys) do
-        if enemy.visible and enemy.hp > 0 then
+        if enemy.visible and enemy.hp > Fix.zero then
             if enemy.obj.size == 1 then
                 set_take_grid(enemy.grid, eid)
             else
                 for i = 0, enemy.obj.size - 1 do
                     for j = 0, enemy.obj.size - 1 do
-                        local grid = enemy.grid + j + i * Const.Board.WIDTH
+                        local grid = enemy.grid + j + i * Const.Board.NWIDTH
                         set_take_grid(grid, eid)
                     end
                 end
@@ -132,9 +133,9 @@ local function push_data_map(push_line)
         table.insert(data.lines, l)
     end
     data.start_line = data.start_line - push_line
-    local yoffset = push_line * Const.Board.SIDE
+    local yoffset = Fix.tofix(push_line) * Const.Board.SIDE
     local move_enemy = function(enemy)
-        if enemy.hp <= 0 then
+        if enemy.hp <= Fix.zero then
            return 
         end
 
@@ -145,7 +146,7 @@ local function push_data_map(push_line)
 
         enemy.rect.top = enemy.rect.top + yoffset
         enemy.rect.bottom = enemy.rect.bottom + yoffset
-        enemy.grid = enemy.grid + push_line * Const.Board.WIDTH
+        enemy.grid = enemy.grid + push_line * Const.Board.NWIDTH
         if enemy.rect.top < data.rect.top or enemy.rect.bottom > data.rect.bottom then
             visible = false
         end
@@ -208,7 +209,7 @@ local function get_enemies()
             point = m.point,
             grid = m.grid,
             cid = m.cid,
-            hp = mc.hp,
+            hp = Fix.tofix(mc.hp),
             visible = true,
             solid = mc.solid,
             evt = mc.evt,
@@ -293,8 +294,8 @@ end
 
 local function sub_enemy_hp(enemy, sub)
     enemy.hp = enemy.hp - sub
-    if enemy.hp < 0 then
-        enemy.hp = 0
+    if enemy.hp < Fix.zero then
+        enemy.hp = Fix.zero
     end
 end
 
@@ -466,7 +467,7 @@ local function use_skill(rid, target, is_op)
         Line.through = true
         --data.ball_dmg = data.ball_dmg * 3
         for _, role in pairs(data.roles) do
-            role:change_attack(role:get_attack() * 3, -1)
+            role:change_attack(role:get_attack() * Fix.tofix(3), -1)
         end
     elseif cfg.type == Const.SkillType.RANGE_DAMAGE then
         local enemies = Skill.get_skill_enemies(data, target, cfg)
@@ -484,16 +485,16 @@ local function init(roles)
     end
 
     local max_line = StageCfg.max_line
-    if max_line < Const.Board.HEIGHT then
-        max_line = Const.Board.HEIGHT
+    if max_line < Const.Board.NHEIGHT then
+        max_line = Const.Board.NHEIGHT
     end
 
     for _, line in ipairs(frames) do
         table.insert(data.lines, line)
     end
 
-    data.start_line = max_line - Const.Board.HEIGHT
-    local yoffset = data.start_line * Const.Board.SIDE
+    data.start_line = max_line - Const.Board.NHEIGHT
+    local yoffset = Fix.tofix(data.start_line) * Const.Board.SIDE
 
     data.enemys = get_enemies()
     for eid, enemy in pairs(data.enemys) do
@@ -508,7 +509,7 @@ local function init(roles)
 
         enemy.rect.top = enemy.rect.top - yoffset
         enemy.rect.bottom = enemy.rect.bottom - yoffset
-        enemy.grid = enemy.grid - data.start_line * Const.Board.WIDTH
+        enemy.grid = enemy.grid - data.start_line * Const.Board.NWIDTH
 
         if enemy.rect.top < data.rect.top or enemy.rect.bottom > data.rect.bottom then
             enemy.visible = false
@@ -528,16 +529,22 @@ local function init(roles)
 end
 
 local function start_round(dir)
-    table.insert(data.ops, {op = Const.OpType.BALL, dir = Basic.copy_point(dir)})
+    table.insert(data.ops, {op = Const.OpType.BALL, dir = Basic.point_to_number(dir)})
     data.cmds = {}
-    Basic.assign_point(dir, data.begin_dir)
+    --Basic.assign_point(dir, data.begin_dir)
+    print(Help.table_to_json(dir))
+    data.begin_dir = {
+        x = Fix.tofix(dir.x),
+        y = Fix.tofix(dir.y)
+    }
     for _, role in pairs(data.roles) do
         role:reset()
     end
 
     local collide = check_next_collide(data.base, data.begin_dir, {}, 0)
-    local dist = Basic.distance({x = collide.point.x - data.base.x, y = collide.point.y - data.base.y})
+    local dist = Basic.distance(collide.point, data.base)
     local n = 0
+    local fn = Fix.zero
     for _, role in pairs(data.roles) do
         for i = 1, role:ball_count() do
             local ball = Ball:new({
@@ -546,18 +553,19 @@ local function start_round(dir)
                 x = data.base.x,
                 y = data.base.y,
                 collide = collide,
-                dist = dist + n * data.interval,
+                dist = dist + fn * data.interval,
                 dir = Basic.copy_point(data.begin_dir),
-                interval = n * data.interval
+                interval = fn * data.interval
             })
             data.balls:add(ball)
             add_cmd({
                 type = Const.CmdType.CREATE_BALL,
                 bid = n + 1,
                 cid = role.id,
-                dir = data.begin_dir
+                dir = Basic.point_to_number(data.begin_dir)
             })
             n = n + 1
+            fn = fn + Fix.one
         end
     end
     data.next_base = nil
@@ -619,11 +627,11 @@ local function ball_step(step)
         if enemy.hp > 0 then
             if enemy.solid then
                 sub_enemy_hp(enemy, role:get_attack())
-                cmd.dmg = {id = enemy.id, sub = role:get_attack(), hp = enemy.hp}
+                cmd.dmg = {id = enemy.id, sub = Fix.tonumber(role:get_attack()), hp = Fix.tonumber(enemy.hp)}
             else
                 -- 非实物一般只计算打击次数，hp表示最大次数
                 sub_enemy_hp(enemy, 1)
-                cmd.dmg = {id = enemy.id, sub = 1, hp = enemy.hp}
+                cmd.dmg = {id = enemy.id, sub = 1, hp = Fix.tonumber(enemy.hp)}
             end
 
             if enemy.hp <= 0 then
@@ -738,7 +746,7 @@ local function end_round()
         Basic.assign_point(data.next_base, data.base)
     end
 
-    add_cmd({type = Const.CmdType.ROUND_END, base = Basic.copy_point(data.base)})
+    add_cmd({type = Const.CmdType.ROUND_END, base = Basic.point_to_number(data.base)})
 end
 
 local function rest_round()

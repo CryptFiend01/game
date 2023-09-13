@@ -1,6 +1,7 @@
 local Basic = require "ball_logic.basic"
 local Line = require "ball_logic.line"
 local Help = require "ball_logic.help"
+local Fix = require "ball_logic.fixed"
 
 local function reset_ignores(start, ignores, collide, finish)
     local temp = {}
@@ -18,7 +19,7 @@ local function reset_ignores(start, ignores, collide, finish)
 end
 
 local function check_next_collide(start, dir, lines, ignores, hitid)
-    local nearest = 1e10
+    local nearest = 1e9
     local collide = {}
     local check_line = function(l)
         -- 检测是否需要忽略，hitid表示当前需要忽略碰撞的敌方id
@@ -31,7 +32,7 @@ local function check_next_collide(start, dir, lines, ignores, hitid)
         end
         -- 检查入射方向与线的夹角，背面入射不碰撞
         local angle = Basic.get_angle(dir, l.normal)
-        if angle > math.pi / 2 then
+        if angle > Fix.pi / 2 then
             return
         end
         local p = Basic.ray_line_intersection(start, dir, l)
@@ -40,7 +41,7 @@ local function check_next_collide(start, dir, lines, ignores, hitid)
             if l:is_hit_hide(p) then
                 return
             end
-            local dist = Basic.distance({x = p.x - start.x, y = p.y - start.y})
+            local dist = Basic.distance(p, start)
             -- 实线和虚线相交时，算碰到实线
             if dist < nearest or (dist == nearest and l.solid and not collide.line.solid) then
                 collide.point = p;
