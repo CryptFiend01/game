@@ -91,6 +91,14 @@ else
     function fp.abs(x)
         return math.abs(x)
     end
+
+    function fp.max(a, b)
+        return math.max(a, b)
+    end
+
+    function fp.min(a, b)
+        return math.min(a, b)
+    end
 end
 
 return fp
