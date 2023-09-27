@@ -1,7 +1,7 @@
 local fp = {}
 
 local version = _G._VERSION
-if version == "Lua 5.4" then
+if version == "Lua 5.0" then
     local Fix = require "fp64"
 
     fp.zero = Fix.zero

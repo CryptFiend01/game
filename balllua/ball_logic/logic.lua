@@ -39,6 +39,7 @@ local function init_data()
     data.begin_dir = {x = Fix.zero, y = Fix.zero}
     data.enemys = {}
     data.enemy_count = 0
+    data.enemy_visible_count = 0
     data.start_line = 0
     data.pushed = 0
     data.interval = Const.INTERVAL
@@ -123,8 +124,8 @@ local function check_next_collide(start, dir, ignores, hitid)
     return Collide.check_next_collide(start, dir, data.lines, ignores, hitid)
 end
 
-local function aim(base, dir, times)
-    return Collide.aim(base, dir, data.lines, times)
+local function aim(dir, times)
+    return Collide.aim(data.base, dir, data.lines, times)
 end
 
 local function push_data_map(push_line)
@@ -132,7 +133,9 @@ local function push_data_map(push_line)
     for _, l in ipairs(frames) do
         table.insert(data.lines, l)
     end
+    data.enemy_visible_count = 0
     data.start_line = data.start_line - push_line
+    local add_views = {}
     local yoffset = Fix.tofix(push_line) * Const.Board.SIDE
     local move_enemy = function(enemy)
         if enemy.hp <= Fix.zero then
@@ -151,7 +154,9 @@ local function push_data_map(push_line)
             visible = false
         end
 
-        if enemy.visible and enemy.solid and not visible then
+        if not enemy.visible and visible then
+            table.insert(add_views, {id = enemy.id, cid = enemy.cid, grid = enemy.grid, hp = enemy.hp})
+        elseif enemy.visible and enemy.solid and not visible then
             data.enemy_count = data.enemy_count - 1
         end
         enemy.visible = visible
@@ -160,6 +165,9 @@ local function push_data_map(push_line)
             for _, l in ipairs(enemy.lines) do
                 table.insert(data.lines, l)
             end
+            if enemy.solid then
+                data.enemy_visible_count = data.enemy_visible_count + 1
+            end
         end
     end
     for eid, enemy in pairs(data.enemys) do
@@ -167,6 +175,7 @@ local function push_data_map(push_line)
     end
 
     Help.hiden_in_line(data.lines, #frames+1)
+    return add_views
 end
 
 local function push_map(push_line)
@@ -174,11 +183,11 @@ local function push_map(push_line)
         return
     end
 
-    push_data_map(push_line)
+    local add_enemies = push_data_map(push_line)
 
     reset_take_grids()
 
-    add_cmd({type = Const.CmdType.PUSH, line =  push_line})
+    add_cmd({type = Const.CmdType.PUSH, line =  push_line, add_enemies = add_enemies})
 end
 
 local function remove_dead(lines, id)
@@ -245,6 +254,7 @@ local function add_enemy(id, mc, obj, grid)
 
     data.enemys[id] = enemy
     data.enemy_count = data.enemy_count + 1
+    data.enemy_visible_count = data.enemy_visible_count + 1
     Help.hiden_part_lines(lines, data.lines, #frames + 1)
     return enemy
 end
@@ -391,6 +401,7 @@ local function effect_skill(skill)
                 end
             end
             data.enemy_count = data.enemy_count - 1
+            data.enemy_visible_count = data.enemy_visible_count - 1
         end
     end
     if skill.cfg.type == Const.SkillType.ROUND_DAMAGE then
@@ -408,9 +419,8 @@ local function effect_skill(skill)
     if data.enemy_count <= 0 then
         add_cmd({type = Const.CmdType.WIN})
         data.win = true
-    elseif #data.lines <= #frames and data.start_line > 0 then
-        local push_line = math.min(data.start_line, 10)
-        push_map(push_line)
+    elseif data.enemy_visible_count <= 0 then
+        data.balls:clear()
     end
     return effects
 end
@@ -520,6 +530,9 @@ local function init(roles)
         if enemy.visible then
             for _, l in ipairs(enemy.lines) do
                 table.insert(data.lines, l)
+            end
+            if enemy.solid then
+                data.enemy_visible_count = data.enemy_visible_count + 1
             end
         end
     end
@@ -646,12 +659,17 @@ local function ball_step(step)
                 -- end
                 if enemy.solid then
                     data.enemy_count = data.enemy_count - 1
+                    data.enemy_visible_count = data.enemy_visible_count - 1
                 end
 
                 if data.enemy_count <= 0 then
                     add_cmd(cmd)
                     data.win = true
                     add_cmd({type = Const.CmdType.WIN})
+                    return
+                elseif data.enemy_visible_count <= 0 then
+                    add_cmd(cmd)
+                    data.balls:clear()
                     return
                 end
             end
@@ -680,7 +698,11 @@ local function ball_step(step)
             })
             data.balls:add(vball)
             role:clear_anger()
-            add_cmd({type = Const.CmdType.SKILL_READY, cid = ball:role_id(), grid = grid})
+            local grids
+            if grid >= 0 and skill_cfg.shape then
+                grids = Skill.get_skill_grids(skill_cfg, grid)
+            end
+            add_cmd({type = Const.CmdType.SKILL_READY, cid = ball:role_id(), grid = grid, grids = grids})
         end
     end
 end
@@ -753,7 +775,7 @@ local function rest_round()
     enemy_round()
     data.round = data.round + 1
     push_round()
-    skill_round()
+    --skill_round()
     end_round()
 end
 
@@ -762,12 +784,17 @@ local function update_round()
     rest_round()
 end
 
+local function get_base()
+    return data.base
+end
+
 local function get_board()
     local board = {
         balls = {},
         lines = data.lines,
         enemies = {},
-        enemy_count = data.enemy_count
+        enemy_count = data.enemy_count,
+        enemy_visible_count = data.enemy_visible_count,
     }
 
     data.balls:foreach(function (b)
@@ -794,6 +821,7 @@ return {
     rest_round = rest_round,
     ball_step = ball_step,
     is_ball_round_finish = is_ball_round_finish,
+    get_base = get_base,
     get_board = get_board,
     check_next_collide = check_next_collide,
     aim = aim,

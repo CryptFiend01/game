@@ -13,8 +13,12 @@ local function get_skill_range(point, width, height)
     }
 end
 
+local function in_game_board(p)
+    return p.x >= 0 and p.x < Const.Board.NWIDTH and p.y >= 0 and p.y < Const.Board.NHEIGHT
+end
+
 local function get_enemy(data, p)
-    if p.x < 0 or p.x >= Const.Board.NWIDTH or p.y < 0 or p.y >= Const.Board.NHEIGHT then
+    if not in_game_board(p) then
         return nil
     end
     local grid = p.x + p.y * Const.Board.NWIDTH
@@ -36,11 +40,17 @@ end
 local function get_cross_enemies(data, point, horizon, vertical)
     local enemies = {}
     for i = -horizon, horizon do
-        add_enemy(enemies, data, {x = point.x + i, y = point.y})
+        local p = {x = point.x + i, y = point.y}
+        if in_game_board(p) then
+            add_enemy(enemies, data, p)
+        end
     end
 
     for i = -vertical, vertical do
-        add_enemy(enemies, data, {x = point.x, y = point.y + i})
+        local p = {x = point.x, y = point.y + i}
+        if in_game_board(p) then
+            add_enemy(enemies, data, p)
+        end
     end
     return enemies
 end
@@ -51,7 +61,10 @@ local function get_rect_enemies(data, point, width, height)
     local y = math.floor(height / 2)
     for h = -y, y do
         for w = -x, x do
-            add_enemy(enemies, data, {x = point.x + w, y = point.y + h})
+            local p = {x = point.x + w, y = point.y + h}
+            if in_game_board(p) then
+                add_enemy(enemies, data, p)
+            end
         end 
     end
     return enemies
@@ -88,14 +101,14 @@ local function select_cross_grid(data, horizon, vertical)
         local point = Help.grid_to_xy(g)
         for i = -horizon, horizon do
             local p = {x = point.x + i, y = point.y}
-            if get_enemy(data, p) then
+            if in_game_board(p) and get_enemy(data, p) then
                 count = count + 1
             end
         end
 
         for i = -vertical, -vertical do
             local p = {x = point.x, y = point.y + i}
-            if get_enemy(data, p) then
+            if in_game_board(p) and get_enemy(data, p) then
                 count = count + 1
             end
         end
@@ -114,7 +127,7 @@ local function select_rect_grid(data, width, height)
         for h = -y, y do
             for w = -x, x do
                 local p = {x = point.x + w, y = point.y + h}
-                if get_enemy(data, p) then
+                if in_game_board(p) and get_enemy(data, p) then
                     count = count + 1
                 end
             end
@@ -137,8 +150,56 @@ local function select_skill_grid(data, skill)
     end
 end
 
+local function get_cross_grids(point, horizon, vertical)
+    local grids = {}
+    table.insert(grids, Help.xy_to_grid(point))
+    for i = -horizon, horizon do
+        local p = {x = point.x + i, y = point.y}
+        if i ~= 0 and in_game_board(p) then
+            local g = Help.xy_to_grid(p)
+            table.insert(grids, g)            
+        end
+    end
+
+    for i = -vertical, vertical do
+        local p = {x = point.x, y = point.y + i}
+        if i ~= 0 and in_game_board(p) then
+            local g = Help.xy_to_grid(p)
+            table.insert(grids, g)            
+        end
+    end
+    return grids
+end
+
+local function get_rect_grids(point, width, height)
+    local grids = {}
+    local x = math.floor(width / 2)
+    local y = math.floor(height / 2)
+    for h = -y, y do
+        for w = -x, x do
+            local p = {x = point.x + w, y = point.y + h}
+            if in_game_board(p) then
+                local g = Help.xy_to_grid(p)
+                table.insert(grids, g)                
+            end
+        end 
+    end
+end
+
+local function get_skill_grids(skill, grid)
+    local point = Help.grid_to_xy(grid)
+    if skill.shape == "cross" then
+        return get_cross_grids(point, skill.horizon, skill.vertical)
+    elseif skill.shape == "rect" then
+        return get_rect_grids(point, skill.width, skill.height)
+    else
+        return {}
+    end
+end
+
 return {
     get_skill_range = get_skill_range,
     select_skill_grid = select_skill_grid,
-    get_skill_enemies = get_skill_enemies
+    get_skill_enemies = get_skill_enemies,
+    get_skill_grids = get_skill_grids,
 }
