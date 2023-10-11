@@ -67,10 +67,10 @@ local Canvas = {
 }
 
 local Offset = {
-    x = (Canvas.WIDTH - Board.WIDTH * Board.SIDE) / 2, 
-    y = Fix.tofix(5),
-    nx = (Canvas.NWIDTH - Board.NWIDTH * Board.NSIDE) / 2,
-    ny = 5
+    x = 0, --(Canvas.WIDTH - Board.WIDTH * Board.SIDE) / 2, 
+    y = 0, --Fix.tofix(5),
+    nx = 0, --(Canvas.NWIDTH - Board.NWIDTH * Board.NSIDE) / 2,
+    ny = 0 --5
 }
 
 local GameRect = {

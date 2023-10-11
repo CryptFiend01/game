@@ -1,13 +1,13 @@
 return {
     battle_type = 1, 
-    max_line = 21,
+    max_line = 31,
     push = {
-        {round = 3, line = 5},
-        {round = 5, line = 6}
+        -- {round = 3, line = 5},
+        -- {round = 5, line = 6}
     },
     monsters = {
-        {id = 1, cid = 4, grid = 88},
-        {id = 2, cid = 5, grid = 95},
+        {id = 1, cid = 10, grid = 88},
+        {id = 2, cid = 10, grid = 95},
         {id = 3, cid = 1, grid = 96},
         {id = 4, cid = 1, grid = 104},
         {id = 5, cid = 1, grid = 112},
@@ -29,8 +29,8 @@ return {
         {id = 21, cid = 1, grid = 125},
         {id = 22, cid = 1, grid = 127},
         {id = 23, cid = 2, grid = 99},
-        {id = 24, cid = 6, grid = 136},
-        {id = 25, cid = 3, grid = 143},
+        {id = 24, cid = 10, grid = 136},
+        {id = 25, cid = 10, grid = 143},
         {id = 26, cid = 7, grid = 153},
         {id = 27, cid = 1, grid = 130},
         {id = 28, cid = 1, grid = 133},
@@ -56,7 +56,42 @@ return {
         {id = 69, cid = 1, grid = 39},
         {id = 70, cid = 1, grid = 46},
         {id = 71, cid = 1, grid = 47},
-        {id = 72, cid = 101, grid = 19}
+        {id = 72, cid = 101, grid = 19},
+
+        {id = 80, cid = 11, grid = 177},
+        {id = 81, cid = 1, grid = 178},
+        {id = 82, cid = 1, grid = 179},
+        {id = 83, cid = 1, grid = 180},
+        {id = 84, cid = 1, grid = 181},
+        {id = 85, cid = 11, grid = 182},
+
+        {id = 86, cid = 11, grid = 185},
+        {id = 87, cid = 1, grid = 186},
+        {id = 88, cid = 1, grid = 187},
+        {id = 89, cid = 1, grid = 188},
+        {id = 90, cid = 1, grid = 189},
+        {id = 91, cid = 11, grid = 190},
+
+        {id = 92, cid = 11, grid = 193},
+        {id = 93, cid = 1, grid = 194},
+        {id = 94, cid = 1, grid = 195},
+        {id = 95, cid = 1, grid = 196},
+        {id = 96, cid = 1, grid = 197},
+        {id = 97, cid = 11, grid = 198},
+
+        {id = 98, cid = 11, grid = 201},
+        {id = 99, cid = 1, grid = 202},
+        {id = 100, cid = 1, grid = 203},
+        {id = 101, cid = 1, grid = 204},
+        {id = 102, cid = 1, grid = 205},
+        {id = 103, cid = 11, grid = 206},
+
+        {id = 104, cid = 11, grid = 209},
+        {id = 105, cid = 1, grid = 210},
+        {id = 106, cid = 1, grid = 211},
+        {id = 107, cid = 1, grid = 212},
+        {id = 108, cid = 1, grid = 213},
+        {id = 109, cid = 11, grid = 214},
         
     }
 }

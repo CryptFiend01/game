@@ -5,7 +5,7 @@ local Const = require "ball_logic.const"
 local StageCfg = require "ball_logic.data.stage"
 local MonsterCfg = require "ball_logic.data.monster"
 local ObjectCfg = require "ball_logic.data.object"
-local RoleCfg = require "ball_logic.data.role"
+local RoleCfg = require "ball_logic.data.rolecfg"
 local Help = require "ball_logic.help"
 local Basic = require "ball_logic.basic"
 local Collide = require "ball_logic.collide"
@@ -400,8 +400,10 @@ local function effect_skill(skill)
                     data.skill_deads.all = true
                 end
             end
-            data.enemy_count = data.enemy_count - 1
-            data.enemy_visible_count = data.enemy_visible_count - 1
+            if enemy.solid then
+                data.enemy_count = data.enemy_count - 1
+                data.enemy_visible_count = data.enemy_visible_count - 1                
+            end
         end
     end
     if skill.cfg.type == Const.SkillType.ROUND_DAMAGE then
@@ -640,11 +642,11 @@ local function ball_step(step)
         if enemy.hp > 0 then
             if enemy.solid then
                 sub_enemy_hp(enemy, role:get_attack())
-                cmd.dmg = {id = enemy.id, sub = Fix.tonumber(role:get_attack()), hp = Fix.tonumber(enemy.hp)}
+                cmd.dmg = {id = enemy.id, dmg = Fix.tonumber(role:get_attack()), hp = Fix.tonumber(enemy.hp)}
             else
                 -- 非实物一般只计算打击次数，hp表示最大次数
                 sub_enemy_hp(enemy, 1)
-                cmd.dmg = {id = enemy.id, sub = 1, hp = Fix.tonumber(enemy.hp)}
+                cmd.dmg = {id = enemy.id, dmg = 1, hp = Fix.tonumber(enemy.hp)}
             end
 
             if enemy.hp <= 0 then
@@ -774,8 +776,8 @@ end
 local function rest_round()
     enemy_round()
     data.round = data.round + 1
+    skill_round()
     push_round()
-    --skill_round()
     end_round()
 end
 

@@ -184,6 +184,7 @@ local function get_rect_grids(point, width, height)
             end
         end 
     end
+    return grids
 end
 
 local function get_skill_grids(skill, grid)
