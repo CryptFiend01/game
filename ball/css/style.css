@@ -1,0 +1,210 @@
+.main {
+    margin: 0 auto;
+    width: 1000px;
+    display: flex;
+    flex-direction: row;
+    align-content: center;
+}
+
+.game {
+    margin: 0 auto;
+    width: 500px;
+}
+
+canvas {
+    border: 1px solid black;
+}
+
+#skills {
+    display: block;
+}
+
+.skill1, .skill2, .skill3, .skill4, .skill5 {
+    display: none;
+    margin: 15px;
+    border: 0;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+}
+
+.skill1 {
+    background-color: red;
+    color: yellow;
+}
+
+.skill1:hover {
+    background-color: rgb(255, 97, 97);
+}
+
+.skill1:disabled {
+    background-color: gray;
+    color: aliceblue;
+}
+
+.skill2 {
+    background-color: orange;
+    color: yellow;
+}
+
+.skill2:hover {
+    background-color: rgb(250, 188, 73);
+}
+
+.skill2:disabled {
+    background-color: gray;
+    color: aliceblue;
+}
+
+.skill3 {
+    background-color: purple;
+    color: yellow;
+}
+
+.skill3:hover {
+    background-color: rgb(247, 76, 247);
+}
+
+.skill3:disabled {
+    background-color: gray;
+    color: aliceblue;
+}
+
+.skill4 {
+    background-color: skyblue;
+    color: rgb(170, 132, 63);
+}
+
+.skill4:hover {
+    background-color: rgb(141, 186, 204);
+}
+
+.skill4:disabled {
+    background-color: gray;
+    color: aliceblue;
+}
+
+.skill5 {
+    background-color: cyan;
+    color: rgb(180, 111, 47);
+}
+
+.skill5:hover {
+    background-color: rgb(98, 221, 221);
+}
+
+.skill5:disabled {
+    background-color: gray;
+    color: aliceblue;
+}
+
+.finish {
+    border: 0;
+    background-color: rgb(37, 223, 121);
+    border-radius: 5px;
+    color: rgb(80, 80, 80);
+    width: 400px;
+    height: 50px;
+}
+
+.finish:hover {
+    background-color: rgb(152, 230, 187);
+}
+
+.btn-replay {
+    margin: 5px;
+    border: 0;
+    background-color: rgb(37, 139, 223);
+    border-radius: 5px;
+    color: rgb(241, 241, 241);
+    width: 120px;
+    height: 45px;
+}
+
+.btn-replay:hover {
+    background-color: rgb(152, 177, 230);
+}
+
+.replay-panel {
+    display: none;
+    position: absolute;
+    align-self: center;
+    background-color: #e2e2e2;
+    border-radius: 5px;
+    flex-direction: column;
+    width: 420px;
+    height: 400px;
+    top: 100px;
+    left: calc(46vw - 210px);
+}
+
+.replay-panel>.title {
+    background-color: rgb(37, 223, 121);
+    border-radius: 5px 5px 0px 0px;
+    color: rgb(54, 53, 52);
+    height: 30px;
+    line-height: 30px;
+}
+
+input[type="number"] {
+    margin: 10px 3px 10px 3px;
+    width: 50px;
+    border: 1px solid gray;
+}
+
+input[type="number"]:focus {
+    border: 1px solid rgb(37, 223, 121);
+    outline: none;
+}
+
+#dir-x {
+    width: 120px;
+}
+
+#dir-y {
+    margin-left: 30px;
+    width: 120px;
+}
+
+#ball-speed {
+    width: 300px;
+}
+
+textarea {
+    margin: 10px 3px 10px 3px;
+}
+
+.group-btn {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    gap: 30px;
+    margin-bottom: 10px;
+}
+
+.btn-panel {
+    border: 0;
+    width: 180px;
+    height: 40px;
+    background-color: rgb(37, 223, 121);
+    border-radius: 5px;
+}
+
+.btn-panel:hover {
+    background-color: rgb(152, 230, 187);
+}
+
+.btn-debug {
+    margin: 5px;
+    border: 0;
+    background-color: rgb(37, 139, 223);
+    border-radius: 5px;
+    color: rgb(241, 241, 241);
+    width: 120px;
+    height: 45px;
+}
+
+.btn-debug:hover {
+    background-color: rgb(152, 177, 230);
+}

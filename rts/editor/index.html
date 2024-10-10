@@ -5,46 +5,51 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.staticfile.org/jquery/1.10.2/jquery.min.js"></script>
     <title>Editor</title>
 </head>
 <body>
     <div class="nav">
         <ul class="main-head">
             <li class="main-first-menu">☰</li>
-            <li class="main-menu">
+            <li id="filemain" class="main-menu">
                 <span>文件</span>
-                <ul class="droplist">
+                <ul id="filedrop" class="droplist">
                     <li class="sub-menu" id="new">新建</li>
                     <li class="sub-menu" id="open">打开</li>
                     <li class="sub-menu" id="save">保存</li>
                     <li class="sub-menu" id="reload">重新加载</li>
                 </ul>
             </li>
-            <li class="main-menu">
+            <li id="editmain" class="main-menu">
                 <span>编辑</span>
-                <ul class="droplist">
+                <ul id="editdrop" class="droplist">
+                    <li class="sub-menu" id="pen">画笔</li>
                     <li class="sub-menu" id="erase">擦除</li>
                     <li class="sub-menu" id="clear">清空</li>
                     <li class="sub-menu" id="fill">填充</li>
+                    <li class="sub-menu" id="drag">抓取</li>
                     <li class="sub-menu" id="init1">出生点1</li>
                     <li class="sub-menu" id="init2">出生点2</li>
                 </ul>
             </li>
-            <li class="main-menu">
+            <li id="layermain" class="main-menu">
                 <span>图层</span>
-                <ul class="droplist">
-                    <li class="sub-menu" id="piclayer">图像层</li>
-                    <li class="sub-menu" id="gridlayer">网格层</li>
+                <ul id="layerdrop" class="droplist">
+                    <!-- <li class="sub-menu" id="piclayer">图像层</li>
+                    <li class="sub-menu" id="gridlayer">网格层</li> -->
                     <li class="sub-menu" id="setgrid">设置网格</li>
                     <li class="sub-menu" id="remgrid">擦除网格</li>
-                    <li class="sub-menu" id="cleargrid">擦除网格</li>
+                    <li class="sub-menu" id="cleargrid">清除网格</li>
                 </ul>
             </li>
         </ul>
     </div>
     <div class="main">
         <div id="cell-list" class="cell-list">
-            <button id="load" onclick="onClickLoad()">load</button>
+            <a href="#" class="img-file">添加图片文件
+                <input type="file" id="loadimg">  
+            </a>
             <table>
                 <tbody id="imageList">
                 </tbody>
@@ -78,6 +83,23 @@
             </div>
         </div>
     </div>
+    <div id="openbox" class="openbox-panel">
+        <div class="panel-title">
+            <button class="close-openbox-btn" id="close-openbox" onclick="onClickCloseOpenbox()">X</button>
+        </div>
+        <div class="open-group">
+            <div class="open-line">
+                <label>地图列表: </label>
+                <button class="dropdown-button" id="select-mapid" onclick="onClickMapidDropdown()"></button>
+                <ul class="dropdown" id="select-mapid-down">
+                </ul>
+            </div>
+            <div class="open-line">
+                <button class="new-ok-btn" onclick="onClickOpen()">确认</button>
+            </div>
+        </div>
+    </div>
     <script src="editor.js"></script>
+    <script src="panel.js"></script>
 </body>
 </html>

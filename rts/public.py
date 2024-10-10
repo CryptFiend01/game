@@ -1,5 +1,7 @@
 from cmath import sqrt
+import pygame
 
+COLOR_KEY = pygame.Color(1, 1, 1)
 
 CMD_MOVE = 1
 

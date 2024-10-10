@@ -2,13 +2,13 @@ from math import fabs
 from public import *
 import json
 
+
 @Singleton
 class TableData:
     def __init__(self) -> None:
         self.st_building = None
         self.st_unit = None
         self.st_map = None
-        
 
     def Init(self):
         if not self.loadBuilding():
@@ -20,7 +20,7 @@ class TableData:
         return True
 
     def loadMaps(self):
-        maps = [1001]
+        maps = [1001, 1002, 1003]
         self.st_map = {}
         for mapid in maps:
             cfg = json.load(open(f'json/maps/{mapid}.json', 'r'))

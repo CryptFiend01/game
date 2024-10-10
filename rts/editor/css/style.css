@@ -12,8 +12,8 @@ body {
 }
 
 .nav {
-    height: 60px;
-    background-color: deepskyblue;
+    height: 40px;
+    background-color: #666;
     display: flex;
 }
 
@@ -23,54 +23,50 @@ body {
 }
 
 .main-menu {
-    color: #e5e5e5;
-    width: 100px;
+    color: #efefe5;
+    width: 80px;
     text-align: center;
-    line-height: 60px;
-    font-size: 18px;
+    line-height: 40px;
+    font-size: 14px;
     cursor: pointer;
 }
 
 .main-first-menu {
-    color: #e5e5e5;
+    color: #efefe5;
     text-align: center;
     width: 60px;
-    line-height: 60px;
-    font-size: 30px;
+    line-height: 40px;
+    font-size: 25px;
     cursor: default;
 }
 
 .main-menu:hover {
-    background-color: skyblue;
+    background-color: #888;
 }
 
 .droplist {
     position: relative;
-    visibility: hidden;
-}
-
-.main-menu:hover .droplist {
-    visibility: visible;
+    display: none;
 }
 
 .sub-menu {
     width: 120px;
-    height: 40px;
-    background-color: deepskyblue;
-    line-height: 40px;
+    height: 30px;
+    background-color: #999;
+    line-height: 30px;
     text-align: center;
     border-top: 1px solid #ccc;
     cursor: pointer;
-    font-size: 16px;
+    font-size: 14px;
     /* border: 1px solid #ccc; */
 }
 
 .sub-menu:hover {
-    background-color: skyblue;
+    background-color: #aaa;
 }
 
 .main {
-    height: calc(100vh - 60px);
+    height: calc(100vh - 40px);
     display: flex;
 }
 
@@ -82,21 +78,36 @@ body {
     align-items: center; /* column对应的水平居中是align-items，row对应的是justify-content */
 }
 
-.cell-list button {
-    background-color: deepskyblue;
-    border: none;
-    color: aliceblue;
-    font-size: 20px;
-    border-radius: 4px;
+.img-file {  
+    /* position: relative;  
+    display: inline-block;   */
+    background: #666;  
+    border: none;  
+    border-radius: 4px;  
+    padding: 4px 12px;
+    /* overflow: hidden;   */
+    color: #e5e5e5;
+    line-height: 20px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    text-align: center;
     width: 350px;
-    height: 40px;
-    margin-top: 20px;
-    margin-bottom: 20px;
+    height: 30px;
 }
 
-.cell-list button:hover {
-    background-color: cornflowerblue;
+.img-file input {  
+    position: absolute;  
+    font-size: 100px; 
+    height: 30px;
+    right: 0;  
+    top: 50px;  
+    opacity: 0;  
 }
+
+.img-file:hover {  
+    background: #888;
+    /* color: #004974;   */
+} 
 
 .cell-list table {
     border: 1px solid #0a0a0a;
@@ -143,10 +154,12 @@ body {
 .scene {
     margin: 16px;
     border: 1px solid #0a0a0a;
+    max-width: 100%;
+    overflow: scroll;
     /* position: absolute; */
 }
 
-.panel, .newbox-panel {
+.panel, .newbox-panel, .openbox-panel {
     position: absolute;
     align-self: center;
     display: flex;
@@ -157,8 +170,8 @@ body {
 }
 
 .newbox-panel {
-    width: 600px;
-    height: 450px;
+    width: 400px;
+    height: 250px;
     margin-top: 100px;
 }
 
@@ -186,13 +199,13 @@ body {
     background-color: #ff6060;
 }
 
-.new-group {
+.new-group, .open-group {
     display: flex;
     flex-direction: column;
     margin-top: 20px;
 }
 
-.new-line {
+.new-line, .open-line {
     align-self: center;
     line-height: 40px;
 }
@@ -204,4 +217,50 @@ body {
     border: none;
     border-radius: 3px;
     color: #e7e7e7;
+    margin-top: 20px;
+}
+
+.openbox-panel {
+    width: 350px;
+    height: 180px;
+    margin-top: 100px;
+}
+
+.dropdown-button {
+    width: 200px;
+    height: 25px;
+    margin-left: 20px;
+}
+
+.dropdown {
+    position: absolute;
+    float: left;
+    left: 148px;
+}
+
+.li-dropdown {
+    background-color: #e7e7e7;
+    width: 200px;
+    height: 20px;
+    /* border: 1px solid #0a0a0a; */
+    position: relative;
+    text-align: center;
+    line-height: 20px;
+    cursor: pointer;
+}
+
+.li-dropdown:hover {
+    background-color: #55aaff;
+}
+
+.btn-sel {
+    background-color: grey;
+    border: none;
+    border-radius: 2px;
+    cursor: pointer;
+    width: 100%;
+}
+
+.btn-sel:hover {
+    background-color: #55aaff;
 }

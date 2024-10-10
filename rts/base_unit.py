@@ -1,4 +1,5 @@
 import pygame
+from public import *
 
 class BaseUnit:
     def __init__(self, app, uid, campid) -> None:
@@ -16,8 +17,8 @@ class BaseUnit:
 
     def initSelect(self):
         self.selSurf = pygame.Surface([self.resCfg['width'], self.resCfg['width']/2], 0, self.app.screen)
-        self.selSurf.set_colorkey(pygame.Color(1, 1, 1))
-        self.selSurf.fill(pygame.Color(1, 1, 1))
+        self.selSurf.set_colorkey(COLOR_KEY)
+        self.selSurf.fill(COLOR_KEY)
         pygame.draw.ellipse(self.selSurf, pygame.Color(35,217,110), pygame.Rect(0, 0, self.resCfg['width'], self.resCfg['width']/2), 1)
 
     def subHp(self, hp):
@@ -42,3 +43,6 @@ class BaseUnit:
     def draw(self, dst):
         if self.surface:
             dst.blit(self.surface, self.renderPos)
+
+    def isMoving(self):
+        return False
