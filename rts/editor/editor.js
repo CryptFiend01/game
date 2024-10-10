@@ -7,6 +7,7 @@ let sceneWidth = 0;
 let sceneHeight = 0;
 let cursor = null;
 let images = [];
+let imageWids = [];
 let isFill = false;
 let isErase = false;
 let initSet = 0;
@@ -27,12 +28,19 @@ let mapObj = {
 function resetScene() {
     sceneWidth = mapObj.width;
     sceneHeight = mapObj.height;
+    if (sceneWidth > 40) {
+        sceneWidth = 40;
+    }
+
+    if (sceneHeight > 30) {
+        sceneHeight = 30;
+    }
     scene.width = imgSide * sceneWidth;
     scene.height = imgSide * sceneHeight;
     mapObj.tiles = [];
     mapObj.blocks = [];
     for (let i = 0; i < sceneWidth*sceneHeight; i++) {
-        mapObj.tiles.push([0, 0, 0]);
+        mapObj.tiles.push([0, 0]);
         mapObj.blocks.push(0);
     }
 }
@@ -58,7 +66,7 @@ function initEditor() {
         let y = Math.floor((evt.offsetY * scene.height / scene.clientHeight) / imgSide) * imgSide;
         let i = Math.floor(x / imgSide) + Math.floor(y / imgSide) * sceneWidth;
         if (isErase) {
-            mapObj.tiles[i] = [0, 0, 0];
+            mapObj.tiles[i] = [0, 0];
         } else {
             if (cursor == null) {
                 return;
@@ -79,7 +87,7 @@ function initEditor() {
             let y = Math.floor((evt.offsetY * scene.height / scene.clientHeight) / imgSide) * imgSide;
             let i = Math.floor(x / imgSide) + Math.floor(y / imgSide) * sceneWidth;
             if (isErase) {
-                mapObj.tiles[i] = [0, 0, 0];
+                mapObj.tiles[i] = [0, 0];
             } else if (cursor != null) {
                 mapObj.tiles[i] = [cursor.img+1, cursor.x, cursor.y];
             }
@@ -120,7 +128,7 @@ function initEditor() {
 
     document.getElementById("clear").addEventListener("click", function() {
         for (let i = 0; i < sceneWidth*sceneHeight; i++) {
-            mapObj.tiles[i] = [0, 0, 0];
+            mapObj.tiles[i] = [0, 0];
         }
         draw();
     });
@@ -168,6 +176,7 @@ function onClickLoad() {
             cellCtx.drawImage(img, 0, 0, cells.width, cells.height);
             mapObj.images.push(name);
             images.push(img);
+            imageWids.push(img.width / imgSide);
         });
     }
 }
