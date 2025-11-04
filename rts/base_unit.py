@@ -32,6 +32,10 @@ class BaseUnit:
     def isInRect(self, rect):
         rt = pygame.Rect(self.renderPos[0], self.renderPos[1], self.resCfg['width'], self.resCfg['height'])
         return rt.colliderect(rect)
+    
+    def isHitPos(self, pos):
+        rt = pygame.Rect(self.renderPos[0], self.renderPos[1], self.resCfg['width'], self.resCfg['height'])
+        return rt.collidepoint(pos)
 
     def setSelected(self, selected):
         self.isSelected = selected

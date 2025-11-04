@@ -3,6 +3,7 @@ from base_unit import BaseUnit
 from timer_mgr import TimerMgr
 from unit import Unit
 from res_mgr import ResMgr
+import logging
 
 class Building(BaseUnit):
     def __init__(self, app, uid, campid) -> None:
@@ -14,6 +15,7 @@ class Building(BaseUnit):
         self.start_time = 0
         self.cfg = None
         self.pos = [0, 0]
+        self.collectPos = None
 
     def Init(self, cfg, pos):
         self.cfg = cfg
@@ -45,6 +47,13 @@ class Building(BaseUnit):
 
     def getUnitPos(self):
         return [self.pos[0] + self.cfg['size'] / 2, self.pos[1] + self.cfg['size'] / 2]
+    
+    def getCollectPos(self):
+        return self.collectPos
+    
+    def setCollectPos(self, pos):
+        logging.debug("set collect pos: %s", pos)
+        self.collectPos = pos
 
     def update(self):
         while len(self.trainings) > 0:
@@ -54,6 +63,8 @@ class Building(BaseUnit):
             else:
                 break
 
-    def draw(self, dst):
+    def draw(self, dst: pygame.Surface):
         self.drawSelect(dst)
         dst.blit(self.img, self.renderPos, self.rect)
+        if self.getCollectPos() and self.isSelected:
+            pygame.draw.line(dst, (150, 110, 30), self.pos, self.getCollectPos(), 2)

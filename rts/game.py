@@ -6,6 +6,7 @@ from unit import Unit
 from camp import Camp
 from game_map import GameMap
 from table_data import TableData
+import logging
 
 class Game:
     def __init__(self, app) -> None:
@@ -38,8 +39,10 @@ class Game:
             campid += 1
 
         poses = [[110, 110], [320, 82], [510, 90], [115, 180], [140, 55], [20, 200]]
-        for pos in poses:
+        for pos in poses[:4]:
             self.addUnit(101, pos, 1)
+        for pos in poses[4:]:
+            self.addUnit(102, pos, 1)
         
         self.surface = pygame.Surface((self.map.getWidth(), self.map.getHeight()), 0, self.app.screen)
         self.selSurf = pygame.Surface((self.map.getWidth(), self.map.getHeight()), 0, self.app.screen)
@@ -101,7 +104,7 @@ class Game:
             self.app.screen.blit(self.selSurf, (0, 0), (self.windowPos[0], self.windowPos[1], self.app.width, self.app.height))
 
     def clearFlows(self):
-        print("clear flows.")
+        logging.debug("clear flows.")
         self.map.redrawFlow(None)
 
     def genUid(self):
@@ -164,10 +167,21 @@ class Game:
         self.defaultTeam.clear()
         self.defaultTeam.setSelect(True)
         #self.selectUnits = []
-        rect = pygame.Rect(x, y, w, h)
-        for _, unit in self.units.items():
-            if unit.isInRect(rect):
-                self.defaultTeam.addToTeam(unit)
+        if w > 1 and h > 1:
+            rect = pygame.Rect(x, y, w, h)
+            for _, unit in self.units.items():
+                if unit.isInRect(rect):
+                    self.defaultTeam.addToTeam(unit)
+        else:
+            for _, unit in self.units.items():
+                if unit.isHitPos((x, y)):
+                    self.defaultTeam.addToTeam(unit)
+                    break
+            if self.defaultTeam.isEmpty():
+                for _, building in self.buildings.items():
+                    if building.isHitPos((x, y)):
+                        self.defaultTeam.addBuilding(building)
+                        break
 
     def onRMouseClick(self, mpos):
         if self.defaultTeam.isEmpty():

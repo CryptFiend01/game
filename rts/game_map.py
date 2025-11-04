@@ -62,7 +62,7 @@ class GameMap:
             sx, sy = int(tile[1] % cols), int(tile[1] / cols)
             dx, dy = int(i % width), int(i / width)
             self.surface.blit(img, (dx * side, dy * side), (sx * side, sy * side, side, side))
-        print(f"game surface size: {self.surface.get_width()}, {self.surface.get_height()}")
+        logging.debug(f"game surface size: {self.surface.get_width()}, {self.surface.get_height()}")
         return True
 
     def getWidth(self):
@@ -159,7 +159,7 @@ class GameMap:
 
     def draw(self, dst: pygame.Surface):
         dst.blit(self.surface, (0, 0))
-        dst.blit(self.flowSurf, (0, 0))
+        #dst.blit(self.flowSurf, (0, 0))
 
     def posToGrid(self, pos):
         return [int(pos[0] / self.side), int(pos[1] / self.side)]
@@ -202,7 +202,7 @@ class GameMap:
             if cell.isBlock:
                 continue
             if cell.layer != self.roadLayer:
-                print(f"cell{cell.pos} not in new layer")
+                logging.warning(f"cell{cell.pos} not in new layer")
                 continue
             minval = -1
             for k, p in enumerate(self.nears):

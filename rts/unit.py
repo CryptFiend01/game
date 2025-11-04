@@ -79,7 +79,7 @@ class Unit(BaseUnit):
                 if tagUnit and not tagUnit.isMoving() and posDist(self.pos, tagUnit.pos) <= self.radius + tagUnit.radius + 5:
                     self.roads.pop(0)
                     self.runningCmd = None
-                    print("last grid is taked, stop.")
+                    logging.debug("last grid is taked, stop.")
                     return
 
             dist = posDist(tag, self.pos)
