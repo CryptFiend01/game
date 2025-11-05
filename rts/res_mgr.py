@@ -9,6 +9,7 @@ class ResMgr:
         self.unit_imgs = {}
         self.building_res = {}
         self.building_imgs = {}
+        self.ui_images = {}
 
     def getUnitResCfg(self, configId):
         res = self.unit_res.get(configId)
@@ -36,3 +37,8 @@ class ResMgr:
             img = pygame.image.load("Assets/" + imgName).convert_alpha()
         return img
         
+    def getUIImage(self, imgName):
+        img = self.ui_images.get(imgName)
+        if not img:
+            img = pygame.image.load("Assets/UI/" + imgName).convert_alpha()
+        return img
